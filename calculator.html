@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Magic Calculator</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body {
+            background-color: #000;
+            color: white;
+            overflow: hidden;
+            touch-action: none;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: #000;
+        }
+        
+        @media (min-width: 640px) {
+            body {
+                background: radial-gradient(circle at 50% 120%, #1a1a1a, #000);
+            }
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .ease-ios { transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1); }
+        .btn-press:active { transform: scale(0.92); opacity: 0.8; }
+        .backdrop-blur-xl { -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
+        
+        .safe-pb {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- SVG Icons ---
+        const ClockIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+        );
+        const CalculatorIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+                <line x1="8" y1="6" x2="16" y2="6"/>
+                <line x1="16" y1="14" x2="16" y2="14"/>
+                <line x1="16" y1="18" x2="16" y2="18"/>
+                <line x1="8" y1="14" x2="8" y2="14"/>
+                <line x1="8" y1="18" x2="8" y2="18"/>
+                <line x1="12" y1="14" x2="12" y2="14"/>
+                <line x1="12" y1="18" x2="12" y2="18"/>
+            </svg>
+        );
+        const DeleteIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
+                <line x1="18" y1="9" x2="12" y2="15"/>
+                <line x1="12" y1="9" x2="18" y2="15"/>
+            </svg>
+        );
+        const XIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        );
+        const SettingsIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        );
+        const BatteryIcon = () => (
+             <div className="w-[22px] h-[10px] border border-white/40 rounded-[3px] relative flex items-center p-[1px]">
+                 <div className="h-full w-[80%] bg-white rounded-[1px]"></div>
+                 <div className="absolute -right-[3px] h-[4px] w-[2px] bg-white/40 rounded-r-[1px]"></div>
+             </div>
+        );
+        const SignalIcon = () => (
+             <div className="flex items-end gap-[2px]">
+                <div className="w-[3px] h-[4px] bg-white/40 rounded-[1px]"></div>
+                <div className="w-[3px] h-[6px] bg-white/60 rounded-[1px]"></div>
+                <div className="w-[3px] h-[8px] bg-white rounded-[1px]"></div>
+                <div className="w-[3px] h-[10px] bg-white rounded-[1px]"></div>
+             </div>
+        );
+         const WifiIcon = () => (
+             <svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" clipRule="evenodd" d="M9.00003 10.7417C9.97235 10.7417 10.8718 10.4211 11.5997 9.88242L9.12354 13.0807C9.05834 13.1649 8.94172 13.1649 8.87652 13.0807L6.40034 9.88242C7.12822 10.4211 8.02771 10.7417 9.00003 10.7417ZM4.80529 7.82206C5.98774 6.94692 7.44296 6.4292 9.00003 6.4292C10.5571 6.4292 12.0123 6.94692 13.1948 7.82206L14.7944 5.75628C13.1895 4.56847 11.1825 3.8667 9.00003 3.8667C6.81757 3.8667 4.81052 4.56847 3.20566 5.75628L4.80529 7.82206ZM1.60599 3.69014C3.69229 2.14611 6.25701 1.2292 9.00003 1.2292C11.7431 1.2292 14.3078 2.14611 16.3941 3.69014L17.8423 1.81989C15.352 0.655869 12.2854 0 9.00003 0C5.71469 0 2.64803 0.655869 0.157715 1.81989L1.60599 3.69014Z" fill="white"/>
+             </svg>
+        );
+
+        const MagicCalculator = () => {
+            const [inputExpression, setInputExpression] = useState('0');
+            const [lastExpression, setLastExpression] = useState(''); // 新增：用於顯示右上角小字
+            const [isResultState, setIsResultState] = useState(false);
+            
+            const [history, setHistory] = useState([]);
+            const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+            // Magic Mode States
+            const [isMagicMode, setIsMagicMode] = useState(false);
+            const [magicRemainder, setMagicRemainder] = useState('');
+            const [magicIndex, setMagicIndex] = useState(0);
+            const [debugMode, setDebugMode] = useState(false);
+
+            // Time & Target
+            const getTargetNumber = () => {
+                const now = new Date();
+                const month = String(now.getMonth() + 1);
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const min = String(now.getMinutes()).padStart(2, '0');
+                return parseInt(`${month}${day}${hours}${min}`);
+            };
+
+            const formatDisplay = (expr) => {
+                if (!expr) return '';
+                let visualStr = expr
+                .replace(/\*/g, '×') 
+                .replace(/\//g, '÷')
+                .replace(/\+/g, '+')
+                .replace(/\-/g, '−');
+                
+                return visualStr.replace(/(\d+)(\.\d+)?/g, (match, p1, p2) => {
+                    return Number(p1).toLocaleString('en-US') + (p2 || '');
+                });
+            };
+
+            const safeCalculate = (expr) => {
+                try {
+                    const sanitized = expr.replace(/[^0-9+\-*/.]/g, '');
+                    // eslint-disable-next-line no-new-func
+                    const result = new Function('return ' + sanitized)();
+                    return parseFloat(result.toFixed(10)); 
+                } catch (e) {
+                    return 'Error';
+                }
+            };
+
+            const getFontSizeClass = (str) => {
+                const len = str.length;
+                if (len > 18) return 'text-[2rem] sm:text-[2.5rem]';
+                if (len > 14) return 'text-[2.5rem] sm:text-[3rem]';
+                if (len > 11) return 'text-[3.2rem] sm:text-[3.8rem]';
+                if (len > 9) return 'text-[4rem] sm:text-[4.8rem]';
+                if (len > 7) return 'text-[4.5rem] sm:text-[5.5rem]';
+                return 'text-[4.8rem] sm:text-[5.5rem]';
+            };
+
+            // Input Handling
+            const handleNumPress = (num) => {
+                if (isResultState) {
+                    handleNewInput(num, true);
+                    return;
+                }
+                if (isMagicMode) {
+                    if (magicIndex < magicRemainder.length) {
+                        const ghostChar = magicRemainder[magicIndex];
+                        if (inputExpression === '0') {
+                            setInputExpression(ghostChar);
+                        } else {
+                            setInputExpression(prev => prev + ghostChar);
+                        }
+                        setMagicIndex(prev => prev + 1);
+                    }
+                    return;
+                }
+                handleNewInput(num, false);
+            };
+
+            const handleNewInput = (num, reset) => {
+                const val = String(num);
+                if (reset) {
+                    setLastExpression(''); // 重置小字
+                    setInputExpression(val === '.' ? '0.' : val);
+                    setIsResultState(false);
+                    return;
+                }
+                if (inputExpression === '0' && val !== '.') {
+                    setInputExpression(val);
+                } else {
+                    if (val === '.') {
+                        const parts = inputExpression.split(/[\+\-\*\/]/);
+                        const currentNum = parts[parts.length - 1];
+                        if (currentNum.includes('.')) return;
+                    }
+                    setInputExpression(prev => prev + val);
+                }
+            };
+
+            const handleOperator = (op) => {
+                setIsResultState(false);
+                setLastExpression(''); // 開始新運算時清除小字
+                const lastChar = inputExpression.slice(-1);
+                const isLastOp = ['+', '-', '*', '/'].includes(lastChar);
+                if (isLastOp) {
+                    setInputExpression(prev => prev.slice(0, -1) + op);
+                } else {
+                    if (inputExpression === 'Error') {
+                        setInputExpression('0');
+                    } else {
+                        setInputExpression(prev => prev + op);
+                    }
+                }
+            };
+
+            const handleEqual = () => {
+                if (isResultState) return;
+                let finalResult;
+                let finalExpression = inputExpression;
+                
+                if (isMagicMode) {
+                    finalResult = getTargetNumber();
+                    setIsMagicMode(false);
+                    setMagicRemainder('');
+                } else {
+                    finalResult = safeCalculate(inputExpression);
+                }
+
+                // 設定右上角小字 (包含等號)
+                setLastExpression(formatDisplay(finalExpression) + ' =');
+                
+                setInputExpression(String(finalResult));
+                setIsResultState(true);
+                
+                const historyItem = {
+                    expression: formatDisplay(finalExpression),
+                    result: Number(finalResult).toLocaleString('en-US'),
+                    rawResult: String(finalResult)
+                };
+                setHistory(prev => [historyItem, ...prev]);
+            };
+
+            const handleClear = () => {
+                setInputExpression('0');
+                setLastExpression(''); // 清除小字
+                setIsResultState(false);
+                if (isMagicMode) setMagicIndex(0);
+            };
+
+            const handleBackspace = () => {
+                if (isResultState) {
+                    setLastExpression(''); // 清除小字
+                    setInputExpression('0');
+                    setIsResultState(false);
+                    return;
+                }
+                if (inputExpression.length > 1) {
+                    setInputExpression(prev => prev.slice(0, -1));
+                } else {
+                    setInputExpression('0');
+                }
+            };
+            
+            const handleToggleSign = () => {
+                const parts = inputExpression.split(/([\+\-\*\/])/);
+                const lastToken = parts[parts.length - 1];
+                
+                if (lastToken && !isNaN(lastToken)) {
+                     const newVal = parseFloat(lastToken) * -1;
+                     parts[parts.length - 1] = newVal.toString();
+                     setInputExpression(parts.join(''));
+                }
+            };
+            
+            const handlePercent = () => {
+                const parts = inputExpression.split(/([\+\-\*\/])/);
+                const lastToken = parts[parts.length - 1];
+                
+                if (lastToken && !isNaN(lastToken)) {
+                     const newVal = parseFloat(lastToken) / 100;
+                     parts[parts.length - 1] = newVal.toString();
+                     setInputExpression(parts.join(''));
+                }
+            };
+
+            // Magic Trigger
+            const toggleMagicMode = () => {
+                if (isMagicMode) {
+                    setIsMagicMode(false);
+                    return;
+                }
+                const target = getTargetNumber();
+                let currentExpr = inputExpression;
+                if (['+', '-', '*', '/'].includes(currentExpr.slice(-1))) {
+                    currentExpr = currentExpr.slice(0, -1);
+                }
+                const currentVal = safeCalculate(currentExpr);
+                if (currentVal === 'Error') return;
+                let remainder = target - currentVal;
+                if (remainder < 0) remainder = 999999; 
+                setMagicRemainder(String(remainder));
+                setMagicIndex(0);
+                setIsMagicMode(true);
+                setIsResultState(false);
+            };
+
+            const loadHistory = (val) => {
+                setInputExpression(val);
+                setLastExpression('');
+                setIsResultState(true);
+                setIsHistoryOpen(false);
+            };
+
+            // Components
+            const Button = ({ text, icon, type, onClick, wide }) => {
+                const bgColors = {
+                    light: 'bg-[#404040] text-white', 
+                    dark: 'bg-[#404040] text-white',
+                    orange: 'bg-[#ff9f0a] text-white',
+                };
+                
+                let isActiveOp = false;
+                if (type === 'op' && !isResultState) {
+                    const lastChar = inputExpression.slice(-1);
+                    const opMap = { '÷': '/', '×': '*', '−': '-', '+': '+' };
+                    if (opMap[text] === lastChar) isActiveOp = true;
+                }
+
+                return (
+                <button 
+                    onClick={onClick} 
+                    className={`
+                        w-full aspect-square justify-center rounded-full
+                        ${isActiveOp ? 'bg-white text-[#ff9f0a] transition-none' : (type === 'op' ? bgColors.orange : bgColors.dark)}
+                        text-[1.8rem] sm:text-[2rem] font-normal leading-none flex items-center select-none btn-press transition-colors duration-200
+                    `}
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                    {icon ? icon : text}
+                </button>
+                );
+            };
+
+            return (
+                <div className="flex justify-center items-center h-[100dvh] w-full font-sans overflow-hidden relative">
+                    
+                    {/* RWD Container */}
+                    <div className="relative w-full h-full sm:w-[390px] sm:h-[844px] sm:max-h-[95dvh] sm:bg-black sm:rounded-[55px] sm:border-[10px] sm:border-[#1c1c1e] sm:shadow-2xl flex flex-col overflow-hidden z-10 transition-all duration-300">
+                        
+                        {/* Status Bar */}
+                        <div className="h-[44px] w-full flex justify-between items-center px-6 pt-2 z-50">
+                             <div 
+                                className="text-white font-semibold text-[15px] cursor-pointer active:opacity-50"
+                                onClick={toggleMagicMode}
+                             >
+                                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                             </div>
+                             
+                             <div className="flex items-center gap-1.5">
+                                <SignalIcon />
+                                <WifiIcon />
+                                <BatteryIcon />
+                             </div>
+                        </div>
+
+                        {/* App Header Icons */}
+                        <div className="flex justify-between px-5 pt-2 z-40">
+                             <button 
+                                onClick={() => setIsHistoryOpen(true)}
+                                className="w-10 h-10 rounded-full flex items-center justify-center border border-white/20 text-white hover:bg-white/10 transition-colors"
+                             >
+                                <ClockIcon className="w-5 h-5" />
+                             </button>
+                             <div className="w-10 h-10 rounded-full flex items-center justify-center border border-white/20 text-white">
+                                <CalculatorIcon className="w-5 h-5" />
+                             </div>
+                        </div>
+
+                        {/* History Panel */}
+                        <div className={`absolute inset-0 z-50 transition-transform duration-500 ease-ios flex flex-col justify-end ${isHistoryOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+                            <div className="flex-1" onClick={() => setIsHistoryOpen(false)}></div>
+                            <div className="h-[80%] bg-[#1c1c1e]/90 backdrop-blur-xl rounded-t-[30px] flex flex-col p-6 shadow-2xl border-t border-white/5 relative">
+                                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-white/20 rounded-full"></div>
+                                <div className="flex justify-between items-center mb-6 mt-4 pb-4 border-b border-white/10">
+                                    <h3 className="text-white text-xl font-medium tracking-tight">History</h3>
+                                    <button onClick={() => setIsHistoryOpen(false)} className="bg-[#3a3a3c] rounded-full p-1.5 text-gray-300 hover:bg-[#48484a] transition-colors">
+                                        <XIcon className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-3 no-scrollbar pb-6">
+                                    {history.length === 0 ? (
+                                        <div className="text-gray-500 text-center mt-20 font-light text-lg">No history yet</div>
+                                    ) : (
+                                        history.map((item, idx) => (
+                                            <div key={idx} onClick={() => loadHistory(item.rawResult)} className="text-right p-4 rounded-2xl active:bg-white/10 cursor-pointer transition-colors border border-transparent hover:border-white/5">
+                                                <div className="text-[#ff9f0a] text-lg mb-1 opacity-90">{item.expression} =</div>
+                                                <div className="text-white text-4xl font-light tracking-tight">{item.result}</div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Display Area */}
+                        <div className="flex-1 flex flex-col justify-end items-end px-8 pb-6 gap-0 relative z-10 pointer-events-none">
+                            {/* 右上角小字：顯示上一步的計算過程 (例如 8×2 =) */}
+                            <div className={`text-[#8e8e93] text-[1.6rem] font-light tracking-wide transition-all duration-300 min-h-[32px] transform origin-right ${lastExpression ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+                                {lastExpression}
+                            </div>
+
+                            {/* 主顯示區 */}
+                            <div className={`text-white font-medium leading-none transition-all duration-200 ${getFontSizeClass(formatDisplay(inputExpression))}`}>
+                                {formatDisplay(inputExpression)}
+                            </div>
+                        </div>
+
+                        {/* Keypad */}
+                        <div className="px-5 pb-8 sm:pb-12 safe-pb">
+                            <div className="grid grid-cols-4 gap-3 sm:gap-3.5">
+                                {/* Row 1 */}
+                                <Button icon={<DeleteIcon className="w-7 h-7" />} onClick={handleBackspace} />
+                                <Button text="C" onClick={handleClear} />
+                                <Button text="%" onClick={handlePercent} />
+                                <Button text="÷" type="op" onClick={() => handleOperator('/')} />
+
+                                {/* Row 2 */}
+                                <Button text="7" onClick={() => handleNumPress(7)} />
+                                <Button text="8" onClick={() => handleNumPress(8)} />
+                                <Button text="9" onClick={() => handleNumPress(9)} />
+                                <Button text="×" type="op" onClick={() => handleOperator('*')} />
+
+                                {/* Row 3 */}
+                                <Button text="4" onClick={() => handleNumPress(4)} />
+                                <Button text="5" onClick={() => handleNumPress(5)} />
+                                <Button text="6" onClick={() => handleNumPress(6)} />
+                                <Button text="−" type="op" onClick={() => handleOperator('-')} />
+
+                                {/* Row 4 */}
+                                <Button text="1" onClick={() => handleNumPress(1)} />
+                                <Button text="2" onClick={() => handleNumPress(2)} />
+                                <Button text="3" onClick={() => handleNumPress(3)} />
+                                <Button text="+" type="op" onClick={() => handleOperator('+')} />
+
+                                {/* Row 5 */}
+                                <Button text="±" onClick={handleToggleSign} />
+                                <Button text="0" onClick={() => handleNumPress(0)} />
+                                <Button text="." onClick={() => handleNewInput('.', false)} />
+                                <Button text="=" type="op" onClick={handleEqual} />
+                            </div>
+                        </div>
+
+                        {/* Home Bar */}
+                        <div className="w-[130px] h-[5px] bg-white rounded-full mx-auto mb-2 opacity-40 absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none"></div>
+                        
+                        {/* Debug Button */}
+                        <div className="absolute bottom-4 right-4 z-50 safe-pb">
+                            <button onClick={() => setDebugMode(!debugMode)} className="w-8 h-8 rounded-full flex items-center justify-center text-white/5 hover:text-white/20 transition-colors">
+                                <SettingsIcon className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Debug Panel */}
+                        {debugMode && (
+                            <div className="absolute bottom-16 right-4 bg-[#1c1c1e]/90 backdrop-blur-md text-white p-4 rounded-xl text-xs font-mono border border-white/10 w-48 shadow-2xl z-50">
+                                <div className="font-bold border-b border-white/10 pb-2 mb-2 flex justify-between">
+                                    <span>Magic Debug</span>
+                                    <span className={`px-1.5 rounded ${isMagicMode ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{isMagicMode ? "ON" : "OFF"}</span>
+                                </div>
+                                <div className="space-y-1 opacity-80">
+                                    <div>Target: <span className="text-blue-400">{getTargetNumber()}</span></div>
+                                    {isMagicMode && (
+                                        <div className="mt-2 bg-yellow-500/10 p-2 rounded text-yellow-500 border border-yellow-500/20">
+                                            Ghost: {magicRemainder}<br/>
+                                            Next: <span className="font-bold text-lg">{magicRemainder[magicIndex]}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MagicCalculator />);
+    </script>
+</body>
+</html>
