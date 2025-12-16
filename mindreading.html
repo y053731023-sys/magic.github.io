@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心靈感應 (Mind Reader Magic)</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* 自定義滾動條樣式 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* 動畫類別 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes zoomIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .animate-zoom-in { animation: zoomIn 0.5s ease-out; }
+        .animate-slide-in { animation: slideInRight 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen overflow-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 圖示組件 (SVG) ---
+        const Sparkles = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 9h4"/><path d="M3 5h4"/></svg>
+        );
+        const RefreshCw = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+        );
+        const Zap = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        );
+        const Eye = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        );
+        const HelpCircle = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+        );
+
+        // --- 主程式 ---
+        function MindReader() {
+            const [step, setStep] = useState(0);
+            const [magicMode, setMagicMode] = useState(false);
+            const [targetSymbol, setTargetSymbol] = useState(null);
+            const [grid, setGrid] = useState([]);
+            
+            // 符號庫
+            const symbols = ['★', '♥', '♠', '♦', '♣', '☀', '☾', '⚛', '☯', '☮', 'Ω', 'Σ', 'Ψ'];
+
+            // 初始化遊戲
+            const initGame = () => {
+                const forcedSymbol = '★'; 
+                const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+                
+                // 如果魔術模式開啟，結果必定是 forcedSymbol，否則隨機
+                const winningSymbol = magicMode ? forcedSymbol : randomSymbol;
+                setTargetSymbol(winningSymbol);
+
+                // 產生 0-99 的網格
+                let newGrid = [];
+                for (let i = 0; i < 100; i++) {
+                    // 9的倍數 (9, 18, 27...) 必須是 winningSymbol
+                    if (i % 9 === 0) {
+                        newGrid.push({ num: i, sym: winningSymbol });
+                    } else {
+                        // 其他數字放隨機干擾符號
+                        let randomSym = symbols[Math.floor(Math.random() * symbols.length)];
+                        while (randomSym === winningSymbol) {
+                            randomSym = symbols[Math.floor(Math.random() * symbols.length)];
+                        }
+                        newGrid.push({ num: i, sym: randomSym });
+                    }
+                }
+                setGrid(newGrid);
+            };
+
+            useEffect(() => {
+                if (step === 2) {
+                    initGame();
+                }
+            }, [step]);
+
+            // 切換魔術模式（隱藏觸發器）
+            const toggleMagicMode = () => {
+                setMagicMode(!magicMode);
+            };
+
+            const nextStep = () => {
+                if (step < 3) setStep(step + 1);
+                else setStep(0); // 重置
+            };
+
+            // --- 狀態指示燈按鈕組件 ---
+            const MagicButton = ({ onClick, text, icon: Icon }) => (
+                <button
+                    onClick={onClick}
+                    className="group relative flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full shadow-[0_0_20px_rgba(124,58,237,0.5)] hover:shadow-[0_0_30px_rgba(124,58,237,0.8)] hover:scale-105 transition-all duration-300 active:scale-95 text-white font-bold text-xl w-full max-w-xs mx-auto overflow-hidden"
+                >
+                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
+                    {Icon && <Icon className="w-6 h-6" />}
+                    <span>{text}</span>
+
+                    {/* 狀態指示燈 (The Indicator Dot) */}
+                    <div 
+                        className={`
+                            rounded-full bg-white transition-all duration-500 ease-in-out ml-2
+                            ${magicMode 
+                                ? 'w-3 h-3 shadow-[0_0_8px_white] opacity-100 scale-125' // 魔術模式開啟：點變大、發光
+                                : 'w-1 h-1 opacity-40' // 魔術模式關閉：點很小、半透明
+                            }
+                        `}
+                    />
+                </button>
+            );
+
+            return (
+                <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-sans select-none overflow-hidden relative">
+                    
+                    {/* 背景特效 */}
+                    <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+                        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl animate-pulse" />
+                        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl animate-pulse delay-700" />
+                    </div>
+
+                    <div className="z-10 w-full max-w-md flex flex-col items-center gap-8">
+                        
+                        {/* 標題與隱藏觸發區 */}
+                        <header className="flex items-center gap-2 mb-4">
+                            <div 
+                                onClick={toggleMagicMode} // 點擊這裡切換模式
+                                className="cursor-pointer transition-transform active:scale-90 p-2 rounded-full hover:bg-white/5"
+                                title="???"
+                            >
+                                <Sparkles className={`w-8 h-8 ${magicMode ? 'text-yellow-400' : 'text-purple-400'}`} />
+                            </div>
+                            <h1 className="text-3xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-indigo-300">
+                                心靈感應
+                            </h1>
+                        </header>
+
+                        {/* 遊戲內容區域 */}
+                        <div className="w-full bg-slate-800/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-2xl min-h-[400px] flex flex-col items-center justify-center relative">
+                            
+                            {step === 0 && (
+                                <div className="text-center space-y-6 animate-fade-in animate-zoom-in">
+                                    <Eye className="w-20 h-20 text-indigo-400 mx-auto opacity-80" />
+                                    <h2 className="text-2xl font-bold text-white">讀心術測試</h2>
+                                    <p className="text-slate-300 leading-relaxed">
+                                        我能看透你的心思。<br/>請放鬆心情，跟隨我的引導。
+                                    </p>
+                                    <div className="pt-4">
+                                        <MagicButton onClick={nextStep} text="開始感應" icon={Zap} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 1 && (
+                                <div className="text-center space-y-6 animate-slide-in">
+                                    <HelpCircle className="w-16 h-16 text-indigo-400 mx-auto" />
+                                    <div className="text-left bg-black/20 p-4 rounded-xl space-y-3 text-lg text-slate-200">
+                                        <p>1. 在心中想一個 <span className="text-yellow-400 font-bold">兩位數</span> (例如: 23)</p>
+                                        <p>2. 將這兩個數字相加 (2 + 3 = 5)</p>
+                                        <p>3. 用原本的數字減去相加的結果 (23 - 5 = 18)</p>
+                                        <p>4. 記住這最後的數字！</p>
+                                    </div>
+                                    <MagicButton onClick={nextStep} text="下一步" icon={Zap} />
+                                </div>
+                            )}
+
+                            {step === 2 && (
+                                <div className="w-full flex flex-col h-full animate-fade-in">
+                                    <p className="text-center text-sm text-slate-400 mb-2">找到你的數字對應的符號，並用力記住它</p>
+                                    <div className="flex-1 overflow-y-auto grid grid-cols-5 gap-2 p-2 bg-black/20 rounded-xl mb-4 max-h-[300px] custom-scrollbar">
+                                        {grid.map((item) => (
+                                            <div key={item.num} className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 transition-colors">
+                                                <span className="text-xs text-slate-500 font-mono">{item.num}</span>
+                                                <span className="text-xl text-yellow-200">{item.sym}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <MagicButton onClick={nextStep} text="顯示答案" icon={Eye} />
+                                </div>
+                            )}
+
+                            {step === 3 && (
+                                <div className="text-center space-y-8 animate-zoom-in">
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-purple-500 blur-[60px] opacity-20 animate-pulse"></div>
+                                        <div className="relative z-10 text-8xl font-bold text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)] transform hover:scale-110 transition-transform cursor-default">
+                                            {targetSymbol}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                        <h3 className="text-2xl font-bold text-white">這就是你想的符號！</h3>
+                                        {magicMode && <p className="text-xs text-purple-400 font-mono opacity-50">(Magic Mode Active)</p>}
+                                    </div>
+
+                                    <div className="pt-4">
+                                        <MagicButton onClick={nextStep} text="再玩一次" icon={RefreshCw} />
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+                        
+                        <p className="text-xs text-slate-600 mt-4">
+                            提示：點擊標題旁的水晶球可進行神秘儀式
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MindReader />);
+    </script>
+</body>
+</html>
