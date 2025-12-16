@@ -40,17 +40,6 @@
             -webkit-backdrop-filter: blur(24px); 
             backdrop-filter: blur(24px); 
         }
-        
-        /* 呼吸燈動畫 */
-        @keyframes pulse-dot {
-            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); transform: scale(1); opacity: 1; }
-            70% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0); transform: scale(1.1); opacity: 0.8; }
-            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); transform: scale(1); opacity: 1; }
-        }
-        
-        .magic-dot {
-            animation: pulse-dot 2s infinite;
-        }
 
         * { -webkit-tap-highlight-color: transparent; }
 
@@ -114,21 +103,23 @@
             const [history, setHistory] = useState([]);
             const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
-            // Magic State
-            const [isMagicMode, setIsMagicMode] = useState(false);
-            const [customTarget, setCustomTarget] = useState(null); // 新增：自定義目標
-            const [magicRemainder, setMagicRemainder] = useState('');
-            const [magicIndex, setMagicIndex] = useState(0);
+            // Magic States
+            const [isForceMode, setIsForceMode] = useState(false); 
+            const [isGhostMode, setIsGhostMode] = useState(false); 
+            
+            const [customTarget, setCustomTarget] = useState(null); // Force Mode 的預先設定目標
+            const [magicRemainder, setMagicRemainder] = useState(''); // 需要鬼影輸入的「差額」
+            const [magicIndex, setMagicIndex] = useState(0); 
+            
             const [debugMode, setDebugMode] = useState(false);
+            const longPressTimerRef = useRef(null);
+            const isLongPressTriggeredRef = useRef(false);
 
             const triggerHaptic = () => {
                 if (navigator.vibrate) navigator.vibrate(10);
             };
 
-            const getTargetNumber = () => {
-                // 如果有設定自定義目標，優先使用
-                if (customTarget !== null) return customTarget;
-
+            const calculateTimeNumber = () => {
                 const now = new Date();
                 const month = String(now.getMonth() + 1);
                 const day = String(now.getDate()).padStart(2, '0');
@@ -154,10 +145,45 @@
                 try {
                     const sanitized = expr.replace(/[^0-9+\-*/.]/g, '');
                     const result = new Function('return ' + sanitized)();
+                    // 處理浮點數精度
                     return parseFloat(Number(result).toPrecision(12)); 
                 } catch (e) {
                     return 'Error';
                 }
+            };
+
+            // 計算目標與當前數值的差額，作為鬼影輸入的內容
+            const calculateRemainder = (targetVal) => {
+                // 先計算當前螢幕上的結果
+                // 注意：如果最後有運算符號 (如 "100 +")，safeCalculate 會忽略運算符號算出 100
+                let currentExpr = inputExpression;
+                if (['+', '-', '*', '/'].includes(currentExpr.slice(-1))) {
+                    currentExpr = currentExpr.slice(0, -1);
+                }
+                
+                const currentVal = safeCalculate(currentExpr);
+                
+                // 如果當前值是錯誤或無效，或目標無效，則無法計算差額
+                if (currentVal === 'Error' || isNaN(currentVal)) {
+                    return String(targetVal); // 直接輸入目標值 (視為從零開始)
+                }
+
+                // 計算差額 (Target - Current)
+                // 假設最後操作是加法或正數輸入。如果是減法情境，邏輯會較複雜，這裡預設為補足數值。
+                let diff = targetVal - currentVal;
+                
+                // 如果差額是負數，這在鬼影輸入很難表現 (需要輸入負號)。
+                // 簡單處理：取絕對值，或者如果真的發生，就強制在按下等於時修正結果。
+                // 為了流暢度，這裡我們取絕對值讓鬼影能打出來，最後靠 handleEqual 的強制修正來兜底。
+                if (diff < 0) {
+                     // 特殊情況：目標比當前小。
+                     // 策略：鬼影輸入 diff 的絕對值，但依賴 handleEqual 強制修正結果。
+                     // 視覺上觀眾會看到輸入了數字，但結果變小，這在數學上不合理 (除非是減法)。
+                     // 但為了魔術效果不卡住，我們先讓它能輸入。
+                     return String(Math.abs(diff));
+                }
+
+                return String(diff);
             };
 
             const getFontSizeClass = (str) => {
@@ -177,19 +203,31 @@
                     handleNewInput(num, true);
                     return;
                 }
-                if (isMagicMode) {
-                    // 魔術模式：只輸入鬼影數字
+
+                // --- 鬼影輸入邏輯 (適用於 Force Mode 和 Ghost Mode) ---
+                if (isForceMode || isGhostMode) {
                     if (magicIndex < magicRemainder.length) {
                         const ghostChar = magicRemainder[magicIndex];
+                        
+                        // 處理輸入：如果是小數點要特別處理，這裡簡化為數字和點
                         if (inputExpression === '0') {
-                            setInputExpression(ghostChar);
+                             setInputExpression(ghostChar);
                         } else {
-                            setInputExpression(prev => prev + ghostChar);
+                             // 防止重複小數點
+                             if (ghostChar === '.' && inputExpression.includes('.')) {
+                                 // skip
+                             } else {
+                                 setInputExpression(prev => prev + ghostChar);
+                             }
                         }
                         setMagicIndex(prev => prev + 1);
+                    } else {
+                        // 數字打完了，卡住 (不顯示新數字)
                     }
-                    return;
+                    return; // 攔截真實輸入
                 }
+                
+                // --- 正常輸入 ---
                 handleNewInput(num, false);
             };
 
@@ -238,12 +276,26 @@
                 setActiveOp(null);
                 
                 let finalResult;
-                finalResult = safeCalculate(inputExpression);
-
-                if (isMagicMode) {
-                    setIsMagicMode(false);
-                    setMagicRemainder('');
-                    setCustomTarget(null); // 結束後重置自定義目標
+                
+                // --- 結果邏輯 ---
+                // 無論是 Ghost Mode 還是 Force Mode，只要有設定目標，
+                // 我們的鬼影輸入都是為了湊出那個目標。
+                // 所以按下等於時，直接顯示該目標即可 (確保萬無一失)。
+                
+                if (isGhostMode) {
+                    finalResult = calculateTimeNumber();
+                    resetMagic();
+                } else if (isForceMode) {
+                    if (customTarget !== null) {
+                        finalResult = customTarget;
+                    } else {
+                        // 如果在 Force Mode 但沒有設定目標 (極端情況)，回歸正常計算
+                        finalResult = safeCalculate(inputExpression);
+                    }
+                    resetMagic();
+                } else {
+                    // 普通模式
+                    finalResult = safeCalculate(inputExpression);
                 }
 
                 setLastExpression(formatDisplay(inputExpression) + ' =');
@@ -265,7 +317,8 @@
                     setInputExpression('0');
                     setLastExpression('');
                     setIsResultState(false);
-                    if (isMagicMode) setMagicIndex(0);
+                    // 清除時重置鬼影索引，允許重新輸入鬼影
+                    if (isForceMode || isGhostMode) setMagicIndex(0);
                 }
             };
 
@@ -300,59 +353,96 @@
                 }
             };
 
-            // 魔術觸發邏輯 (更新版)
-            const toggleMagicMode = () => {
-                triggerHaptic();
-                
-                if (isMagicMode) {
-                    setIsMagicMode(false);
-                    setCustomTarget(null);
+            const resetMagic = () => {
+                setIsForceMode(false);
+                setIsGhostMode(false);
+                // 注意：不清除 customTarget，以便下次可能重複使用，
+                // 但依據流程，通常一次表演完會重設。這裡選擇不自動清 customTarget 除非重設。
+                // 但為了安全，結束後清除 remainder。
+                setMagicRemainder('');
+            };
+
+            // --- 觸發邏輯 ---
+
+            // 1. 強選模式 (Force Mode) - 短按觸發
+            const handleShortPressMagic = () => {
+                // 如果已經在模式中，則關閉
+                if (isForceMode || isGhostMode) {
+                    resetMagic();
                     return;
                 }
 
-                // 檢查螢幕上是否有數字 -> 設定為自定義目標
                 const currentScreenVal = safeCalculate(inputExpression);
-                let target;
-
-                if (currentScreenVal !== 'Error' && currentScreenVal !== 0 && inputExpression !== '0') {
-                    // 設定自定義目標
-                    target = currentScreenVal;
-                    setCustomTarget(target);
-                    // 清除螢幕，假裝什麼事都沒發生
+                
+                // 判斷是「設定目標」還是「啟動魔術」
+                // 邏輯：如果目前尚未設定目標 (customTarget is null) 且螢幕有數字 -> 設定目標
+                // 如果已經設定目標 (customTarget exists) -> 啟動魔術
+                // 或者，我們用更直覺的邏輯：
+                // 如果螢幕數字 > 0 且沒有運算符號 -> 設定目標 (Setup Phase)
+                // 如果正在運算中 (或按了運算符) -> 啟動魔術 (Performance Phase)
+                
+                // 為了簡化且符合您的描述 "先存起來...最後打開功能"：
+                // 我們使用 customTarget 是否為 null 來判斷狀態。
+                // 但這有個問題：怎麼知道現在是設定還是表演？
+                // 讓我們依賴螢幕狀態：
+                
+                if (customTarget === null && currentScreenVal !== 'Error' && currentScreenVal !== 0 && inputExpression !== '0') {
+                    // [設定階段]
+                    setCustomTarget(currentScreenVal);
+                    // 清除螢幕，讓觀眾開始
                     setInputExpression('0');
                     setLastExpression('');
+                    if (navigator.vibrate) navigator.vibrate(50); // 設定成功震動
+                } else if (customTarget !== null) {
+                    // [啟動階段] - 已經有目標了，現在開啟 Force Mode
+                    const remainder = calculateRemainder(customTarget);
+                    setMagicRemainder(remainder);
+                    setMagicIndex(0);
+                    
+                    setIsForceMode(true);
+                    setIsResultState(false);
+                    if (navigator.vibrate) navigator.vibrate(10); // 啟動震動
                 } else {
-                    // 使用預設時間
-                    setCustomTarget(null);
-                    target = getTargetNumber();
+                     // 沒目標且螢幕為0 -> 無效操作或純指示燈
+                     // 這裡不做任何事，或者您可以開啟一個 dummy mode
                 }
+            };
 
-                // 計算鬼影餘數 (這裡假設是從 0 開始，或是計算目前輸入值的補數)
-                // 鬼影輸入邏輯通常是：
-                // 情境A：螢幕為 0 -> 觀眾輸入 A -> 按 + -> 觀眾輸入 B(鬼影) -> = Target.
-                // 情境B：螢幕已有 A + -> 觸發 -> 觀眾輸入 B(鬼影) -> = Target.
-
-                let currentExpr = inputExpression;
-                if (['+', '-', '*', '/'].includes(currentExpr.slice(-1))) {
-                    currentExpr = currentExpr.slice(0, -1);
+            // 2. 鬼影模式 (Ghost Mode) - 長按觸發
+            const handleLongPressMagic = () => {
+                if (isForceMode || isGhostMode) {
+                    resetMagic();
+                    return;
                 }
                 
-                const currentVal = safeCalculate(currentExpr);
-                if (currentVal === 'Error') return; // 防呆
+                const target = calculateTimeNumber();
+                const remainder = calculateRemainder(target);
                 
-                // 反推需要的數字 (預設用減法補數)
-                let remainder = target - currentVal;
-                
-                // 如果是負數 (例如 目標500，當前已經輸入800)，鬼影補負數可能露餡
-                // 這裡做簡單處理：如果負數，就加一個大數循環，或者直接用負號
-                // 在計算機魔術中，通常是「加上」某數。
-                // 若 remainder < 0，我們就設定 remainder 為 target (強制重來模式)
-                // 或者保持負數
-                
-                setMagicRemainder(String(remainder));
+                setIsGhostMode(true); 
+                setMagicRemainder(remainder); 
                 setMagicIndex(0);
-                setIsMagicMode(true);
                 setIsResultState(false);
+                
+                if (navigator.vibrate) navigator.vibrate([50, 50, 50]); 
+            };
+
+            const handleMagicTouchStart = () => {
+                isLongPressTriggeredRef.current = false;
+                longPressTimerRef.current = setTimeout(() => {
+                    handleLongPressMagic();
+                    isLongPressTriggeredRef.current = true;
+                }, 800); 
+            };
+
+            const handleMagicTouchEnd = (e) => {
+                if (longPressTimerRef.current) {
+                    clearTimeout(longPressTimerRef.current);
+                }
+                if (isLongPressTriggeredRef.current) {
+                    e.preventDefault(); 
+                    return; 
+                }
+                handleShortPressMagic(); 
             };
 
             const loadHistory = (val) => {
@@ -363,7 +453,7 @@
                 setIsHistoryOpen(false);
             };
 
-            const Button = ({ text, icon, type, onClick, opValue, wide, hasIndicator }) => {
+            const Button = ({ text, icon, type, onClick, opValue, wide }) => {
                 const bgColors = {
                     func: 'bg-[#A5A5A5] text-black', 
                     num: 'bg-[#333333] text-white',   
@@ -389,6 +479,19 @@
                     }
                 }
 
+                let content = icon ? icon : text;
+                // 小數點視覺暗號
+                if (text === '.') {
+                    content = (
+                        <span 
+                            className={`transition-transform duration-500 ease-in-out block ${(isForceMode || isGhostMode) ? 'scale-[1.8] font-medium' : 'scale-100'}`}
+                            style={{ transformOrigin: '50% 65%' }}
+                        >
+                            .
+                        </span>
+                    );
+                }
+
                 return (
                 <button 
                     onClick={onClick} 
@@ -400,12 +503,7 @@
                     `}
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                    {icon ? icon : text}
-                    
-                    {/* 指示燈：僅在有 hasIndicator 且 magicMode 開啟時顯示 */}
-                    {hasIndicator && isMagicMode && (
-                        <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)] magic-dot"></div>
-                    )}
+                    {content}
                 </button>
                 );
             };
@@ -428,8 +526,15 @@
                              
                              {/* 觸發開關：點擊右側圖示 */}
                              <div 
-                                className="w-10 h-10 rounded-full flex items-center justify-center border border-white/30 text-white cursor-pointer active:opacity-50 transition-opacity relative"
-                                onClick={toggleMagicMode}
+                                className="w-10 h-10 rounded-full flex items-center justify-center border border-white/30 text-white cursor-pointer active:opacity-50 transition-opacity relative select-none"
+                                onMouseDown={handleMagicTouchStart}
+                                onMouseUp={handleMagicTouchEnd}
+                                onTouchStart={handleMagicTouchStart}
+                                onTouchEnd={handleMagicTouchEnd}
+                                onMouseLeave={() => {
+                                    if(longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+                                }}
+                                onContextMenu={(e) => e.preventDefault()}
                              >
                                 <CalculatorIcon className="w-6 h-6" />
                              </div>
@@ -498,7 +603,7 @@
                                 <Button icon={<PlusMinusIcon className="w-8 h-8 text-white" />} type="num" onClick={handleToggleSign} />
                                 <Button text="0" type="num" onClick={() => handleNumPress(0)} />
                                 <Button text="." type="num" onClick={() => handleNewInput('.', false)} />
-                                <Button text="=" type="op" onClick={handleEqual} hasIndicator={true} />
+                                <Button text="=" type="op" onClick={handleEqual} />
                             </div>
                         </div>
 
@@ -513,11 +618,15 @@
                             <div className="absolute top-20 left-6 bg-white/90 backdrop-blur-md text-black p-4 rounded-xl text-xs font-mono border w-48 shadow-2xl z-50">
                                 <div className="font-bold border-b pb-2 mb-2 flex justify-between">
                                     <span>Magic Status</span>
-                                    <span className={isMagicMode ? "text-green-600" : "text-red-600"}>{isMagicMode ? "ON" : "OFF"}</span>
+                                    <span>
+                                        {isForceMode ? <span className="text-green-600">FORCE ON</span> : ""}
+                                        {isGhostMode ? <span className="text-purple-600"> GHOST ON</span> : ""}
+                                        {!isForceMode && !isGhostMode ? <span className="text-red-600">OFF</span> : ""}
+                                    </span>
                                 </div>
-                                <div>Target: {getTargetNumber()}</div>
-                                <div>Custom: {customTarget ? "YES" : "NO"}</div>
-                                {isMagicMode && <div>Ghost: {magicRemainder}</div>}
+                                <div>Time: {calculateTimeNumber()}</div>
+                                <div>Saved Target: {customTarget || "None"}</div>
+                                <div>Remainder: {magicRemainder}</div>
                             </div>
                         )}
 
