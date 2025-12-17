@@ -41,7 +41,7 @@
         body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
-<body class="bg-[#0f172a] text-white min-h-screen overflow-hidden font-sans">
+<body class="bg-[#0f172a] text-white min-h-[100dvh] overflow-hidden font-sans">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -65,15 +65,15 @@
 
         // --- 秘密控制面板 (Pro Feature) ---
         const SecretPanel = ({ symbols, onSelect, onClose, currentForced }) => (
-            <div className="absolute inset-0 z-[100] bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center animate-[fadeIn_0.3s_ease-out]">
-                <div className="bg-slate-800 p-6 rounded-2xl border border-red-500/30 shadow-2xl w-[90%] max-w-sm">
-                    <h3 className="text-xl font-bold text-red-400 mb-6 flex items-center justify-center gap-2">
+            <div className="absolute inset-0 z-[100] bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center animate-[fadeIn_0.3s_ease-out] p-4">
+                <div className="bg-slate-800 p-5 md:p-6 rounded-2xl border border-red-500/30 shadow-2xl w-full max-w-[320px] md:max-w-sm">
+                    <h3 className="text-lg md:text-xl font-bold text-red-400 mb-4 md:mb-6 flex items-center justify-center gap-2">
                         <Icons.Lock className="w-5 h-5"/> Force Selection
                     </h3>
-                    <div className="grid grid-cols-5 gap-3 mb-6">
+                    <div className="grid grid-cols-5 gap-2 md:gap-3 mb-4 md:mb-6">
                         <button 
                             onClick={() => { triggerHaptic([50]); onSelect(null); }}
-                            className={`aspect-square rounded-xl border-2 flex items-center justify-center text-sm font-bold transition-all
+                            className={`aspect-square rounded-xl border-2 flex items-center justify-center text-xs md:text-sm font-bold transition-all
                             ${currentForced === null ? 'border-red-500 bg-red-500/20 text-white' : 'border-slate-700 text-slate-500'}`}
                         >
                             OFF
@@ -82,14 +82,14 @@
                             <button 
                                 key={s}
                                 onClick={() => { triggerHaptic([50]); onSelect(s); }}
-                                className={`aspect-square rounded-xl border-2 flex items-center justify-center text-xl transition-all
+                                className={`aspect-square rounded-xl border-2 flex items-center justify-center text-lg md:text-xl transition-all
                                 ${currentForced === s ? 'border-amber-400 bg-amber-400/20 text-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.3)]' : 'border-slate-700 text-slate-400 hover:bg-slate-700'}`}
                             >
                                 {s}
                             </button>
                         ))}
                     </div>
-                    <button onClick={onClose} className="w-full py-3 bg-slate-700 rounded-xl text-slate-300 font-medium active:scale-95 transition-transform">
+                    <button onClick={onClose} className="w-full py-3 bg-slate-700 rounded-xl text-slate-300 font-medium active:scale-95 transition-transform text-sm md:text-base">
                         Close Panel
                     </button>
                 </div>
@@ -99,22 +99,22 @@
         // --- 掃描動畫組件 ---
         const ScanningOverlay = () => (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-900/90 backdrop-blur-sm animate-[fadeIn_0.5s]">
-                <div className="relative w-32 h-32 mb-8">
+                <div className="relative w-24 h-24 md:w-32 md:h-32 mb-6 md:mb-8">
                     {/* 脈衝光環 */}
                     <div className="absolute inset-0 rounded-full border-2 border-indigo-500/30 animate-pulse-ring"></div>
                     <div className="absolute inset-0 rounded-full border-2 border-indigo-500/30 animate-pulse-ring" style={{animationDelay: '1s'}}></div>
                     
                     {/* 核心圖示 */}
                     <div className="absolute inset-0 flex items-center justify-center text-indigo-400 drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]">
-                        <Icons.Fingerprint className="w-16 h-16 animate-pulse" />
+                        <Icons.Fingerprint className="w-12 h-12 md:w-16 md:h-16 animate-pulse" />
                     </div>
                     
                     {/* 掃描線 */}
                     <div className="absolute left-0 right-0 h-1 bg-indigo-400/50 blur-[2px] shadow-[0_0_10px_#818cf8] animate-scan"></div>
                 </div>
-                <div className="text-center space-y-2">
-                    <h3 className="text-xl font-bold text-white tracking-widest uppercase">Analyzing</h3>
-                    <p className="text-indigo-300/70 text-sm font-mono animate-pulse">Reading mental projection...</p>
+                <div className="text-center space-y-2 px-4">
+                    <h3 className="text-lg md:text-xl font-bold text-white tracking-widest uppercase">Analyzing</h3>
+                    <p className="text-indigo-300/70 text-xs md:text-sm font-mono animate-pulse">Reading mental projection...</p>
                 </div>
             </div>
         );
@@ -190,14 +190,12 @@
             };
 
             // 動態標題樣式 - 這是隱藏的指示器
-            // 正常：紫色漸層
-            // 強選開啟：極微小的金色偏移，只有魔術師看得出來
             const titleStyle = forcedSymbol 
                 ? "bg-gradient-to-r from-purple-200 via-amber-100 to-indigo-200" 
                 : "bg-gradient-to-r from-purple-300 via-indigo-200 to-indigo-300";
 
             return (
-                <div className="relative min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
+                <div className="relative min-h-[100dvh] flex flex-col items-center justify-center p-4 md:p-6 overflow-hidden">
                     
                     {/* 背景動態粒子 (純 CSS) */}
                     <div className="absolute inset-0 pointer-events-none opacity-20">
@@ -228,48 +226,48 @@
                     )}
 
                     {/* Header Area */}
-                    <div className="z-10 w-full max-w-md flex justify-between items-center mb-8 relative">
+                    <div className="z-10 w-full max-w-md flex justify-between items-center mb-4 md:mb-8 relative px-2">
                         {/* 隱形觸發區：左上角水晶球 */}
                         <div 
                             onClick={toggleMagicMode}
                             className={`p-2 rounded-full transition-all duration-700 ${magicMode ? 'text-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]' : 'text-slate-600 hover:text-slate-500'}`}
                         >
-                            <Icons.Sparkles className="w-6 h-6" />
+                            <Icons.Sparkles className="w-5 h-5 md:w-6 md:h-6" />
                         </div>
 
                         {/* 隱形觸發區：標題 (雙擊) */}
                         <h1 
                             onDoubleClick={() => setShowSecretPanel(true)}
-                            className={`text-2xl font-black tracking-widest uppercase bg-clip-text text-transparent cursor-default transition-all duration-500 ${titleStyle}`}
+                            className={`text-xl md:text-2xl font-black tracking-widest uppercase bg-clip-text text-transparent cursor-default transition-all duration-500 ${titleStyle}`}
                         >
                             Mind Reader
                         </h1>
 
-                        <div className="w-10"></div> {/* 佔位符保持標題置中 */}
+                        <div className="w-9 md:w-10"></div> {/* 佔位符保持標題置中 */}
                     </div>
 
                     {/* Main Card */}
-                    <div className="z-10 w-full max-w-md bg-slate-800/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden min-h-[420px] flex flex-col">
+                    <div className="z-10 w-full max-w-md bg-slate-800/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden min-h-[400px] md:min-h-[450px] flex flex-col">
                         
                         {/* 掃描層 */}
                         {isScanning && <ScanningOverlay />}
 
                         {/* Step 0: Intro */}
                         {step === 0 && (
-                            <div className="flex-1 flex flex-col items-center justify-center space-y-8 animate-[fadeIn_0.6s_ease-out]">
+                            <div className="flex-1 flex flex-col items-center justify-center space-y-6 md:space-y-8 animate-[fadeIn_0.6s_ease-out]">
                                 <div className="relative">
                                     <div className="absolute inset-0 bg-indigo-500 blur-2xl opacity-20 animate-pulse"></div>
-                                    <Icons.Fingerprint className="w-24 h-24 text-indigo-400 relative z-10" />
+                                    <Icons.Fingerprint className="w-20 h-20 md:w-24 md:h-24 text-indigo-400 relative z-10" />
                                 </div>
                                 <div className="text-center space-y-3">
-                                    <h2 className="text-2xl font-bold text-white">量子讀心術</h2>
+                                    <h2 className="text-xl md:text-2xl font-bold text-white">量子讀心術</h2>
                                     <p className="text-indigo-200/70 text-sm leading-relaxed max-w-[260px] mx-auto">
                                         透過演算法解析潛意識的微表情。<br/>請放鬆，讓我連結你的思緒。
                                     </p>
                                 </div>
                                 <button 
                                     onClick={handleNext}
-                                    className="group relative px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold tracking-wide transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(79,70,229,0.4)]"
+                                    className="group relative px-6 py-3 md:px-8 md:py-3 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold tracking-wide transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(79,70,229,0.4)] text-sm md:text-base"
                                 >
                                     開始連結
                                     <div className="absolute inset-0 rounded-full bg-white/20 animate-pulse-ring opacity-0 group-hover:opacity-100"></div>
@@ -280,12 +278,12 @@
                         {/* Step 1: Instruction */}
                         {step === 1 && (
                             <div className="flex-1 flex flex-col animate-[slideInRight_0.4s_ease-out]">
-                                <div className="flex-1 space-y-6">
+                                <div className="flex-1 space-y-4 md:space-y-6">
                                     <div className="flex items-center gap-3 text-indigo-400 mb-2">
                                         <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center font-bold">1</div>
-                                        <h3 className="font-bold text-white">數學共振</h3>
+                                        <h3 className="font-bold text-white text-lg">數學共振</h3>
                                     </div>
-                                    <ul className="space-y-4 text-slate-300 text-sm leading-relaxed bg-black/20 p-5 rounded-2xl border border-white/5">
+                                    <ul className="space-y-3 md:space-y-4 text-slate-300 text-xs md:text-sm leading-relaxed bg-black/20 p-4 md:p-5 rounded-2xl border border-white/5">
                                         <li className="flex gap-3">
                                             <span className="text-indigo-400">➢</span>
                                             <span>心中想一個 <strong className="text-white">兩位數</strong> <span className="text-slate-500">(例: 23)</span></span>
@@ -306,7 +304,7 @@
                                 </div>
                                 <button 
                                     onClick={handleNext}
-                                    className="w-full py-4 mt-6 bg-slate-700/50 hover:bg-slate-700 border border-white/10 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 group"
+                                    className="w-full py-3 md:py-4 mt-6 bg-slate-700/50 hover:bg-slate-700 border border-white/10 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 group text-sm md:text-base"
                                 >
                                     我記住了
                                     <Icons.ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -318,19 +316,19 @@
                         {step === 2 && (
                             <div className="flex-1 flex flex-col h-full animate-[fadeIn_0.5s]">
                                 <div className="text-center mb-4">
-                                    <p className="text-sm text-indigo-200">找到你的數字，<span className="text-amber-300 font-bold">專注看著旁邊的符號</span></p>
+                                    <p className="text-xs md:text-sm text-indigo-200">找到你的數字，<span className="text-amber-300 font-bold">專注看著旁邊的符號</span></p>
                                 </div>
-                                <div className="flex-1 overflow-y-auto grid grid-cols-5 gap-2 pr-1 custom-scrollbar mask-image-gradient">
+                                <div className="flex-1 overflow-y-auto grid grid-cols-5 gap-1 md:gap-2 pr-1 custom-scrollbar mask-image-gradient">
                                     {grid.map((item) => (
                                         <div key={item.num} className="aspect-square flex flex-col items-center justify-center rounded-lg bg-slate-700/30 border border-white/5">
-                                            <span className="text-[10px] text-slate-500 font-mono mb-1">{item.num}</span>
-                                            <span className="text-lg text-white font-serif">{item.sym}</span>
+                                            <span className="text-[10px] md:text-xs text-slate-500 font-mono mb-0.5 md:mb-1">{item.num}</span>
+                                            <span className="text-base md:text-xl text-white font-serif leading-none">{item.sym}</span>
                                         </div>
                                     ))}
                                 </div>
                                 <button 
                                     onClick={handleNext}
-                                    className="w-full py-4 mt-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold shadow-lg shadow-indigo-900/50 transition-all active:scale-95"
+                                    className="w-full py-3 md:py-4 mt-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold shadow-lg shadow-indigo-900/50 transition-all active:scale-95 text-sm md:text-base"
                                 >
                                     讀取我的心思
                                 </button>
@@ -341,22 +339,22 @@
                         {step === 3 && (
                             <div className="flex-1 flex flex-col items-center justify-center animate-[zoomIn_0.5s_cubic-bezier(0.175,0.885,0.32,1.275)]">
                                 <div className="relative group cursor-pointer">
-                                    <div className="absolute inset-0 bg-amber-400 blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity duration-1000"></div>
-                                    <div className="relative z-10 text-[100px] leading-none font-serif text-transparent bg-clip-text bg-gradient-to-br from-amber-100 to-amber-400 drop-shadow-[0_0_30px_rgba(251,191,36,0.4)] transform group-hover:scale-110 transition-transform duration-500">
+                                    <div className="absolute inset-0 bg-amber-400 blur-[60px] md:blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity duration-1000"></div>
+                                    <div className="relative z-10 text-[80px] md:text-[100px] leading-none font-serif text-transparent bg-clip-text bg-gradient-to-br from-amber-100 to-amber-400 drop-shadow-[0_0_30px_rgba(251,191,36,0.4)] transform group-hover:scale-110 transition-transform duration-500">
                                         {targetSymbol}
                                     </div>
                                 </div>
                                 
-                                <div className="mt-12 text-center space-y-2">
-                                    <h3 className="text-white text-lg font-medium tracking-wide">你的心思是...</h3>
-                                    <p className="text-slate-400 text-xs">Mental Connection Established</p>
+                                <div className="mt-8 md:mt-12 text-center space-y-2">
+                                    <h3 className="text-white text-base md:text-lg font-medium tracking-wide">你的心思是...</h3>
+                                    <p className="text-slate-400 text-[10px] md:text-xs">Mental Connection Established</p>
                                 </div>
 
                                 <button 
                                     onClick={handleNext}
-                                    className="mt-12 px-6 py-2 rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2 text-sm"
+                                    className="mt-8 md:mt-12 px-6 py-2 rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2 text-xs md:text-sm"
                                 >
-                                    <Icons.Refresh className="w-4 h-4" />
+                                    <Icons.Refresh className="w-3 h-3 md:w-4 md:h-4" />
                                     再次連結
                                 </button>
                             </div>
