@@ -610,6 +610,17 @@
                                 <div>Time: {calculateTimeNumber()}</div>
                                 <div>Saved Target: {customTarget || "None"}</div>
                                 <div>Remainder: {magicRemainder}</div>
+                                
+                                {/* 操作說明 */}
+                                <div className="mt-3 pt-2 border-t border-gray-300 space-y-1 text-[10px] text-gray-600">
+                                    <p className="font-bold text-gray-800">操作說明:</p>
+                                    <p>⏰ 左上 (時鐘):</p>
+                                    <p>• 短按: 歷史紀錄</p>
+                                    <p>• 長按: 時間預言 (鬼影)</p>
+                                    <p>🧮 右上 (計算機):</p>
+                                    <p>• 長按: 設定當前數字為目標</p>
+                                    <p>• 短按: 啟動強選模式</p>
+                                </div>
                             </div>
                         )}
 
@@ -623,5 +634,3 @@
     </script>
 </body>
 </html>
-
-
