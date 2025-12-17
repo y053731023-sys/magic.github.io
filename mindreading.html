@@ -263,7 +263,7 @@
                     </div>
 
                     {/* Main Card */}
-                    <div className="z-10 w-full max-w-md bg-slate-800/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden min-h-[400px] md:min-h-[450px] flex flex-col">
+                    <div className="z-10 w-full max-w-md bg-slate-800/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden h-[65dvh] min-h-[400px] md:h-auto md:max-h-[80dvh] flex flex-col">
                         
                         {/* 掃描層 */}
                         {isScanning && <ScanningOverlay />}
@@ -341,8 +341,8 @@
                                 </div>
 
                                 {/* 滾動區域 */}
-                                <div className="flex-1 overflow-y-auto grid grid-cols-3 md:grid-cols-4 gap-x-2 gap-y-2 px-2 no-scrollbar mask-gradient scroll-smooth">
-                                    {/* 頂部留白，讓第一個元素能滾到中間 */}
+                                <div className="flex-1 overflow-y-auto grid grid-cols-3 md:grid-cols-4 gap-x-2 gap-y-2 px-2 no-scrollbar mask-gradient scroll-smooth touch-pan-y">
+                                    {/* 頂部留白 */}
                                     <div className="col-span-full h-8"></div>
                                     
                                     {grid.map((item) => (
@@ -352,8 +352,8 @@
                                         </div>
                                     ))}
                                     
-                                    {/* 底部留白 */}
-                                    <div className="col-span-full h-8 flex justify-center items-center opacity-30 pt-4">
+                                    {/* 底部留白 - 增加高度以確保最後一個元素能滾出漸層區 */}
+                                    <div className="col-span-full h-16 flex justify-center items-center opacity-30 pt-4">
                                         <Icons.ChevronDown className="w-5 h-5 animate-bounce-slow" />
                                     </div>
                                 </div>
