@@ -261,34 +261,26 @@
                                     <div className="relative">
                                         <div className="absolute inset-0 bg-purple-500 blur-[60px] opacity-20 animate-pulse"></div>
                                         <div className="relative z-10 text-8xl font-bold text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)] transform hover:scale-110 transition-transform cursor-default">
-                                            {targetSymbol}
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                        <h3 className="text-2xl font-bold text-white">這就是你想的符號！</h3>
-                                        <div className="flex flex-col items-center gap-1">
-                                            {magicMode && <p className="text-xs text-purple-400 font-mono opacity-50">Magic Mode Active</p>}
-                                            {forcedSymbol && <p className="text-xs text-red-400 font-mono opacity-50">Force Active: {forcedSymbol}</p>}
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-4">
-                                        <MagicButton onClick={nextStep} text="再玩一次" icon={RefreshCw} />
+                                        {targetSymbol}
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                        
-                        <p className="text-xs text-slate-600 mt-4">
-                            提示：點擊水晶球開啟魔術模式，雙擊標題進行設定
-                        </p>
+                                
+                                <div className="space-y-2">
+                                    <h3 className="text-2xl font-bold text-white">這就是你想的符號！</h3>
+                                </div>
+
+                                <div className="pt-4">
+                                    <MagicButton onClick={nextStep} text="再玩一次" icon={RefreshCw} />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
-            );
-        }
+            </div>
+        );
+    }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+    const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<MindReader />);
     </script>
 </body>
