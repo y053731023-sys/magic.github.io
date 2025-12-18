@@ -82,40 +82,48 @@
 
         // 隨機產生並洗牌的函數
         function generateNewGameCards() {
-            const ranks = ['J', 'Q', 'K'];
-            const suits = [
-                { name: 'hearts', color: 'red' },
-                { name: 'diamonds', color: 'red' },
-                { name: 'spades', color: 'black' },
-                { name: 'clubs', color: 'black' }
-            ];
+            // 輔助函數：洗牌
+            const shuffle = (arr) => {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            };
 
-            // 1. 產生所有 12 張花牌 (J, Q, K)
-            let deck = [];
+            let selectionPile = [];
+            let revealPool = [];
             let idCounter = 1;
-            
-            ranks.forEach(rank => {
-                suits.forEach(suit => {
-                    deck.push({
-                        id: idCounter++,
-                        rank: rank,
-                        suit: suit.name,
-                        color: suit.color
-                    });
-                });
+
+            // 針對每個點數 (J, Q, K) 進行處理
+            ['J', 'Q', 'K'].forEach(rank => {
+                // 產生紅色的牌 (紅心, 方塊)
+                const reds = [
+                    { id: idCounter++, rank: rank, suit: 'hearts', color: 'red' },
+                    { id: idCounter++, rank: rank, suit: 'diamonds', color: 'red' }
+                ];
+                // 產生黑色的牌 (黑桃, 梅花)
+                const blacks = [
+                    { id: idCounter++, rank: rank, suit: 'spades', color: 'black' },
+                    { id: idCounter++, rank: rank, suit: 'clubs', color: 'black' }
+                ];
+
+                // 隨機打亂紅牌與黑牌
+                shuffle(reds);
+                shuffle(blacks);
+
+                // 取出一張紅牌和一張黑牌放入選牌區 (保證顏色平衡：3紅3黑)
+                selectionPile.push(reds[0]);
+                selectionPile.push(blacks[0]);
+
+                // 剩下的放入揭曉區
+                revealPool.push(reds[1]);
+                revealPool.push(blacks[1]);
             });
 
-            // 2. Fisher-Yates 洗牌演算法
-            for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [deck[i], deck[j]] = [deck[j], deck[i]];
-            }
-
-            // 3. 分配卡牌
-            // 取前 6 張給使用者看
-            currentInitialCards = deck.slice(0, 6);
-            // 取接下來的 5 張作為揭曉牌 (保證與前 6 張完全不同)
-            currentRevealCards = deck.slice(6, 11);
+            // 最後再次洗亂這兩堆牌，讓順序不固定
+            currentInitialCards = shuffle(selectionPile);
+            currentRevealCards = shuffle(revealPool).slice(0, 5);
         }
 
         // --- 渲染輔助函數 ---
@@ -219,7 +227,7 @@
         function showReading() {
             const texts = [
                 '正在讀取你的腦波...',
-                '分析你的瞳孔反應...',
+                '正在與你的潛意識建立連結...',
                 '感應到了...',
                 '鎖定你心中的那張牌！'
             ];
@@ -269,10 +277,11 @@
                             <i data-lucide="sparkles" class="text-amber-400 w-12 h-12 animate-spin-slow"></i>
                         </div>
                         <h2 class="text-3xl md:text-5xl font-bold mb-4 text-white">
-                            你的牌... <span class="text-red-500">不見了！</span>
+                            你的心思... <span class="text-red-500">已被我看透</span>
                         </h2>
-                        <p class="text-slate-300 text-lg mb-8">
-                            這就是你要找的那張牌嗎？我已經把它從牌組中移除了。
+                        <p class="text-slate-300 text-lg mb-8 leading-relaxed">
+                            就在剛才連結你潛意識的瞬間，我把你選的那張牌... 變不見了。<br>
+                            仔細看看，它是否已經消失了？
                         </p>
                     </div>
                     
