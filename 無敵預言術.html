@@ -76,24 +76,47 @@
             clubs: '♣',
         };
 
-        // 初始卡牌 (使用者記住其中一張)
-        const INITIAL_CARDS = [
-            { id: 1, rank: 'K', suit: 'hearts', color: 'red' },
-            { id: 2, rank: 'J', suit: 'spades', color: 'black' },
-            { id: 3, rank: 'Q', suit: 'diamonds', color: 'red' },
-            { id: 4, rank: 'K', suit: 'clubs', color: 'black' },
-            { id: 5, rank: 'Q', suit: 'hearts', color: 'red' },
-            { id: 6, rank: 'J', suit: 'clubs', color: 'black' },
-        ];
+        // 全域變數儲存當前局的卡牌
+        let currentInitialCards = [];
+        let currentRevealCards = [];
 
-        // 揭曉卡牌 (全部換掉，造成心理盲點)
-        const REVEAL_CARDS = [
-            { id: 7, rank: 'K', suit: 'diamonds', color: 'red' },
-            { id: 8, rank: 'J', suit: 'clubs', color: 'black' },
-            { id: 9, rank: 'Q', suit: 'hearts', color: 'red' },
-            { id: 10, rank: 'K', suit: 'spades', color: 'black' },
-            { id: 11, rank: 'J', suit: 'diamonds', color: 'red' },
-        ];
+        // 隨機產生並洗牌的函數
+        function generateNewGameCards() {
+            const ranks = ['J', 'Q', 'K'];
+            const suits = [
+                { name: 'hearts', color: 'red' },
+                { name: 'diamonds', color: 'red' },
+                { name: 'spades', color: 'black' },
+                { name: 'clubs', color: 'black' }
+            ];
+
+            // 1. 產生所有 12 張花牌 (J, Q, K)
+            let deck = [];
+            let idCounter = 1;
+            
+            ranks.forEach(rank => {
+                suits.forEach(suit => {
+                    deck.push({
+                        id: idCounter++,
+                        rank: rank,
+                        suit: suit.name,
+                        color: suit.color
+                    });
+                });
+            });
+
+            // 2. Fisher-Yates 洗牌演算法
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+
+            // 3. 分配卡牌
+            // 取前 6 張給使用者看
+            currentInitialCards = deck.slice(0, 6);
+            // 取接下來的 5 張作為揭曉牌 (保證與前 6 張完全不同)
+            currentRevealCards = deck.slice(6, 11);
+        }
 
         // --- 渲染輔助函數 ---
 
@@ -164,7 +187,10 @@
 
         // 2. 顯示選牌畫面 (Selection)
         function showSelection() {
-            const cardsHTML = INITIAL_CARDS.map((card, idx) => getCardHTML(card, idx * 100)).join('');
+            // 每次進入選牌畫面時，重新產生一組隨機卡牌
+            generateNewGameCards();
+
+            const cardsHTML = currentInitialCards.map((card, idx) => getCardHTML(card, idx * 100)).join('');
 
             appContainer.innerHTML = `
                 <div class="text-center w-full max-w-5xl animate-fade-in-up">
@@ -234,7 +260,7 @@
         function showReveal() {
             resetTimers(); // 清除動畫的計時器
             
-            const cardsHTML = REVEAL_CARDS.map((card, idx) => getCardHTML(card, idx * 100)).join('');
+            const cardsHTML = currentRevealCards.map((card, idx) => getCardHTML(card, idx * 100)).join('');
 
             appContainer.innerHTML = `
                 <div class="text-center w-full max-w-5xl animate-fade-in-up">
