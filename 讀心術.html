@@ -24,7 +24,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            /* 使用 dvh 解決手機瀏覽器工具列遮擋問題，不支援則退回 vh */
             height: 100vh;
+            height: 100dvh;
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -38,8 +40,8 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            width: 40px;
-            height: 40px;
+            width: 44px; /* 加大觸控區 */
+            height: 44px;
             opacity: 0.05; 
             background: white;
             border-radius: 50%;
@@ -86,7 +88,7 @@
             z-index: 1000;
             flex-direction: column;
             align-items: center;
-            padding: 30px 20px;
+            padding: 40px 20px;
             box-sizing: border-box;
             text-align: left;
             overflow-y: auto;
@@ -94,28 +96,28 @@
         }
         
         #help-modal h3 { color: #a29bfe; margin: 15px 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 8px; width: 100%; font-size: 18px; }
-        #help-modal p { font-size: 13px; color: #bbb; line-height: 1.6; margin-bottom: 10px; }
+        #help-modal p { font-size: 14px; color: #bbb; line-height: 1.6; margin-bottom: 10px; }
         
         .mode-switch-group { display: flex; gap: 10px; width: 100%; margin-bottom: 20px; }
         .mode-option { flex: 1; padding: 15px; background: #222; border: 2px solid #333; border-radius: 8px; color: #777; text-align: center; cursor: pointer; transition: all 0.2s; }
         .mode-option.active { background: #2d2d2d; border-color: #6c5ce7; color: #fff; box-shadow: 0 0 10px rgba(108, 92, 231, 0.3); }
         .mode-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; display: block; }
-        .mode-desc { font-size: 11px; display: block; }
+        .mode-desc { font-size: 12px; display: block; }
 
-        .settings-box { width: 100%; background: #1a1a1a; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
-        .card-setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
-        .card-setting-row select { background: #333; color: white; border: 1px solid #555; padding: 5px; border-radius: 4px; }
+        .settings-box { width: 100%; background: #1a1a1a; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-sizing: border-box; }
+        .card-setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 16px; }
+        .card-setting-row select { background: #333; color: white; border: 1px solid #555; padding: 8px; border-radius: 4px; font-size: 16px; }
         
         .settings-btns { display: flex; gap: 10px; margin-top: 15px; width: 100%; }
-        .setting-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .setting-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
         .btn-save { background: #6c5ce7; color: white; }
         .btn-reset { background: #444; color: #ccc; }
-        .close-help { padding: 12px; background: transparent; color: #888; border: 1px solid #444; border-radius: 50px; margin-top: 20px; width: 100%; }
+        .close-help { padding: 12px; background: transparent; color: #888; border: 1px solid #444; border-radius: 50px; margin-top: 20px; width: 100%; font-size: 16px; }
 
         .upload-section { margin-bottom: 20px; text-align: center; border: 1px dashed #444; padding: 15px; border-radius: 8px; }
-        .upload-label { display: block; margin-bottom: 10px; color: #aaa; font-size: 13px; }
+        .upload-label { display: block; margin-bottom: 10px; color: #aaa; font-size: 14px; }
         .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
-        .btn-upload { border: 1px solid #666; color: white; background-color: #333; padding: 8px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        .btn-upload { border: 1px solid #666; color: white; background-color: #333; padding: 10px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; }
         .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
 
         /* --- 遊戲區域 --- */
@@ -140,12 +142,15 @@
             perspective: 1000px;
         }
 
-        /* 撲克牌樣式 */
+        /* --- 撲克牌 RWD 設定 (關鍵修正) --- */
         .card {
-            width: 18vw; 
-            height: 27vw;
-            max-width: 90px; 
-            max-height: 135px;
+            /* 手機版預設 (Fluid Layout) */
+            width: 19vw; 
+            height: 28.5vw; /* 2:3 比例 */
+            
+            /* 置中修正：margin 必須是寬高的一半 */
+            margin-left: -9.5vw;  
+            margin-top: -14.25vw; 
             
             background-color: white;
             background-image: var(--card-sprite); 
@@ -160,17 +165,16 @@
             padding: 0; 
             box-sizing: border-box;
             
-            color: black;
+            /* 使用 clamp 讓字體隨螢幕縮放，但有上下限 */
+            font-size: clamp(14px, 4vw, 24px);
             font-weight: bold;
-            font-size: 20px;
+            color: black;
             
             box-shadow: 0 4px 8px rgba(0,0,0,0.5);
             
             position: absolute; 
             left: 50%;
             top: 50%;
-            margin-left: -9vw;  
-            margin-top: -13.5vw; 
             
             transform-style: preserve-3d;
             transition: transform 0.5s ease-out, opacity 0.5s;
@@ -178,19 +182,25 @@
             z-index: 10;
         }
         
-        @media (min-width: 500px) {
-            .card { margin-left: -45px; margin-top: -67.5px; }
+        /* 平板與電腦版 (Fixed Layout) - 當螢幕夠寬時鎖定大小 */
+        @media (min-width: 600px) {
+            .card {
+                width: 120px;
+                height: 180px;
+                margin-left: -60px;
+                margin-top: -90px;
+                font-size: 24px;
+                border-radius: 10px;
+            }
         }
 
         .card-inner-text {
             width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: space-between; align-items: center;
-            padding: 5px; box-sizing: border-box; background: transparent; 
+            padding: 10%; box-sizing: border-box; background: transparent; 
         }
-        
-        /* 小牌字體 */
-        .card-corner { align-self: flex-start; font-size: 0.8em; line-height: 1; display: flex; flex-direction: column; align-items: center; }
-        .card-center { font-size: 1.8em; }
+        .card-corner { align-self: flex-start; font-size: 0.9em; line-height: 1; display: flex; flex-direction: column; align-items: center; }
+        .card-center { font-size: 2.5em; line-height: 1; }
         .card-corner.bottom { align-self: flex-end; transform: rotate(180deg); }
         .card.red { color: #d00; }
         .card.black { color: #000; }
@@ -201,7 +211,7 @@
             background-image: var(--card-back-img) !important;
             background-size: cover !important;
             background-position: center !important;
-            border: 4px solid white; 
+            border: 3px solid white; 
             outline: 1px solid #999;
         }
         
@@ -226,11 +236,16 @@
             pointer-events: none; 
         }
 
+        /* 大牌 RWD 設定 */
         .big-card-wrapper {
+            /* 手機版 */
             width: 70vw;
             height: 105vw; 
+            
+            /* 電腦版上限 */
             max-width: 320px;
             max-height: 480px;
+            
             perspective: 1500px;
             pointer-events: auto; 
         }
@@ -248,7 +263,7 @@
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
             border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         }
 
         .big-card-back {
@@ -272,42 +287,28 @@
             background-image: var(--card-sprite);
             background-repeat: no-repeat;
             background-size: var(--bg-size-x) var(--bg-size-y);
-            display: flex; flex-direction: column; justify-content: space-between; padding: 20px;
+            display: flex; flex-direction: column; justify-content: space-between; padding: 0;
             color: black;
+            /* 大牌字體也需要 RWD */
+            font-size: clamp(32px, 8vw, 60px); 
+            font-weight: bold;
             transform: rotateY(180deg);
         }
         
-        /* 大牌顏色樣式 (修復點) */
         .big-card-front.red { color: #d00; }
         .big-card-front.black { color: #000; }
 
-        /* 大牌字體樣式 (修復點：使用與小牌相同的 Class，但調整大小) */
-        .big-card-front .card-corner { 
-            font-size: 48px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            z-index: -1; 
-            line-height: 1;
-        }
-        .big-card-front .card-center { 
-            font-size: 120px; 
-            position: absolute; 
-            top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); 
-            z-index: -1;
-        }
-        .big-card-front .card-corner.bottom { 
-            transform: rotate(180deg); 
-            align-self: flex-end; 
-        }
+        /* 復用小牌的結構但字體放大 */
+        .big-card-front .card-corner { font-size: 1em; padding: 20px; }
+        .big-card-front .card-center { font-size: 3em; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: -1;}
+        .big-card-front .card-corner.bottom { transform: rotate(180deg); }
         
         .big-card-wrapper.flipped .big-card-inner { transform: rotateY(180deg); }
 
         /* --- 底部控制區 --- */
         .controls {
             position: absolute;
-            bottom: 60px;
+            bottom: 8vh; /* 使用 vh 避免貼底 */
             width: 100%;
             z-index: 100;
             display: flex;
@@ -331,6 +332,7 @@
             outline: none;
             position: relative;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
         #action-btn:hover {
@@ -585,6 +587,7 @@
             const baseWidth = cards[0].offsetWidth;
             const viewportWidth = window.innerWidth;
             let targetWidth = viewportWidth * 0.7; 
+            // 限制最大寬度 (電腦版)
             if (targetWidth > 320) targetWidth = 320; 
             const scaleFactor = (targetWidth / baseWidth);
 
@@ -720,9 +723,10 @@
                     </div>
                 `;
                 
-                // 固定位置邏輯 (修正版)
-                // 寬度 18vw, 間距 20vw => 總寬 = 20*4 = 80vw + 18vw = 98vw，剛好塞滿
-                const offset = (index - 2) * 20; 
+                // --- 修正後的間距邏輯 (RWD) ---
+                // 寬度 19vw，間距 18vw。總寬度約 91vw，不會超出螢幕。
+                // 5 張牌的偏移量：-36, -18, 0, 18, 36 (vw)
+                const offset = (index - 2) * 18; 
                 const transform = `translateX(${offset}vw)`;
                 div.style.transform = transform;
                 div.dataset.baseTransform = transform;
