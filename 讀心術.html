@@ -24,9 +24,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            /* 使用 dvh 解決手機瀏覽器工具列遮擋問題，不支援則退回 vh */
             height: 100vh;
-            height: 100dvh;
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -40,7 +38,7 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            width: 44px; /* 加大觸控區 */
+            width: 44px;
             height: 44px;
             opacity: 0.05; 
             background: white;
@@ -142,13 +140,10 @@
             perspective: 1000px;
         }
 
-        /* --- 撲克牌 RWD 設定 (關鍵修正) --- */
+        /* --- 撲克牌 RWD 設定 --- */
         .card {
-            /* 手機版預設 (Fluid Layout) */
             width: 19vw; 
-            height: 28.5vw; /* 2:3 比例 */
-            
-            /* 置中修正：margin 必須是寬高的一半 */
+            height: 28.5vw; 
             margin-left: -9.5vw;  
             margin-top: -14.25vw; 
             
@@ -165,7 +160,6 @@
             padding: 0; 
             box-sizing: border-box;
             
-            /* 使用 clamp 讓字體隨螢幕縮放，但有上下限 */
             font-size: clamp(14px, 4vw, 24px);
             font-weight: bold;
             color: black;
@@ -182,7 +176,6 @@
             z-index: 10;
         }
         
-        /* 平板與電腦版 (Fixed Layout) - 當螢幕夠寬時鎖定大小 */
         @media (min-width: 600px) {
             .card {
                 width: 120px;
@@ -238,14 +231,10 @@
 
         /* 大牌 RWD 設定 */
         .big-card-wrapper {
-            /* 手機版 */
             width: 70vw;
             height: 105vw; 
-            
-            /* 電腦版上限 */
             max-width: 320px;
             max-height: 480px;
-            
             perspective: 1500px;
             pointer-events: auto; 
         }
@@ -263,7 +252,7 @@
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
             border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
 
         .big-card-back {
@@ -289,7 +278,6 @@
             background-size: var(--bg-size-x) var(--bg-size-y);
             display: flex; flex-direction: column; justify-content: space-between; padding: 0;
             color: black;
-            /* 大牌字體也需要 RWD */
             font-size: clamp(32px, 8vw, 60px); 
             font-weight: bold;
             transform: rotateY(180deg);
@@ -298,7 +286,6 @@
         .big-card-front.red { color: #d00; }
         .big-card-front.black { color: #000; }
 
-        /* 復用小牌的結構但字體放大 */
         .big-card-front .card-corner { font-size: 1em; padding: 20px; }
         .big-card-front .card-center { font-size: 3em; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: -1;}
         .big-card-front .card-corner.bottom { transform: rotate(180deg); }
@@ -308,7 +295,7 @@
         /* --- 底部控制區 --- */
         .controls {
             position: absolute;
-            bottom: 8vh; /* 使用 vh 避免貼底 */
+            bottom: 8vh;
             width: 100%;
             z-index: 100;
             display: flex;
@@ -583,11 +570,10 @@
 
             const cards = document.querySelectorAll('.card');
 
-            // 計算放大比例 (適應螢幕寬度)
+            // 計算放大比例
             const baseWidth = cards[0].offsetWidth;
             const viewportWidth = window.innerWidth;
             let targetWidth = viewportWidth * 0.7; 
-            // 限制最大寬度 (電腦版)
             if (targetWidth > 320) targetWidth = 320; 
             const scaleFactor = (targetWidth / baseWidth);
 
@@ -643,6 +629,9 @@
             
             const cardData = cardsData[selectedCardIndex];
             
+            // --- 剪貼簿複製功能 ---
+            copyCardInfo(cardData);
+            
             // Sprite 位置計算
             const SUIT_MAP = { '♠': 0, '♥': 1, '♣': 2, '♦': 3 };
             const VAL_MAP = { 'A': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7, '9': 8, '10': 9, 'J': 10, 'Q': 11, 'K': 12 };
@@ -681,6 +670,35 @@
                     actionBtn.style.pointerEvents = 'auto';
                 }, 800);
             }, 50); 
+        }
+        
+        function copyCardInfo(card) {
+            const suitMap = { '♠': '1', '♥': '2', '♦': '3', '♣': '4' };
+            const valMap = {
+                'A': '01', '2': '02', '3': '03', '4': '04', '5': '05',
+                '6': '06', '7': '07', '8': '08', '9': '09', '10': '10',
+                'J': '11', 'Q': '12', 'K': '13'
+            };
+            
+            const suitCode = suitMap[card.suit] || '0';
+            const valCode = valMap[card.val] || '00';
+            const code = suitCode + valCode;
+            
+            // 建立隱藏的 textarea 進行複製
+            const textArea = document.createElement("textarea");
+            textArea.value = code;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                // 靜默失敗
+            }
+            
+            document.body.removeChild(textArea);
         }
 
         function handleOrientation(event) {
@@ -723,9 +741,7 @@
                     </div>
                 `;
                 
-                // --- 修正後的間距邏輯 (RWD) ---
-                // 寬度 19vw，間距 18vw。總寬度約 91vw，不會超出螢幕。
-                // 5 張牌的偏移量：-36, -18, 0, 18, 36 (vw)
+                // 修正後的間距邏輯 (RWD)
                 const offset = (index - 2) * 18; 
                 const transform = `translateX(${offset}vw)`;
                 div.style.transform = transform;
@@ -856,3 +872,5 @@
     </script>
 </body>
 </html>
+
+
