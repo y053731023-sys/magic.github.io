@@ -6,8 +6,12 @@
     <title>Magic Card</title>
     <style>
         :root {
+            /* 牌面雪碧圖變數 */
             --card-sprite: none; 
+            /* 牌背圖片變數 */
             --card-back-img: none;
+            
+            /* 微調參數預設值 */
             --bg-size-x: 1300%;
             --bg-size-y: 400%;
             --bg-off-x: 0px;
@@ -684,20 +688,27 @@
             const valCode = valMap[card.val] || '00';
             const code = suitCode + valCode;
             
-            // 建立隱藏的 textarea 進行複製
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code).then(() => {
+                    // silent success
+                }).catch(err => {
+                    fallbackCopy(code);
+                });
+            } else {
+                fallbackCopy(code);
+            }
+        }
+
+        function fallbackCopy(text) {
             const textArea = document.createElement("textarea");
-            textArea.value = code;
+            textArea.value = text;
             textArea.style.position = "fixed";
             textArea.style.left = "-9999px";
             document.body.appendChild(textArea);
             textArea.select();
-            
             try {
                 document.execCommand('copy');
-            } catch (err) {
-                // 靜默失敗
-            }
-            
+            } catch (err) {}
             document.body.removeChild(textArea);
         }
 
@@ -741,7 +752,6 @@
                     </div>
                 `;
                 
-                // 修正後的間距邏輯 (RWD)
                 const offset = (index - 2) * 18; 
                 const transform = `translateX(${offset}vw)`;
                 div.style.transform = transform;
