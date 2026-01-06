@@ -6,15 +6,14 @@
     <title>Magic Card</title>
     <style>
         :root {
+            /* 牌面雪碧圖變數 */
             --card-sprite: none; 
+            /* 牌背圖片變數 */
             --card-back-img: none;
             
-            /* --- 核心尺寸變數 (控制大牌與輔助框) --- */
-            /* 直向預設：寬度 70vw，高度按 2:3 比例 */
+            /* --- 直向預設尺寸 (大牌) --- */
             --active-w: 70vw;
             --active-h: 105vw;
-            
-            /* 上限限制 */
             --max-w: 320px;
             --max-h: 480px;
 
@@ -25,14 +24,11 @@
             --bg-off-y: 0px;
         }
 
-        /* 橫向模式 (Landscape) 覆寫尺寸變數 */
+        /* --- 橫向模式適配 --- */
         @media (orientation: landscape) {
             :root {
-                /* 改以高度為基準，避免爆框 */
-                --active-h: 80vh;
-                --active-w: 53.33vh; /* 2:3 比例 (80 * 2/3) */
-                
-                /* 解除像素上限，讓它在平板橫向也能夠大 */
+                --active-h: 75vh;
+                --active-w: 50vh; /* 2:3 比例 */
                 --max-w: none;
                 --max-h: none;
             }
@@ -55,41 +51,37 @@
             user-select: none;
             -webkit-user-select: none;
             perspective: 1000px;
+            touch-action: none; 
         }
 
-        /* --- 隱藏按鈕 --- */
+        /* --- UI 元素 --- */
         #help-btn {
             position: absolute; top: 20px; right: 20px; width: 44px; height: 44px;
             opacity: 0.01; background: white; border-radius: 50%; cursor: pointer; z-index: 9999;
         }
 
-        /* --- 區間透視層 (Zone Overlay) --- */
-        /* 使用與卡片完全相同的變數，確保絕對對齊 */
+        /* --- 區間透視層 --- */
         #zone-overlay {
             display: none;
             position: absolute;
             left: 50%; top: 50%;
             transform: translate(-50%, -50%);
-            
             width: var(--active-w);
             height: var(--active-h);
             max-width: var(--max-w);
             max-height: var(--max-h);
-            
             z-index: 1500;
             pointer-events: none;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 0 0 2px rgba(255,255,255,0.3); /* 白色外框 */
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
         }
         #zone-overlay.visible { display: flex; }
 
         .zone-col {
-            flex: 1; height: 100%; 
-            border-right: 1px dashed rgba(255,255,255,0.2);
+            flex: 1; height: 100%; border-right: 1px dashed rgba(255,255,255,0.2);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background: rgba(0,20,40,0.6); 
-            color: rgba(255,255,255,0.9); font-size: 14px;
+            background: rgba(0,20,40,0.7); color: rgba(255,255,255,0.9); font-size: 14px;
         }
         .zone-col:last-child { border-right: none; }
         .zone-title { font-size: 10px; color: #888; margin-bottom: 5px; }
@@ -133,7 +125,7 @@
         .card-wrapper {
             position: absolute;
             left: 50%; top: 50%;
-            /* 初始小牌尺寸 */
+            /* 修正大小與間距，避免在小手機上超出邊界 */
             width: 18vw; height: 27vw; 
             margin-left: -9vw; margin-top: -13.5vw;
             
@@ -141,13 +133,13 @@
             cursor: pointer;
             z-index: 10;
             
+            /* 這裡定義預設動畫速度 */
             transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), 
                         width 0.6s ease, 
                         height 0.6s ease, 
                         margin 0.6s ease;
         }
 
-        /* 修正電腦版小牌初始尺寸 */
         @media (min-width: 600px) {
             .card-wrapper {
                 width: 120px; height: 180px;
@@ -155,21 +147,18 @@
             }
         }
 
-        /* --- 放大狀態 (Active State) --- */
-        /* 使用與 Zone Overlay 相同的變數 */
+        /* 放大狀態 */
         .card-wrapper.active {
             z-index: 1000;
-            
-            width: var(--active-w);
-            height: var(--active-h);
-            max-width: var(--max-w);
-            max-height: var(--max-h);
-            
-            /* 置中修正：透過 CSS transform 絕對置中，
-               並使用 calc 抵消寬高的一半 */
-            margin-left: 0; margin-top: 0; /* 清除舊 margin */
-            left: 50%; top: 50%;
-            transform: translate(-50%, -50%) !important; 
+            width: 70vw; height: 105vw; 
+            max-width: 320px; max-height: 480px;
+            margin-left: -35vw; margin-top: -52.5vw;
+            transform: translate(0, 0) !important; 
+        }
+        @media (min-width: 457px) {
+            .card-wrapper.active {
+                margin-left: -160px; margin-top: -240px;
+            }
         }
 
         /* --- 卡片內部 --- */
@@ -190,7 +179,7 @@
         }
         
         .card-wrapper.active .card-face {
-            border-radius: 12px;
+            border-radius: 15px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.7);
         }
 
@@ -220,14 +209,17 @@
             color: black; font-weight: bold;
         }
         
+        /* 顏色修正：確保紅色能覆蓋預設顏色 */
         .card-front.red { color: #d00 !important; }
         .card-front.black { color: #000 !important; }
 
+        /* 內容佈局修正 */
         .card-content {
             width: 100%; height: 100%; 
             display: flex; flex-direction: column; 
             justify-content: space-between; 
-            padding: 5px; box-sizing: border-box;
+            padding: 5px; 
+            box-sizing: border-box;
         }
         
         .card-corner { 
@@ -235,19 +227,21 @@
             display: flex; flex-direction: column; align-items: center; 
             line-height: 1; 
         }
-        .card-center { font-size: clamp(24px, 10vw, 60px); line-height: 1; }
-        .card-corner.bottom { transform: rotate(180deg); align-self: flex-end; }
         
-        /* 激活後字體變大 (RWD) */
+        .card-center { 
+            font-size: clamp(24px, 10vw, 60px); 
+            line-height: 1;
+        }
+        
+        .card-corner.bottom { 
+            transform: rotate(180deg); 
+            align-self: flex-end; 
+        }
+        
+        /* 激活後字體變大 */
         .card-wrapper.active .card-content { padding: 15px; }
         .card-wrapper.active .card-corner { font-size: 3rem; }
         .card-wrapper.active .card-center { font-size: 8rem; }
-        
-        /* 橫向時字體調整 */
-        @media (orientation: landscape) {
-            .card-wrapper.active .card-corner { font-size: 5vh; }
-            .card-wrapper.active .card-center { font-size: 15vh; }
-        }
 
         /* --- 底部按鈕 --- */
         .controls { 
@@ -270,7 +264,7 @@
         #action-btn:active { transform: scale(0.92); filter: brightness(0.9); }
 
         .fade-out { opacity: 0; pointer-events: none; transition: opacity 0.5s; }
-        #secret-hint { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); height: 2px; width: 2px; background: #333; border-radius: 50%; opacity: 0.5; transition: background 0.3s; }
+        #secret-hint { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); height: 2px; width: 2px; background: #333; border-radius: 50%; opacity: 0; transition: background 0.3s; }
     </style>
 </head>
 <body>
@@ -339,6 +333,10 @@
         let isDragging = false;
         let startX = 0;
         let currentRotation = 0;
+        
+        let shuffleInterval = null;
+        let shuffleTimeout = null;
+        let dealTimeout = null;
 
         const cardsRow = document.getElementById('cards-row');
         const actionBtn = document.getElementById('action-btn');
@@ -425,18 +423,20 @@
 
         function handleMainButton(e) {
             if (e) { e.preventDefault(); e.stopPropagation(); }
-            if (currentStage === 3) resetTable();
-            else if (currentStage === 0) performShuffle();
+            if (currentStage === 3) {
+                resetTable();
+            } else {
+                performShuffle();
+            }
         }
 
         function resetTable() {
             currentStage = 0;
             isDragging = false;
             currentRotation = 0;
-            
             hint.style.opacity = 0;
 
-            initCards(); 
+            initCards(); // 完整重置
             
             actionBtn.innerText = "打亂順序";
             actionBtn.style.opacity = 1;
@@ -444,41 +444,63 @@
         }
 
         function performShuffle() {
+            if (shuffleInterval) clearInterval(shuffleInterval);
+            if (shuffleTimeout) clearTimeout(shuffleTimeout);
+            if (dealTimeout) clearTimeout(dealTimeout);
+
             currentStage = 0.5;
+            
             const wrappers = document.querySelectorAll('.card-wrapper');
             const inners = document.querySelectorAll('.card-inner');
             
-            inners.forEach(i => i.style.transform = 'rotateY(0deg)');
+            // 確保翻回背面
+            inners.forEach(i => {
+                i.style.transition = 'transform 0.3s';
+                i.style.transform = 'rotateY(0deg)';
+            });
             
-            setTimeout(() => {
-                wrappers.forEach(w => w.style.transform = `translateX(0)`);
-            }, 400);
+            wrappers.forEach(w => {
+                w.classList.remove('active', 'fade-out');
+                w.style.opacity = 1;
+                w.style.pointerEvents = 'auto';
+                w.style.transition = 'transform 0.2s ease-out';
+                w.style.transform = `translateX(0)`;
+            });
 
             let count = 0;
-            let interval = setInterval(() => {
-                count++;
-                wrappers.forEach(w => {
-                    w.style.zIndex = Math.floor(Math.random() * 50);
-                    const rx = Math.random() * 15 - 7.5; 
-                    const ry = Math.random() * 15 - 7.5; 
-                    const rr = Math.random() * 10 - 5; 
-                    w.style.transform = `translate(${rx}px, ${ry}px) rotate(${rr}deg)`;
-                });
+            let maxCount = 15;
+            
+            shuffleTimeout = setTimeout(() => {
+                shuffleInterval = setInterval(() => {
+                    count++;
+                    wrappers.forEach(w => {
+                        w.style.zIndex = Math.floor(Math.random() * 50);
+                        const rx = Math.random() * 15 - 7.5; 
+                        const ry = Math.random() * 15 - 7.5; 
+                        const rr = Math.random() * 10 - 5; 
+                        w.style.transition = 'transform 0.1s linear';
+                        w.style.transform = `translate(${rx}px, ${ry}px) rotate(${rr}deg)`;
+                    });
 
-                if (count > 12) {
-                    clearInterval(interval);
-                    dealCardsBack();
-                }
-            }, 60);
+                    if (count > maxCount) {
+                        clearInterval(shuffleInterval);
+                        dealCardsBack();
+                    }
+                }, 60);
+            }, 300);
         }
 
         function dealCardsBack() {
             const wrappers = document.querySelectorAll('.card-wrapper');
             wrappers.forEach((w, index) => {
                 w.style.zIndex = index + 10;
+                w.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)';
                 w.style.transform = w.dataset.baseTransform;
             });
-            setTimeout(() => { currentStage = 1; }, 500);
+            
+            dealTimeout = setTimeout(() => { 
+                currentStage = 1; 
+            }, 500);
         }
 
         function handleCardSelect(index, e) {
@@ -497,10 +519,18 @@
             wrappers.forEach((w, i) => {
                 if (i === index) {
                     w.classList.add('active');
+                    // 這裡改用 1.5s 的慢速動畫，讓移動到中間的過程更優雅
+                    w.style.transition = 'transform 1.5s cubic-bezier(0.19, 1, 0.22, 1), width 1.5s ease, height 1.5s ease, margin 1.5s ease';
                 } else {
-                    w.classList.add('fade-out');
+                    w.style.transition = 'opacity 1.0s ease';
+                    w.style.opacity = 0; 
                 }
             });
+            
+            // 延遲啟用滑動監聽
+            setTimeout(() => {
+                // ...
+            }, 100);
         }
 
         function handleTouchStart(e) {
