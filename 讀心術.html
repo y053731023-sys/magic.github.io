@@ -6,17 +6,15 @@
     <title>Magic Card</title>
     <style>
         :root {
-            /* 牌面雪碧圖變數 */
             --card-sprite: none; 
-            /* 牌背圖片變數 */
             --card-back-img: none;
             
-            /* --- 核心尺寸控制 (統一管理) --- */
-            /* 直向模式 (Portrait) */
-            --active-w: 70vw;
-            --active-h: 105vw; /* 2:3 比例 */
-            --max-w: 320px;
-            --max-h: 480px;
+            /* --- 核心尺寸控制 --- */
+            /* 直向模式 */
+            --active-w: 75vw;
+            --active-h: 112.5vw;
+            --max-w: 340px;
+            --max-h: 510px;
 
             /* 微調參數 */
             --bg-size-x: 1300%;
@@ -25,14 +23,11 @@
             --bg-off-y: 0px;
         }
 
-        /* --- 橫向模式適配 (Landscape) --- */
+        /* --- 橫向模式適配 --- */
         @media (orientation: landscape) {
             :root {
-                /* 改以高度為基準，確保不被裁切 */
-                --active-h: 75vh; 
-                --active-w: 50vh; /* 2:3 比例 */
-                
-                /* 解除像素限制 */
+                --active-h: 85vh; 
+                --active-w: 56.6vh; 
                 --max-w: none;
                 --max-h: none;
             }
@@ -70,7 +65,6 @@
             position: absolute;
             left: 50%; top: 50%;
             transform: translate(-50%, -50%);
-            /* 引用統一變數 */
             width: var(--active-w);
             height: var(--active-h);
             max-width: var(--max-w);
@@ -139,38 +133,35 @@
             transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), 
                         width 0.6s ease, 
                         height 0.6s ease, 
-                        margin 0.6s ease;
+                        margin 0.6s ease,
+                        opacity 0.5s ease;
         }
 
-        /* 橫向模式小牌修正 */
-        @media (orientation: landscape) {
-            .card-wrapper {
-                height: 30vh; width: 20vh; /* 2:3 */
-                margin-top: -15vh; margin-left: -10vh;
-            }
-        }
-
-        /* 電腦版固定上限 */
-        @media (min-width: 600px) and (min-height: 600px) {
+        @media (min-width: 600px) {
             .card-wrapper {
                 width: 120px; height: 180px;
                 margin-left: -60px; margin-top: -90px;
             }
         }
 
-        /* --- 放大狀態 (Active) --- */
-        /* 繼承 root 變數，確保大牌與透視框一致 */
+        /* 放大狀態 */
         .card-wrapper.active {
             z-index: 1000 !important;
             width: var(--active-w);
             height: var(--active-h);
             max-width: var(--max-w);
             max-height: var(--max-h);
-            
-            /* 強制絕對置中 */
             margin: 0 !important;
             left: 50%; top: 50%;
             transform: translate(-50%, -50%) !important; 
+            opacity: 1 !important; /* 確保選中的牌不透明 */
+        }
+
+        /* --- 關鍵修正：讓其他卡片消失 --- */
+        .fade-out {
+            opacity: 0 !important;
+            pointer-events: none;
+            transition: opacity 0.5s ease !important;
         }
 
         /* --- 卡片內部 --- */
@@ -223,35 +214,36 @@
         .card-front.red { color: #d00 !important; }
         .card-front.black { color: #000 !important; }
 
-        /* --- 內容佈局 (修復版) --- */
+        /* 內容佈局 */
         .card-content {
             width: 100%; height: 100%; 
             display: flex; flex-direction: column; 
             justify-content: space-between; 
-            /* 關鍵修復：水平置中，防止字體靠左 */
             align-items: center;
             padding: 5px; box-sizing: border-box;
         }
         
+        /* 小牌字體 */
         .card-corner { 
-            font-size: clamp(12px, 3.5vw, 22px); 
+            font-size: clamp(16px, 4vw, 24px); 
             display: flex; flex-direction: column; align-items: center; 
             line-height: 1; 
         }
-        .card-center { font-size: clamp(24px, 10vw, 80px); line-height: 1; }
+        .card-center { font-size: clamp(32px, 12vw, 70px); line-height: 1; }
         .card-corner.bottom { transform: rotate(180deg); align-self: flex-end; }
         
-        /* 激活後(大牌)字體 */
-        .card-wrapper.active .card-content { padding: 15px; }
-        .card-wrapper.active .card-corner { font-size: 3rem; }
-        .card-wrapper.active .card-center { font-size: 8rem; }
+        /* 激活後(大牌)字體 - 大幅放大 */
+        .card-wrapper.active .card-content { padding: 20px; }
+        .card-wrapper.active .card-corner { font-size: clamp(40px, 8vw, 60px); }
+        .card-wrapper.active .card-center { font-size: clamp(100px, 25vw, 200px); }
         
-        /* 橫向模式字體調整 */
+        /* 橫向模式字體調整 (大牌) */
         @media (orientation: landscape) {
-            .card-wrapper.active .card-corner { font-size: 5vh; }
-            .card-wrapper.active .card-center { font-size: 15vh; }
-            .card-corner { font-size: 2.5vh; }
-            .card-center { font-size: 6vh; }
+            .card-wrapper.active .card-corner { font-size: 8vh; }
+            .card-wrapper.active .card-center { font-size: 25vh; }
+            /* 小牌字體 */
+            .card-corner { font-size: 4vh; }
+            .card-center { font-size: 10vh; }
         }
 
         /* --- 揭曉大牌層 (復用變數) --- */
@@ -266,7 +258,6 @@
             pointer-events: none; 
         }
 
-        /* 確保大牌容器也使用統一變數 */
         .big-card-wrapper {
             width: var(--active-w);
             height: var(--active-h);
@@ -292,7 +283,8 @@
         .big-card-back {
             background-color: #8a0a0a;
             background-image: var(--card-back-img);
-            background-size: cover; background-position: center;
+            background-size: cover;
+            background-position: center;
             border: 6px solid white;
             display: flex; justify-content: center; align-items: center;
         }
@@ -317,8 +309,14 @@
         .big-card-front.red { color: #d00 !important; }
         .big-card-front.black { color: #000 !important; }
 
-        /* 統一使用 .card-content 樣式 */
         .big-card-front .card-content { padding: 20px; }
+        /* 大牌字體與 card-wrapper.active 保持一致，但這裡再強化一下 */
+        .big-card-front .card-corner { font-size: clamp(40px, 8vw, 60px); }
+        .big-card-front .card-center { font-size: clamp(100px, 25vw, 200px); }
+        @media (orientation: landscape) {
+             .big-card-front .card-corner { font-size: 8vh; }
+             .big-card-front .card-center { font-size: 25vh; }
+        }
         
         .big-card-wrapper.flipped .big-card-inner { transform: rotateY(180deg); }
 
@@ -337,7 +335,6 @@
         }
         #action-btn:active { transform: scale(0.92); filter: brightness(0.9); }
 
-        .fade-out { opacity: 0; pointer-events: none; transition: opacity 0.5s; }
         #secret-hint { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); height: 2px; width: 2px; background: #333; border-radius: 50%; opacity: 0; transition: background 0.3s; }
     </style>
 </head>
@@ -478,7 +475,7 @@
         }
         
         function updateCardPosition(el, index) {
-            let offset = (index - 2) * 18; 
+            let offset = (index - 2) * 19; 
             let unit = 'vw';
             if (window.innerWidth > window.innerHeight) {
                 offset = (index - 2) * 22; 
@@ -588,7 +585,9 @@
                     w.classList.add('active');
                     w.style.transition = 'transform 1.5s cubic-bezier(0.19, 1, 0.22, 1), width 1.5s ease, height 1.5s ease, margin 1.5s ease';
                 } else {
-                    w.style.transition = 'opacity 1.0s ease';
+                    w.style.transition = 'opacity 0.5s ease';
+                    // 關鍵修正：確保 opacity 為 0，並使用 class 控制
+                    w.classList.add('fade-out');
                     w.style.opacity = 0; 
                 }
             });
@@ -597,6 +596,7 @@
         function handleTouchStart(e) {
             if (currentStage !== 2) return;
             if (e.target.closest('#help-btn') || e.target.closest('#help-modal')) return;
+            
             isDragging = true;
             startX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
             currentRotation = 0;
@@ -658,7 +658,6 @@
             const bgPos = getSpritePosition(targetData.suit, targetData.val);
             frontFace.style.backgroundPosition = bgPos;
             
-            // 使用 unified class
             const content = frontFace.querySelector('.card-content');
             if(content) {
                 content.innerHTML = `
@@ -696,6 +695,7 @@
                 </div>
             `;
             
+            // 這裡使用 display: none 會更徹底隱藏舊卡片
             document.getElementById('cards-row').style.opacity = 0;
             revealContainer.style.display = 'flex';
             
