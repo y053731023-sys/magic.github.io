@@ -6,8 +6,12 @@
     <title>Magic Card</title>
     <style>
         :root {
+            /* 牌面雪碧圖變數 */
             --card-sprite: none; 
+            /* 牌背圖片變數 */
             --card-back-img: none;
+            
+            /* 微調參數預設值 */
             --bg-size-x: 1300%;
             --bg-size-y: 400%;
             --bg-off-x: 0px;
@@ -38,6 +42,23 @@
         #help-btn {
             position: absolute; top: 20px; right: 20px; width: 44px; height: 44px;
             opacity: 0.01; background: white; border-radius: 50%; cursor: pointer; z-index: 9999;
+        }
+
+        /* --- 隱藏提示點 (關鍵修正) --- */
+        #secret-hint {
+            position: absolute; 
+            top: 5px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            height: 4px; 
+            width: 4px; 
+            background: #333; 
+            border-radius: 50%;
+            opacity: 0; /* 預設隱藏 */
+            transition: background 0.2s, opacity 0.3s;
+            z-index: 9000;
+            pointer-events: none;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
 
         /* --- 區間透視層 --- */
@@ -92,7 +113,6 @@
         .card-wrapper {
             position: absolute;
             left: 50%; top: 50%;
-            /* 修正大小與間距，避免在小手機上超出邊界 */
             width: 18vw; height: 27vw; 
             margin-left: -9vw; margin-top: -13.5vw;
             
@@ -175,18 +195,14 @@
             color: black; font-weight: bold;
         }
         
-        /* 顏色修正：確保紅色能覆蓋預設顏色 */
         .card-front.red { color: #d00 !important; }
         .card-front.black { color: #000 !important; }
 
-        /* 內容佈局修正：使用 Flex 與相對單位防止裁切 */
         .card-content {
             width: 100%; height: 100%; 
             display: flex; flex-direction: column; 
             justify-content: space-between; 
-            /* 減少 padding 避免內容被擠出 */
-            padding: 5px; 
-            box-sizing: border-box;
+            padding: 5px; box-sizing: border-box;
         }
         
         .card-corner { 
@@ -194,16 +210,8 @@
             display: flex; flex-direction: column; align-items: center; 
             line-height: 1; 
         }
-        
-        .card-center { 
-            font-size: clamp(24px, 10vw, 60px); 
-            line-height: 1;
-        }
-        
-        .card-corner.bottom { 
-            transform: rotate(180deg); 
-            align-self: flex-end; 
-        }
+        .card-center { font-size: clamp(24px, 10vw, 60px); line-height: 1; }
+        .card-corner.bottom { transform: rotate(180deg); align-self: flex-end; }
         
         /* 激活後字體變大 */
         .card-wrapper.active .card-content { padding: 15px; }
@@ -231,12 +239,12 @@
         #action-btn:active { transform: scale(0.92); filter: brightness(0.9); }
 
         .fade-out { opacity: 0; pointer-events: none; transition: opacity 0.5s; }
-        #secret-hint { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); height: 2px; width: 2px; background: #333; border-radius: 50%; opacity: 0.5; transition: background 0.3s; }
     </style>
 </head>
 <body>
 
     <div id="help-btn" onclick="toggleHelp()"></div>
+    <!-- 提示點 (預設隱藏) -->
     <div id="secret-hint"></div>
 
     <!-- 設定選單 -->
@@ -252,10 +260,11 @@
         </div>
         <div class="settings-box" id="settings-container"></div>
         <div class="settings-btns">
-            <button class="setting-btn btn-save" onclick="saveCustomCards()">儲存</button>
+            <button class="setting-btn btn-save" onclick="saveCustomCards()">儲存設定</button>
             <button class="setting-btn btn-reset" onclick="resetDefaultCards()">重置</button>
         </div>
         <h3>祕技圖解</h3>
+        <p>點擊下方圖示可開啟/關閉輔助線：</p>
         <div style="display:flex; width:100%; height:40px; margin-bottom:15px; border:1px solid #444; cursor:pointer;" id="visual-zones"></div>
         <button class="close-help" onclick="toggleHelp()">返回</button>
     </div>
@@ -273,7 +282,6 @@
     </div>
 
     <script>
-        // --- 安全讀取 ---
         function safeGetItem(key, defaultVal) {
             try {
                 const val = localStorage.getItem(key);
@@ -306,6 +314,7 @@
         const hint = document.getElementById('secret-hint');
         const zoneOverlay = document.getElementById('zone-overlay');
         const helpModal = document.getElementById('help-modal');
+        const HINT_COLORS = ['#fff', '#f00', '#0f0', '#00f', '#ff0']; 
 
         function initApp() {
             try {
@@ -332,7 +341,6 @@
             }
         }
 
-        // --- DOM 生成 ---
         function initCards() {
             cardsRow.innerHTML = '';
             cardsData.forEach((card, index) => {
@@ -342,7 +350,7 @@
                 
                 let inner = document.createElement('div');
                 inner.className = 'card-inner';
-                inner.style.transform = 'rotateY(180deg)'; // 初始正面
+                inner.style.transform = 'rotateY(180deg)'; 
                 
                 let back = document.createElement('div');
                 back.className = 'card-face card-back';
@@ -352,7 +360,6 @@
                 const bgPos = getSpritePosition(card.suit, card.val);
                 front.style.backgroundPosition = bgPos;
                 
-                // 統一使用 card-content 類別
                 front.innerHTML = `
                     <div class="card-content">
                         <div class="card-corner"><span>${card.val}</span><span>${card.suit}</span></div>
@@ -365,13 +372,11 @@
                 inner.appendChild(front);
                 wrapper.appendChild(inner);
                 
-                // 初始排列：間距 18vw
                 const offset = (index - 2) * 18; 
                 const transform = `translateX(${offset}vw)`;
                 wrapper.style.transform = transform;
                 wrapper.dataset.baseTransform = transform;
                 
-                // 點擊事件
                 const clickHandler = (e) => {
                     if (currentStage === 1) handleCardSelect(index, e);
                 };
@@ -393,16 +398,16 @@
             else if (currentStage === 0) performShuffle();
         }
 
-        // 重置桌面
         function resetTable() {
             currentStage = 0;
             isDragging = false;
             currentRotation = 0;
             
-            // 重新初始化卡片內容，確保沒有殘留的「偷換」痕跡
-            initCards(); 
+            // 重置提示點
+            hint.style.opacity = 0;
+
+            initCards(); // 徹底重置 DOM
             
-            // 顯示按鈕
             actionBtn.innerText = "打亂順序";
             actionBtn.style.opacity = 1;
             actionBtn.style.pointerEvents = 'auto';
@@ -413,35 +418,28 @@
             const wrappers = document.querySelectorAll('.card-wrapper');
             const inners = document.querySelectorAll('.card-inner');
             
-            // 1. 翻背面
             inners.forEach(i => i.style.transform = 'rotateY(0deg)');
             
-            // 2. 集中
             setTimeout(() => {
                 wrappers.forEach(w => w.style.transform = `translateX(0)`);
             }, 400);
 
-            // 3. 洗牌動畫
             let count = 0;
-            let maxCount = 12;
-            
-            setTimeout(() => {
-                let interval = setInterval(() => {
-                    count++;
-                    wrappers.forEach(w => {
-                        w.style.zIndex = Math.floor(Math.random() * 50);
-                        const rx = Math.random() * 15 - 7.5; 
-                        const ry = Math.random() * 15 - 7.5; 
-                        const rr = Math.random() * 10 - 5; 
-                        w.style.transform = `translate(${rx}px, ${ry}px) rotate(${rr}deg)`;
-                    });
+            let interval = setInterval(() => {
+                count++;
+                wrappers.forEach(w => {
+                    w.style.zIndex = Math.floor(Math.random() * 50);
+                    const rx = Math.random() * 15 - 7.5; 
+                    const ry = Math.random() * 15 - 7.5; 
+                    const rr = Math.random() * 10 - 5; 
+                    w.style.transform = `translate(${rx}px, ${ry}px) rotate(${rr}deg)`;
+                });
 
-                    if (count > maxCount) {
-                        clearInterval(interval);
-                        dealCardsBack();
-                    }
-                }, 60);
-            }, 800);
+                if (count > 12) {
+                    clearInterval(interval);
+                    dealCardsBack();
+                }
+            }, 60);
         }
 
         function dealCardsBack() {
@@ -461,6 +459,11 @@
             actionBtn.style.opacity = '0';
             actionBtn.style.pointerEvents = 'none';
 
+            // 進入 Stage 2，如果是感應模式，顯示提示點
+            if (currentMode === 'sensor') {
+                hint.style.opacity = 1;
+            }
+
             const wrappers = document.querySelectorAll('.card-wrapper');
             wrappers.forEach((w, i) => {
                 if (i === index) {
@@ -471,7 +474,6 @@
             });
         }
 
-        // --- 滑動翻牌邏輯 ---
         function handleTouchStart(e) {
             if (currentStage !== 2) return;
             if (e.target.closest('#help-btn') || e.target.closest('#help-modal')) return;
@@ -531,18 +533,15 @@
             }
         }
 
-        // 偷換牌面
         function applySecretCard() {
             const activeCard = document.getElementById(`card-${activeCardIndex}`);
             const frontFace = activeCard.querySelector('.card-front');
             const targetData = cardsData[selectedCardIndex];
             
-            // 確保顏色 Class 正確替換
             frontFace.className = `card-face card-front ${targetData.color}`;
             const bgPos = getSpritePosition(targetData.suit, targetData.val);
             frontFace.style.backgroundPosition = bgPos;
             
-            // 確保文字容器 Class 名稱一致 (card-content)
             const content = frontFace.querySelector('.card-content');
             if(content) {
                 content.innerHTML = `
@@ -559,6 +558,7 @@
             
             copyCardInfo(cardsData[selectedCardIndex]);
             zoneOverlay.classList.remove('visible');
+            hint.style.opacity = 0; 
             
             setTimeout(() => {
                 actionBtn.innerText = "重新開始";
@@ -567,7 +567,6 @@
             }, 600);
         }
 
-        // --- 輔助功能 ---
         function getSpritePosition(suit, val) {
             const SUIT_MAP = { '♠': 0, '♥': 1, '♣': 2, '♦': 3 };
             const VAL_MAP = { 'A': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7, '9': 8, '10': 9, 'J': 10, 'Q': 11, 'K': 12 };
@@ -595,12 +594,16 @@
         }
 
         function handleOrientation(e) {
-            if (currentStage !== 1 || currentMode !== 'sensor') return;
+            // 只有在 Stage 2 且 sensor 模式下才更新
+            if (currentStage !== 2 || currentMode !== 'sensor') return;
+            
             const b = e.beta; if (b===null) return;
             let idx = 2;
             if (b < 20) idx = 0; else if (b < 35) idx = 1; else if (b < 55) idx = 2; else if (b < 75) idx = 3; else idx = 4;
+            
             selectedCardIndex = idx;
-            document.getElementById('secret-hint').style.backgroundColor = ['#fff','#f00','#0f0','#00f','#ff0'][idx];
+            // 即時回饋
+            hint.style.backgroundColor = HINT_COLORS[idx];
         }
 
         function handleBackUpload(input) {
@@ -636,7 +639,6 @@
         function updateModeUI() {
             document.getElementById('mode-touch').className=`mode-option ${currentMode==='touch'?'active':''}`;
             document.getElementById('mode-sensor').className=`mode-option ${currentMode==='sensor'?'active':''}`;
-            document.getElementById('secret-hint').style.display = currentMode==='sensor'?'block':'none';
         }
         document.getElementById('visual-zones').onclick = () => {
             const z = document.getElementById('zone-overlay');
