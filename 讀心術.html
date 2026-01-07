@@ -9,8 +9,7 @@
             --card-sprite: none; 
             --card-back-img: none;
             
-            /* --- 核心尺寸控制 --- */
-            /* 直向模式 (Portrait) */
+            /* --- 核心尺寸控制 (直向模式) --- */
             --active-w: 75vw;
             --active-h: 112.5vw;
             --max-w: 340px;
@@ -26,9 +25,9 @@
         /* --- 橫向模式適配 (Landscape) --- */
         @media (orientation: landscape) {
             :root {
-                /* 卡片高度佔螢幕 80%，留出 10% 上下邊距 */
-                --active-h: 80vh; 
-                --active-w: 53.33vh; /* 2:3 比例 */
+                /* 大牌維持原樣：高度 85% */
+                --active-h: 85vh; 
+                --active-w: 56.6vh; 
                 
                 --max-w: none;
                 --max-h: none;
@@ -107,7 +106,7 @@
         .setting-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn-save { background: #6c5ce7; color: white; }
         .btn-reset { background: #444; color: #ccc; }
-        .close-help { padding: 12px; background: transparent; color: #888; border: 1px solid #444; border-radius: 50px; margin-top: 20px; width: 100%; }
+        .close-help { padding: 12px; background: transparent; color: #888; border: 1px solid #444; border-radius: 50px; margin-top: 20px; width: 100%; font-size: 16px; }
         .btn-upload { border: 1px solid #666; color: white; background-color: #333; padding: 8px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; }
 
         /* --- 遊戲區域 --- */
@@ -125,6 +124,7 @@
         .card-wrapper {
             position: absolute;
             left: 50%; top: 50%;
+            /* 直向預設：18vw */
             width: 18vw; height: 27vw; 
             margin-left: -9vw; margin-top: -13.5vw;
             
@@ -139,24 +139,24 @@
                         opacity 0.5s ease;
         }
 
-        /* 橫向模式小牌適配 */
+        /* 橫向模式小牌 (針對手機優化：加大) */
         @media (orientation: landscape) {
             .card-wrapper {
-                /* 小牌高度為螢幕 35% */
-                height: 35vh; width: 23.33vh; 
-                margin-top: -17.5vh; margin-left: -11.66vh;
+                /* 高度設為 55vh (螢幕一半多)，寬度按比例 2:3 */
+                height: 55vh; width: 36.6vh; 
+                margin-top: -27.5vh; margin-left: -18.3vh;
             }
         }
 
-        /* 電腦版固定上限 */
-        @media (min-width: 600px) and (min-height: 600px) {
+        /* 電腦版/大平板固定上限 */
+        @media (min-width: 800px) and (min-height: 800px) {
             .card-wrapper {
-                width: 120px; height: 180px;
-                margin-left: -60px; margin-top: -90px;
+                width: 140px; height: 210px;
+                margin-left: -70px; margin-top: -105px;
             }
         }
 
-        /* 放大狀態 (Active) */
+        /* 放大狀態 (Active / 大牌) */
         .card-wrapper.active {
             z-index: 1000 !important;
             width: var(--active-w);
@@ -238,35 +238,28 @@
         .card-corner { 
             font-size: clamp(16px, 4vw, 24px); 
             display: flex; flex-direction: column; align-items: center; 
-            line-height: 0.9; 
+            line-height: 1; 
         }
         .card-center { font-size: clamp(32px, 12vw, 70px); line-height: 1; }
-        
-        /* 右下角：隱藏 */
-        .card-corner.bottom { 
-            transform: rotate(180deg); 
-            align-self: flex-end; 
-            visibility: hidden; 
-        }
+        .card-corner.bottom { transform: rotate(180deg); align-self: flex-end; visibility: hidden; }
         
         /* 激活後(大牌)字體 */
         .card-wrapper.active .card-content { padding: 20px; }
         .card-wrapper.active .card-corner { font-size: clamp(40px, 8vw, 60px); }
         .card-wrapper.active .card-center { font-size: clamp(100px, 25vw, 200px); }
         
-        /* --- 橫向模式字體優化 (關鍵修正) --- */
+        /* --- 橫向模式字體優化 (關鍵調整) --- */
         @media (orientation: landscape) {
-            /* 激活大牌：字體加大 */
-            .card-wrapper.active .card-content { padding: 2vh; } /* 縮小 padding 留空間給字 */
-            .card-wrapper.active .card-corner { font-size: 9vh; line-height: 0.9; }
-            .card-wrapper.active .card-center { font-size: 28vh; }
+            /* 小牌字體 (加大) */
+            .card-corner { font-size: 5vh; }
+            .card-center { font-size: 14vh; }
             
-            /* 小牌：字體加大 */
-            .card-corner { font-size: 3.8vh; line-height: 0.9; }
-            .card-center { font-size: 10vh; }
+            /* 大牌字體 (維持清晰度) */
+            .card-wrapper.active .card-corner { font-size: 8vh; }
+            .card-wrapper.active .card-center { font-size: 25vh; }
         }
 
-        /* --- 揭曉大牌層 (復用變數) --- */
+        /* --- 揭曉大牌層 --- */
         #reveal-container {
             display: none;
             position: absolute;
@@ -330,15 +323,13 @@
         .big-card-front.black { color: #000 !important; }
 
         .big-card-front .card-content { padding: 20px; }
-        .big-card-front .card-corner { font-size: clamp(40px, 8vw, 60px); display: flex; flex-direction: column; align-items: center; line-height: 0.9; }
+        .big-card-front .card-corner { font-size: clamp(40px, 8vw, 60px); }
         .big-card-front .card-center { font-size: clamp(100px, 25vw, 200px); }
         .big-card-front .card-corner.bottom { visibility: hidden; }
 
-        /* 橫向模式大牌字體同步 */
         @media (orientation: landscape) {
-             .big-card-front .card-content { padding: 2vh; }
-             .big-card-front .card-corner { font-size: 9vh; }
-             .big-card-front .card-center { font-size: 28vh; }
+             .big-card-front .card-corner { font-size: 8vh; }
+             .big-card-front .card-center { font-size: 25vh; }
         }
         
         .big-card-wrapper.flipped .big-card-inner { transform: rotateY(180deg); }
@@ -499,11 +490,11 @@
         }
         
         function updateCardPosition(el, index) {
-            let offset = (index - 2) * 19; 
+            let offset = (index - 2) * 19; // 直向間距
             let unit = 'vw';
             if (window.innerWidth > window.innerHeight) {
-                // 橫向間距加大到 22vh (卡片寬 20vh)
-                offset = (index - 2) * 22; 
+                // 橫向模式：卡片間距 (約 32vh)
+                offset = (index - 2) * 32; 
                 unit = 'vh';
             }
             const transform = `translateX(${offset}${unit})`;
