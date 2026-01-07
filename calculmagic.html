@@ -159,6 +159,8 @@
                     return String(targetVal); 
                 }
                 let diff = targetVal - currentVal;
+                // 如果差額為負，取絕對值讓鬼影能打出來，但這會導致 safeCalculate 結果錯誤
+                // 表演者需自行控制（通常用加法）
                 if (diff < 0) return String(Math.abs(diff));
                 return String(diff);
             };
@@ -177,9 +179,8 @@
                 triggerHaptic();
                 setActiveOp(null);
 
-                // --- 魔術邏輯：分段顯示鬼影數字 ---
+                // --- 魔術邏輯：一鍵/二鍵顯示鬼影數字 ---
                 if (isForceMode || isGhostMode) {
-                    // 只有當鬼影字串有內容時才執行
                     if (magicRemainder.length > 0) {
                         if (magicIndex === 0) {
                             // 第一下：顯示第一個字
@@ -197,10 +198,8 @@
                             if (rest.length > 0) {
                                 setInputExpression(prev => prev + rest);
                             }
-                            // 標記為已完成 (2)，之後卡住
                             setMagicIndex(2);
                         }
-                        // magicIndex >= 2 時，什麼都不做 (Stuck)
                     }
                     return; 
                 }
@@ -259,10 +258,15 @@
                 
                 let finalResult;
                 
+                // --- 結果邏輯 ---
                 if (isGhostMode) {
-                    finalResult = calculateTimeNumber();
+                    // 時間預言：使用真實計算結果 (不強制)
+                    // 這樣如果觀眾檢查算式，結果是正確的
+                    finalResult = safeCalculate(inputExpression);
                     resetMagic();
                 } else if (isForceMode) {
+                    // 強選模式：如果有設定目標，則強制顯示
+                    // 這是為了確保預言絕對命中
                     if (customTarget !== null) {
                         finalResult = customTarget;
                     } else {
@@ -270,6 +274,7 @@
                     }
                     resetMagic();
                 } else {
+                    // 普通模式
                     finalResult = safeCalculate(inputExpression);
                 }
 
@@ -419,6 +424,7 @@
                 }
 
                 let content = icon ? icon : text;
+                // 視覺暗號
                 if (text === '.') {
                     content = (
                         <span 
@@ -549,11 +555,11 @@
                                 <div className="mt-3 pt-2 border-t border-gray-300 space-y-1 text-[10px] text-gray-600">
                                     <p className="font-bold text-gray-800">操作說明:</p>
                                     <p>⏰ 左上 (時鐘):</p>
-                                    <p>• 短按: 時間預言</p>
+                                    <p>• 短按: 時間預言 (不強制)</p>
                                     <p>🧮 右上 (計算機):</p>
                                     <p>• 長按: 設定目標</p>
-                                    <p>• 短按: 強選預言</p>
-                                    <p>💡 鬼影輸入: 按第1下出一字，第2下全出</p>
+                                    <p>• 短按: 強選預言 (強制)</p>
+                                    <p>💡 鬼影輸入: 第1下出一字，第2下全出</p>
                                 </div>
                             </div>
                         )}
