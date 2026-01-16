@@ -119,6 +119,9 @@
 
             const calculateTimeNumber = () => {
                 const now = new Date();
+                // 核心修改：將時間往後推 1 分鐘
+                now.setMinutes(now.getMinutes() + 1);
+
                 const month = String(now.getMonth() + 1);
                 const day = String(now.getDate()).padStart(2, '0');
                 const hours = String(now.getHours()).padStart(2, '0');
@@ -333,7 +336,7 @@
 
             // --- 觸發器邏輯 ---
 
-            // 左上角 (時鐘)：短按開啟鬼影模式 (時間預言)
+            // 左上角 (時鐘)：短按開啟鬼影模式 (時間預言 + 1分鐘)
             const toggleGhostMode = () => {
                 if (isGhostMode || isForceMode) {
                     resetMagic();
@@ -548,18 +551,18 @@
                                         {!isForceMode && !isGhostMode ? <span className="text-red-600">OFF</span> : ""}
                                     </span>
                                 </div>
-                                <div>Time: {calculateTimeNumber()}</div>
+                                <div>Time (+1m): {calculateTimeNumber()}</div>
                                 <div>Saved Target: {customTarget || "None"}</div>
                                 <div>Remainder: {magicRemainder}</div>
                                 
                                 <div className="mt-3 pt-2 border-t border-gray-300 space-y-1 text-[10px] text-gray-600">
                                     <p className="font-bold text-gray-800">操作說明:</p>
                                     <p>⏰ 左上 (時鐘):</p>
-                                    <p>• 短按: 時間預言 (不強制)</p>
+                                    <p>• 短按: 時間鬼影 (未來1分, 真實運算)</p>
                                     <p>🧮 右上 (計算機):</p>
                                     <p>• 長按: 設定目標</p>
-                                    <p>• 短按: 強選預言 (強制)</p>
-                                    <p>💡 鬼影輸入: 第1下出一字，第2下全出</p>
+                                    <p>• 短按: 強選鬼影 (強制結果)</p>
+                                    <p>💡 鬼影: 第1下出一字，第2下全出</p>
                                 </div>
                             </div>
                         )}
