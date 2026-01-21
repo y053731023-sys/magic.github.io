@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            touch-action: none; 
+            -webkit-user-select: none;
+            user-select: none;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* --- Display Area --- */
+        #display-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+            padding: 0 20px 10px 20px;
+            position: relative;
+            min-height: 120px;
+            cursor: pointer;
+        }
+
+        #main-display {
+            font-weight: 300;
+            line-height: 1;
+            transition: font-size 0.1s ease;
+            white-space: nowrap;
+            text-align: right;
+            width: 100%;
+        }
+
+        /* --- Keypad Grid --- */
+        .keypad {
+            width: 100%;
+            padding: 16px;
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            position: relative;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            aspect-ratio: 1;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .scientific-btn {
+            display: none;
+            background-color: #212121;
+            color: #fff;
+            font-size: 16px;
+        }
+        
+        .btn-dark { background-color: #333333; color: #fff; }
+        .btn-dark:active { background-color: #737373; }
+
+        .btn-gray { background-color: #a5a5a5; color: #000; }
+        .btn-gray:active { background-color: #d9d9d9; }
+        /* Signal class for force activation feedback */
+        .btn-gray.signal-active { background-color: #ff3b30 !important; color: white !important; transition: none; }
+
+        .btn-orange { 
+            background-color: #ff9f0a; 
+            color: #fff; 
+            font-size: 38px;
+            padding-bottom: 4px;
+        }
+        .btn-orange:active { background-color: #fbc78d; color: #ff9f0a; }
+        .btn-orange.is-selected { background-color: #fff; color: #ff9f0a; transition: none; }
+
+        .scientific-btn:active { background-color: #404040; }
+
+        .btn-zero {
+            grid-column: span 2;
+            aspect-ratio: auto;
+            border-radius: 9999px;
+            justify-content: flex-start;
+            padding-left: 30px;
+        }
+
+        /* --- Landscape --- */
+        @media (orientation: landscape) {
+            #display-container {
+                padding: 0 40px 0px 40px;
+                min-height: 80px;
+            }
+            #main-display {
+                font-size: 50px !important;
+            }
+            .keypad {
+                grid-template-columns: repeat(10, 1fr);
+                gap: 8px;
+                padding: 10px 40px 20px 40px;
+                max-width: none;
+            }
+            .btn {
+                border-radius: 40px;
+                aspect-ratio: auto;
+                height: 45px;
+                font-size: 20px;
+            }
+            .btn-orange {
+                font-size: 24px;
+                padding-bottom: 0;
+            }
+            .scientific-btn {
+                display: flex;
+            }
+            .btn-zero {
+                grid-column: 7 / 9;
+                padding-left: 20px;
+            }
+        }
+
+        /* --- Overlays --- */
+        .overlay-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+        }
+        .overlay-screen.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        /* Touch Zones */
+        #gesture-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+        
+        /* The Force Trigger Zone (Top Left Corner) */
+        #force-trigger-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+            z-index: 20; /* Above gesture zone */
+        }
+
+        /* Input Styles for Settings */
+        .settings-input {
+            width: 100%;
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        .settings-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 4px;
+            display: block;
+            text-align: left;
+        }
+        .settings-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Display -->
+    <div id="display-container">
+        <!-- Force Trigger: Top Left -->
+        <div id="force-trigger-zone"></div>
+        <!-- Gesture Zone: Full Display -->
+        <div id="gesture-zone"></div>
+        <div id="main-display" style="font-size: 90px;">0</div>
+    </div>
+
+    <!-- Keypad -->
+    <div class="keypad">
+        <!-- Row 1 -->
+        <div class="btn scientific-btn" onclick="calc.func('(')">(</div>
+        <div class="btn scientific-btn" onclick="calc.func(')')">)</div>
+        <div class="btn scientific-btn" onclick="calc.memory('mc')">mc</div>
+        <div class="btn scientific-btn" onclick="calc.memory('m+')">m+</div>
+        <div class="btn scientific-btn" onclick="calc.memory('m-')">m-</div>
+        <div class="btn scientific-btn" onclick="calc.memory('mr')">mr</div>
+
+        <div class="btn btn-gray" id="btn-ac" onclick="calc.clear()">AC</div>
+        <div class="btn btn-gray" onclick="calc.toggleSign()">+/-</div>
+        
+        <!-- Setting Trigger Button (%) -->
+        <div class="btn btn-gray" id="btn-percent" onclick="calc.percent()">%</div>
+        
+        <div class="btn btn-orange operator-btn" data-op="÷" onclick="calc.chooseOperation('÷', this)">÷</div>
+
+        <!-- Row 2 -->
+        <div class="btn scientific-btn" onclick="calc.func('2nd')">2<sup>nd</sup></div>
+        <div class="btn scientific-btn" onclick="calc.func('x2')">x²</div>
+        <div class="btn scientific-btn" onclick="calc.func('x3')">x³</div>
+        <div class="btn scientific-btn" onclick="calc.func('xy')">xʸ</div>
+        <div class="btn scientific-btn" onclick="calc.func('ex')">eˣ</div>
+        <div class="btn scientific-btn" onclick="calc.func('10x')">10ˣ</div>
+
+        <div class="btn btn-dark" onclick="calc.appendNumber('7')">7</div>
+        <div class="btn btn-dark" onclick="calc.appendNumber('8')">8</div>
+        <div class="btn btn-dark" onclick="calc.appendNumber('9')">9</div>
+        <div class="btn btn-orange operator-btn" data-op="×" onclick="calc.chooseOperation('×', this)">×</div>
+
+        <!-- Row 3 -->
+        <div class="btn scientific-btn" onclick="calc.func('1/x')">¹/x</div>
+        <div class="btn scientific-btn" onclick="calc.func('sqrt')">²√x</div>
+        <div class="btn scientific-btn" onclick="calc.func('cbrt')">³√x</div>
+        <div class="btn scientific-btn" onclick="calc.func('yroot')">ʸ√x</div>
+        <div class="btn scientific-btn" onclick="calc.func('ln')">ln</div>
+        <div class="btn scientific-btn" onclick="calc.func('log10')">log₁₀</div>
+
+        <div class="btn btn-dark" onclick="calc.appendNumber('4')">4</div>
+        <div class="btn btn-dark" onclick="calc.appendNumber('5')">5</div>
+        <div class="btn btn-dark" onclick="calc.appendNumber('6')">6</div>
+        <div class="btn btn-orange operator-btn" data-op="-" onclick="calc.chooseOperation('-', this)">−</div>
+
+        <!-- Row 4 -->
+        <div class="btn scientific-btn" onclick="calc.func('fact')">x!</div>
+        <div class="btn scientific-btn" onclick="calc.func('sin')">sin</div>
+        <div class="btn scientific-btn" onclick="calc.func('cos')">cos</div>
+        <div class="btn scientific-btn" onclick="calc.func('tan')">tan</div>
+        <div class="btn scientific-btn" onclick="calc.appendNumber(Math.E)">e</div>
+        <div class="btn scientific-btn" onclick="calc.func('EE')">EE</div>
+
+        <div class="btn btn-dark" onclick="calc.appendNumber('1')">1</div>
+        <div class="btn btn-dark" onclick="calc.appendNumber('2')">2</div>
+        <div class="btn btn-dark" onclick="calc.appendNumber('3')">3</div>
+        <div class="btn btn-orange operator-btn" data-op="+" onclick="calc.chooseOperation('+', this)">+</div>
+
+        <!-- Row 5 -->
+        <div class="btn scientific-btn" onclick="calc.func('rad')">Rad</div>
+        <div class="btn scientific-btn" onclick="calc.func('sinh')">sinh</div>
+        <div class="btn scientific-btn" onclick="calc.func('cosh')">cosh</div>
+        <div class="btn scientific-btn" onclick="calc.func('tanh')">tanh</div>
+        <div class="btn scientific-btn" onclick="calc.appendNumber(Math.PI)">π</div>
+        <div class="btn scientific-btn" onclick="calc.func('rand')">Rand</div>
+
+        <div class="btn btn-dark btn-zero" onclick="calc.appendNumber('0')">0</div>
+        <div class="btn btn-dark" onclick="calc.appendNumber('.')">.</div>
+        <div class="btn btn-orange" onclick="calc.compute()">=</div>
+    </div>
+
+    <!-- Reveal Screen -->
+    <div id="reveal-overlay" class="overlay-screen" onclick="app.hideReveal()">
+        <div class="text-center w-full max-w-sm px-6">
+            <div id="zodiac-icon" class="text-6xl mb-2 animate-bounce">♓</div>
+            <h2 id="zodiac-text" class="text-3xl font-bold text-purple-400 mb-6">雙魚座</h2>
+            
+            <div class="bg-gray-800 bg-opacity-50 rounded-2xl p-6 mb-6 backdrop-blur-md border border-gray-700">
+                <div class="flex justify-between items-end mb-4 border-b border-gray-600 pb-2">
+                    <span class="text-gray-400 text-sm">Target Date</span>
+                    <span id="target-date" class="text-xl font-mono text-white">03/07/1995</span>
+                </div>
+                <div class="flex justify-between items-end mb-4 border-b border-gray-600 pb-2">
+                    <span class="text-gray-400 text-sm">PIN Code</span>
+                    <span id="target-pin" class="text-xl font-mono text-yellow-400">2133</span>
+                </div>
+                <div class="flex justify-between items-end">
+                    <span class="text-gray-400 text-sm">Days Passed</span>
+                    <span id="days-passed" class="text-xl font-mono text-green-400">11,277</span>
+                </div>
+            </div>
+
+            <div class="text-left space-y-2">
+                <p class="text-gray-500 text-xs uppercase tracking-widest">Identify</p>
+                <p id="celeb-name" class="text-2xl font-bold">張學友</p>
+                <p id="celeb-desc" class="text-gray-300">香港歌神 - 《吻別》</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings-overlay" class="overlay-screen">
+        <div class="bg-gray-900 w-full max-w-sm p-6 rounded-2xl border border-gray-700 mx-4" onclick="event.stopPropagation()">
+            <h2 class="text-xl font-bold mb-4 text-center">魔術設定後台</h2>
+            
+            <div class="mb-4 p-3 bg-gray-800 rounded-lg">
+                <label class="settings-label text-yellow-500">功能 A: 強制運算結果 (Force Number)</label>
+                <input id="set-force-num" type="number" placeholder="點擊隱藏按鈕後顯示的數字" class="settings-input mb-0">
+                <div class="text-[10px] text-gray-500 mt-1">隱藏按鈕位置：螢幕左上角空白處。點擊後 AC 鍵會閃爍紅燈。</div>
+            </div>
+
+            <div class="mb-4 p-3 bg-gray-800 rounded-lg">
+                <label class="settings-label text-purple-400">功能 B: 自定義名人 (Custom Reveal)</label>
+                <div class="flex gap-2 mb-2">
+                    <input id="set-month" type="number" placeholder="月" class="settings-input" style="flex:1">
+                    <input id="set-day" type="number" placeholder="日" class="settings-input" style="flex:1">
+                </div>
+                <input id="set-name" type="text" placeholder="顯示名字" class="settings-input">
+                <textarea id="set-desc" rows="2" placeholder="顯示描述" class="settings-input mb-0"></textarea>
+            </div>
+
+            <button onclick="settings.save()" class="settings-btn bg-green-600 text-white">保存設定 (Save)</button>
+            <button onclick="settings.clear()" class="settings-btn bg-red-900 text-red-200 mt-2">清除所有設定</button>
+            <button onclick="settings.close()" class="settings-btn bg-gray-700 text-white mt-4">關閉 (Close)</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 明星資料庫 ---
+        const defaultDB = {
+            "1-1": { name: "言承旭", desc: "演員/歌手 - 《流星花園》、歌曲《流星雨》" },
+            "1-18": { name: "周杰倫 (Jay Chou)", desc: "歌手 - 歌曲《青花瓷》、《告白氣球》" },
+            "1-29": { name: "鄧麗君", desc: "歌手 - 歌曲《月亮代表我的心》、《甜蜜蜜》" },
+            "2-2": { name: "Shakira", desc: "歌手 - 歌曲《Waka Waka》、《Hips Don't Lie》" },
+            "2-11": { name: "Rosé (BLACKPINK)", desc: "歌手 - 歌曲《On The Ground》、《Gone》" },
+            "2-17": { name: "Ed Sheeran", desc: "歌手 - 歌曲《Shape of You》、《Perfect》" },
+            "3-1": { name: "賈斯汀·比伯 (Justin Bieber)", desc: "歌手 - 歌曲《Baby》、《Peaches》" },
+            "3-27": { name: "Lisa (BLACKPINK)", desc: "歌手 - 歌曲《LALISA》、《MONEY》" },
+            "3-28": { name: "Lady Gaga", desc: "歌手/演員 - 電影《一個巨星的誕生》" },
+            "4-4": { name: "小勞勃·道尼 (Robert Downey Jr.)", desc: "演員 - 電影《鋼鐵人》、《復仇者聯盟》" },
+            "4-7": { name: "成龍", desc: "演員 - 電影《警察故事》、《尖峰時刻》" },
+            "4-16": { name: "舒淇", desc: "演員 - 電影《非誠勿擾》、《刺客聶隱娘》" },
+            "5-5": { name: "Adele", desc: "歌手 - 歌曲《Rolling in the Deep》、《Hello》" },
+            "5-16": { name: "IU (李知恩)", desc: "歌手/演員 - 歌曲《Good Day》、韓劇《德魯納酒店》" },
+            "5-28": { name: "佘詩曼", desc: "演員 - 港劇《金枝慾孽》、《新聞女王》" },
+            "6-14": { name: "周子瑜 (TWICE)", desc: "歌手 - 歌曲《Cheer Up》、《TT》" },
+            "6-22": { name: "周星馳", desc: "演員/導演 - 電影《功夫》、《少林足球》" },
+            "6-26": { name: "亞莉安娜 (Ariana Grande)", desc: "歌手 - 歌曲《7 rings》、《Thank U, Next》" },
+            "7-3": { name: "湯姆·克魯斯 (Tom Cruise)", desc: "演員 - 電影《不可能的任務》系列" },
+            "7-10": { name: "孔劉", desc: "演員 - 韓劇《鬼怪》、電影《屍速列車》" },
+            "7-27": { name: "陳奕迅", desc: "歌手 - 歌曲《十年》、《K歌之王》" },
+            "8-8": { name: "王菲", desc: "歌手 - 歌曲《紅豆》、《我願意》" },
+            "8-18": { name: "G-Dragon (權志龍)", desc: "歌手 - 歌曲《Crooked》、《Fantastic Baby》" },
+            "8-29": { name: "麥可·傑克森 (Michael Jackson)", desc: "歌手 - 歌曲《Thriller》、《Billie Jean》" },
+            "9-4": { name: "碧昂絲 (Beyoncé)", desc: "歌手 - 歌曲《Single Ladies》、《Halo》" },
+            "9-19": { name: "宋仲基", desc: "演員 - 韓劇《太陽的後裔》、《黑道律師文森佐》" },
+            "9-27": { name: "劉德華", desc: "演員/歌手 - 歌曲《忘情水》、電影《無間道》" },
+            "10-8": { name: "火星人布魯諾 (Bruno Mars)", desc: "歌手 - 歌曲《Just the Way You Are》" },
+            "10-18": { name: "周迅", desc: "演員 - 電影《畫皮》、電視劇《如懿傳》" },
+            "10-31": { name: "許光漢", desc: "演員/歌手 - 台劇《想見你》" },
+            "11-11": { name: "李奧納多 (Leonardo DiCaprio)", desc: "演員 - 電影《鐵達尼號》、《全面啟動》" },
+            "11-22": { name: "史嘉蕾·喬韓森 (Scarlett Johansson)", desc: "演員 - 電影《黑寡婦》、《復仇者聯盟》" },
+            "11-29": { name: "林志玲", desc: "演員/模特 - 電影《赤壁》" },
+            "12-13": { name: "泰勒絲 (Taylor Swift)", desc: "歌手 - 歌曲《Love Story》、《Shake It Off》" },
+            "12-18": { name: "布萊德·彼特 (Brad Pitt)", desc: "演員 - 電影《鬥陣俱樂部》" },
+            "12-30": { name: "V (BTS 金泰亨)", desc: "歌手 - 歌曲《Dynamite》、《Butter》" },
+            "default": { name: "神秘嘉賓", desc: "期待你的出現 - 命中註定" }
+        };
+
+        // --- 設定管理 ---
+        const settings = {
+            customDB: {},
+            forceNumber: null,
+
+            init() {
+                const savedDB = localStorage.getItem('magicCalcCustomDB');
+                if (savedDB) {
+                    try { this.customDB = JSON.parse(savedDB); } catch(e) {}
+                }
+                const savedForce = localStorage.getItem('magicCalcForceNum');
+                if (savedForce) {
+                    this.forceNumber = parseFloat(savedForce);
+                }
+
+                // Setup Trigger (%)
+                const btn = document.getElementById('btn-percent');
+                let timer;
+                const start = (e) => {
+                    // Changed from 3000 to 1000
+                    timer = setTimeout(() => { this.open(); }, 1000);
+                };
+                const end = () => { if (timer) clearTimeout(timer); };
+                btn.addEventListener('touchstart', start, {passive:true});
+                btn.addEventListener('touchend', end);
+                btn.addEventListener('mousedown', start);
+                btn.addEventListener('mouseup', end);
+                btn.addEventListener('mouseleave', end);
+            },
+
+            getEntry(key) {
+                return this.customDB[key] || defaultDB[key] || defaultDB['default'];
+            },
+
+            open() {
+                // Populate inputs
+                if(this.forceNumber) document.getElementById('set-force-num').value = this.forceNumber;
+                document.getElementById('settings-overlay').classList.add('visible');
+            },
+
+            close() {
+                document.getElementById('settings-overlay').classList.remove('visible');
+            },
+
+            save() {
+                // Save Force Number
+                const fNum = document.getElementById('set-force-num').value;
+                if(fNum) {
+                    this.forceNumber = parseFloat(fNum);
+                    localStorage.setItem('magicCalcForceNum', fNum);
+                } else {
+                    this.forceNumber = null;
+                    localStorage.removeItem('magicCalcForceNum');
+                }
+
+                // Save Custom Reveal (Optional)
+                const m = document.getElementById('set-month').value;
+                const d = document.getElementById('set-day').value;
+                const name = document.getElementById('set-name').value;
+                const desc = document.getElementById('set-desc').value;
+
+                if (m && d && name) {
+                    const key = `${parseInt(m)}-${parseInt(d)}`;
+                    this.customDB[key] = { name, desc };
+                    localStorage.setItem('magicCalcCustomDB', JSON.stringify(this.customDB));
+                }
+
+                alert("設定已保存！\n\n1. 左上角隱藏按鈕可啟動強制結果。\n2. 自定義名人生效。");
+                
+                // Clear reveal inputs
+                document.getElementById('set-name').value = '';
+                document.getElementById('set-desc').value = '';
+            },
+
+            clear() {
+                if(confirm("確定要清除所有設定嗎？\n(包含強制數字與所有自定義名人)")) {
+                    this.customDB = {};
+                    this.forceNumber = null;
+                    
+                    localStorage.removeItem('magicCalcCustomDB');
+                    localStorage.removeItem('magicCalcForceNum');
+                    
+                    // 清空所有輸入欄位，確保視覺上也清除
+                    document.getElementById('set-force-num').value = '';
+                    document.getElementById('set-month').value = '';
+                    document.getElementById('set-day').value = '';
+                    document.getElementById('set-name').value = '';
+                    document.getElementById('set-desc').value = '';
+                    
+                    alert("已重置：所有設定已清除。");
+                }
+            }
+        };
+
+        const calc = {
+            currentOperand: '0',
+            previousOperand: '',
+            operation: undefined,
+            shouldResetScreen: false,
+            isResult: false,
+            capturedInputs: [], 
+            
+            // MAGIC STATE
+            isForceArmed: false,
+
+            displayElement: document.getElementById('main-display'),
+            acButton: document.getElementById('btn-ac'),
+            operatorButtons: document.querySelectorAll('.operator-btn'),
+
+            // Arm the force
+            activateForce() {
+                if (!settings.forceNumber) return; // Only if setting exists
+                
+                this.isForceArmed = true;
+                
+                // Visual Feedback: Flash AC Button Red
+                this.acButton.classList.add('signal-active');
+                setTimeout(() => {
+                    this.acButton.classList.remove('signal-active');
+                }, 200); // 200ms flash
+            },
+
+            clear() {
+                if (this.currentOperand !== '0' && this.shouldResetScreen === false) {
+                    this.currentOperand = '0';
+                    this.isResult = false;
+                    this.updateDisplay();
+                    this.updateACButton();
+                    return;
+                }
+                this.currentOperand = '0';
+                this.previousOperand = '';
+                this.operation = undefined;
+                this.capturedInputs = [];
+                this.isResult = false;
+                this.isForceArmed = false; // Reset force on AC
+                this.resetOperatorVisuals();
+                this.updateDisplay();
+                this.updateACButton();
+            },
+
+            backspace() {
+                if (this.isResult || this.shouldResetScreen) return;
+                
+                if (this.currentOperand.length === 1) {
+                    this.currentOperand = '0';
+                } else {
+                    this.currentOperand = this.currentOperand.toString().slice(0, -1);
+                }
+                this.updateDisplay();
+                this.updateACButton();
+            },
+
+            appendNumber(number) {
+                if (typeof number === 'number') { 
+                    this.currentOperand = number.toString();
+                    this.shouldResetScreen = true; 
+                    this.isResult = true; 
+                    this.updateDisplay();
+                    return;
+                }
+                if (this.currentOperand === '0' && number === '0') return;
+                if (this.shouldResetScreen) {
+                    this.currentOperand = '';
+                    this.shouldResetScreen = false;
+                    this.isResult = false;
+                    this.resetOperatorVisuals();
+                }
+                if (number === '.' && this.currentOperand.includes('.')) return;
+                
+                if (this.currentOperand === '0' && number !== '.') {
+                    this.currentOperand = number;
+                } else {
+                    this.currentOperand = this.currentOperand.toString() + number.toString();
+                }
+                this.isResult = false; 
+                this.updateDisplay();
+                this.updateACButton();
+            },
+
+            chooseOperation(operation, btnElement) {
+                if (this.currentOperand === '') return;
+                if (this.previousOperand !== '' && this.shouldResetScreen) {
+                    this.operation = operation;
+                    this.resetOperatorVisuals();
+                    if(btnElement) btnElement.classList.add('is-selected');
+                    return;
+                }
+                if (this.currentOperand !== '') {
+                    this.capturedInputs.push(parseFloat(this.currentOperand.replace(/,/g, '')));
+                }
+                if (this.previousOperand !== '') {
+                    this.calculateInternal();
+                    this.isResult = true; 
+                    this.updateDisplay(); 
+                }
+                this.operation = operation;
+                this.previousOperand = this.currentOperand;
+                this.shouldResetScreen = true;
+                this.isResult = true; 
+                this.resetOperatorVisuals();
+                if(btnElement) btnElement.classList.add('is-selected');
+            },
+
+            calculateInternal() {
+                let computation;
+                const prev = parseFloat(this.previousOperand.replace(/,/g, ''));
+                const current = parseFloat(this.currentOperand.replace(/,/g, ''));
+                if (isNaN(prev) || isNaN(current)) return;
+                
+                switch (this.operation) {
+                    case '+': computation = prev + current; break;
+                    case '-': computation = prev - current; break;
+                    case '×': computation = prev * current; break;
+                    case '÷': computation = prev / current; break;
+                    default: return;
+                }
+                this.currentOperand = computation.toString();
+            },
+
+            compute() {
+                if (this.currentOperand !== '') {
+                    this.capturedInputs.push(parseFloat(this.currentOperand.replace(/,/g, '')));
+                }
+                
+                // --- FORCE LOGIC ---
+                if (this.isForceArmed && settings.forceNumber !== null) {
+                    this.currentOperand = settings.forceNumber.toString();
+                    this.isForceArmed = false; // Reset after usage
+                } else {
+                    this.calculateInternal();
+                }
+                // -------------------
+
+                this.operation = undefined;
+                this.previousOperand = '';
+                this.shouldResetScreen = true; 
+                this.isResult = true; 
+                this.resetOperatorVisuals();
+                this.updateDisplay();
+                
+                app.prepareData(this.capturedInputs);
+            },
+
+            toggleSign() {
+                const current = parseFloat(this.currentOperand.replace(/,/g, ''));
+                if (isNaN(current)) return;
+                this.currentOperand = (current * -1).toString();
+                this.isResult = true; 
+                this.updateDisplay();
+            },
+
+            percent() {
+                const current = parseFloat(this.currentOperand.replace(/,/g, ''));
+                if (isNaN(current)) return;
+                this.currentOperand = (current / 100).toString();
+                this.isResult = true;
+                this.updateDisplay();
+            },
+
+            func(type) {
+                let val = parseFloat(this.currentOperand.replace(/,/g, ''));
+                if (isNaN(val)) return;
+                switch(type) {
+                    case 'x2': val = Math.pow(val, 2); break;
+                    case 'x3': val = Math.pow(val, 3); break;
+                    case 'ex': val = Math.exp(val); break;
+                    case '10x': val = Math.pow(10, val); break;
+                    case '1/x': val = 1 / val; break;
+                    case 'sqrt': val = Math.sqrt(val); break;
+                    case 'cbrt': val = Math.cbrt(val); break;
+                    case 'ln': val = Math.log(val); break;
+                    case 'log10': val = Math.log10(val); break;
+                    case 'sin': val = Math.sin(val); break;
+                    case 'cos': val = Math.cos(val); break;
+                    case 'tan': val = Math.tan(val); break;
+                    case 'sinh': val = Math.sinh(val); break;
+                    case 'cosh': val = Math.cosh(val); break;
+                    case 'tanh': val = Math.tanh(val); break;
+                    case 'rand': val = Math.random(); break;
+                    case 'fact': if(val < 0) return; let r = 1; for(let i=2; i<=val; i++) r = r * i; val = r; break;
+                    default: return;
+                }
+                this.currentOperand = val.toString();
+                this.shouldResetScreen = true;
+                this.isResult = true;
+                this.updateDisplay();
+            },
+            
+            memory(action) { this.shouldResetScreen = true; },
+
+            updateDisplay() {
+                const rawVal = parseFloat(this.currentOperand.replace(/,/g, ''));
+                if (isNaN(rawVal)) {
+                    this.displayElement.innerText = "Error";
+                    return;
+                }
+                let displayString;
+                
+                if (!this.isResult) {
+                    const parts = this.currentOperand.split('.');
+                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                    displayString = parts.join('.');
+                } else {
+                    const isLandscape = window.innerWidth > window.innerHeight;
+                    const maxDigits = isLandscape ? 16 : 9; 
+                    const threshold = Math.pow(10, maxDigits);
+                    if ((Math.abs(rawVal) >= threshold) || (Math.abs(rawVal) < 0.0000001 && rawVal !== 0)) {
+                        displayString = rawVal.toExponential(isLandscape ? 10 : 5);
+                        displayString = displayString.replace('e+', 'e');
+                    } else {
+                        displayString = rawVal.toLocaleString('en-US', { maximumFractionDigits: 10 });
+                    }
+                }
+                this.displayElement.innerText = displayString;
+                this.fitText(displayString);
+            },
+
+            fitText(text) {
+                const len = text.length;
+                let size = 90;
+                if (window.innerWidth > window.innerHeight) {
+                    size = 50; 
+                    if (len > 16) size = 40;
+                    if (len > 20) size = 30;
+                } else {
+                    if (len > 6) size = 75;
+                    if (len > 9) size = 60;
+                    if (len > 12) size = 45; 
+                    if (len > 15) size = 35; 
+                }
+                this.displayElement.style.fontSize = size + 'px';
+            },
+
+            resetOperatorVisuals() {
+                this.operatorButtons.forEach(btn => btn.classList.remove('is-selected'));
+            },
+
+            updateACButton() {
+                const val = parseFloat(this.currentOperand.replace(/,/g, ''));
+                this.acButton.innerText = (val !== 0 || this.currentOperand === '0.') ? 'C' : 'AC';
+            }
+        };
+
+        const app = {
+            magicData: { m:0, d:0, y:0, pin:0 },
+            pressTimer: null,
+            startX: 0,
+            startY: 0,
+            startTime: 0,
+
+            init() {
+                settings.init();
+
+                const zone = document.getElementById('gesture-zone');
+                const forceZone = document.getElementById('force-trigger-zone');
+
+                // Force Trigger Logic
+                forceZone.addEventListener('click', (e) => {
+                    e.stopPropagation(); // prevent swipe
+                    calc.activateForce();
+                });
+
+                // Gesture Logic (Display)
+                zone.addEventListener('touchstart', (e) => {
+                    this.startX = e.touches[0].clientX;
+                    this.startY = e.touches[0].clientY;
+                    this.startTime = new Date().getTime();
+                    this.pressTimer = setTimeout(() => {
+                        this.reveal();
+                        this.pressTimer = null; 
+                    // Changed from 1200 to 1000
+                    }, 1000); 
+                }, {passive: false});
+
+                zone.addEventListener('touchmove', (e) => {
+                    const x = e.touches[0].clientX;
+                    const y = e.touches[0].clientY;
+                    if (Math.abs(x - this.startX) > 10 || Math.abs(y - this.startY) > 10) {
+                        if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = null; }
+                    }
+                }, {passive: false});
+
+                zone.addEventListener('touchend', (e) => {
+                    if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = null; }
+                    const endX = e.changedTouches[0].clientX;
+                    const diffX = endX - this.startX;
+                    const timeDiff = new Date().getTime() - this.startTime;
+                    if (Math.abs(diffX) > 30 && timeDiff < 500) {
+                        calc.backspace();
+                    }
+                });
+
+                // Mouse (Desktop)
+                zone.addEventListener('mousedown', (e) => {
+                    this.startX = e.clientX;
+                    this.startTime = new Date().getTime();
+                    // Changed from 1200 to 1000
+                    this.pressTimer = setTimeout(() => this.reveal(), 1000);
+                });
+                zone.addEventListener('mouseup', (e) => {
+                    if (this.pressTimer) clearTimeout(this.pressTimer);
+                    const diffX = e.clientX - this.startX;
+                    if (Math.abs(diffX) > 30 && (new Date().getTime() - this.startTime < 500)) calc.backspace();
+                });
+                zone.addEventListener('mouseleave', () => { if (this.pressTimer) clearTimeout(this.pressTimer); });
+
+                window.addEventListener('resize', () => { calc.updateDisplay(); });
+            },
+
+            prepareData(inputs) {
+                if (inputs.length >= 4) {
+                    this.magicData = { m: inputs[0], d: inputs[1], y: inputs[2], pin: inputs[3] };
+                } else {
+                    this.magicData = { m:3, d:7, y:1995, pin:2133 };
+                }
+            },
+
+            getZodiac(m, d) {
+                const signs = ["摩羯座", "水瓶座", "雙魚座", "白羊座", "金牛座", "雙子座", "巨蟹座", "獅子座", "處女座", "天秤座", "天蠍座", "射手座", "摩羯座"];
+                const cutoffs = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 22, 22];
+                return (d < cutoffs[m-1]) ? signs[m-1] : signs[m];
+            },
+
+            reveal() {
+                const {m, d, y, pin} = this.magicData;
+                const dbKey = `${m}-${d}`;
+                const entry = settings.getEntry(dbKey);
+
+                document.getElementById('zodiac-text').innerText = this.getZodiac(m, d);
+                document.getElementById('target-date').innerText = `${y}/${m.toString().padStart(2,'0')}/${d.toString().padStart(2,'0')}`;
+                document.getElementById('target-pin').innerText = pin;
+                document.getElementById('celeb-name').innerText = entry.name;
+                document.getElementById('celeb-desc').innerText = entry.desc;
+
+                const start = new Date(y, m-1, d);
+                const now = new Date();
+                const diff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+                document.getElementById('days-passed').innerText = diff.toLocaleString();
+
+                document.getElementById('reveal-overlay').classList.add('visible');
+            },
+
+            hideReveal() {
+                document.getElementById('reveal-overlay').classList.remove('visible');
+            }
+        };
+
+        app.init();
+    </script>
+</body>
+</html>
