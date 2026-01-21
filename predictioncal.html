@@ -14,7 +14,9 @@
             touch-action: none; 
             -webkit-user-select: none;
             user-select: none;
-            height: 100vh;
+            /* 修正重點：使用 dvh 解決手機瀏覽器高度問題 */
+            height: 100vh; 
+            height: 100dvh; 
             width: 100vw;
             display: flex;
             flex-direction: column;
@@ -30,6 +32,8 @@
             justify-content: flex-end;
             align-items: flex-end;
             padding: 0 20px 10px 20px;
+            /* 修正重點：加入頂部安全區域，防止被動態島/瀏海遮擋 */
+            padding-top: max(20px, env(safe-area-inset-top));
             position: relative;
             min-height: 120px;
             cursor: pointer;
@@ -109,6 +113,8 @@
             #display-container {
                 padding: 0 40px 0px 40px;
                 min-height: 80px;
+                /* 橫向時安全區域通常較小，但也需要確保 */
+                padding-top: max(10px, env(safe-area-inset-top));
             }
             #main-display {
                 font-size: 50px !important;
@@ -796,7 +802,15 @@
                 });
                 zone.addEventListener('mouseleave', () => { if (this.pressTimer) clearTimeout(this.pressTimer); });
 
-                window.addEventListener('resize', () => { calc.updateDisplay(); });
+                // Updated resize listener with delay
+                window.addEventListener('resize', () => {
+                    setTimeout(() => {
+                        calc.updateDisplay();
+                    }, 50);
+                    setTimeout(() => {
+                        calc.updateDisplay();
+                    }, 300); // Double check for slow rotations
+                });
             },
 
             prepareData(inputs) {
