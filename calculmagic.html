@@ -237,6 +237,7 @@
 
             const handleOperator = (op) => {
                 triggerHaptic();
+                if (isForceMode || isGhostMode) return; // 鬼影模式下鎖定運算符號
                 setIsResultState(false);
                 setLastExpression('');
                 setActiveOp(op);
@@ -299,6 +300,7 @@
 
             const handleToggleSign = () => {
                 triggerHaptic();
+                if (isForceMode || isGhostMode) return; // 鬼影模式下鎖定正負號
                 if (!isResultState && inputExpression !== '0') {
                      if (!isNaN(inputExpression)) {
                          setInputExpression(String(parseFloat(inputExpression) * -1));
@@ -308,6 +310,7 @@
             
             const handlePercent = () => {
                 triggerHaptic();
+                if (isForceMode || isGhostMode) return; // 鬼影模式下鎖定百分比
                 if (!isNaN(inputExpression)) {
                      setInputExpression(String(parseFloat(inputExpression) / 100));
                 }
@@ -315,6 +318,7 @@
 
             const handleBackspace = () => {
                 triggerHaptic();
+                if (isForceMode || isGhostMode) return; // 鬼影模式下鎖定退格鍵
                 if (isResultState) {
                     setLastExpression('');
                     setInputExpression('0');
@@ -535,7 +539,11 @@
                                 {/* Row 5 */}
                                 <Button icon={<PlusMinusIcon className="w-8 h-8 text-white" />} type="num" onClick={handleToggleSign} />
                                 <Button text="0" type="num" onClick={() => handleNumPress(0)} />
-                                <Button text="." type="num" onClick={() => handleNewInput('.', false)} />
+                                <Button text="." type="num" onClick={() => {
+                                    triggerHaptic();
+                                    if (isForceMode || isGhostMode) return; // 鬼影模式下鎖定小數點
+                                    handleNewInput('.', false);
+                                }} />
                                 <Button text="=" type="op" onClick={handleEqual} />
                             </div>
                         </div>
@@ -577,5 +585,3 @@
     </script>
 </body>
 </html>
-
-
