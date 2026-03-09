@@ -223,15 +223,16 @@
       <div class="w-[calc(100%-2rem)] h-[1px] bg-[#2C2C2E] mt-6"></div>
 
       <!-- 計圈列表區 -->
-      <div class="w-full max-w-md flex-1 overflow-y-auto px-4 pb-[120px] no-scrollbar">
+      <div class="w-full max-w-md flex-1 overflow-y-auto px-4 pb-[100px] no-scrollbar">
         <div id="laps-container" class="mt-1">
           <!-- Laps here -->
         </div>
       </div>
     </div>
 
-    <!-- 🌟 底部導覽列 (浮動膠囊狀，絕對不滿版，帶有灰色背景橢圓) -->
-    <div class="absolute bottom-[24px] mb-[env(safe-area-inset-bottom)] left-4 right-4 bg-[#1C1C1E]/80 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-[34px] flex justify-between items-center px-4 py-2 max-w-md mx-auto z-40 w-[calc(100%-2rem)] md:w-auto">
+    <!-- 🌟 底部導覽列 (浮動膠囊狀，極致貼底，帶有灰色背景橢圓) -->
+    <!-- ⬇️ 修改處：將 bottom-[24px] 改為 bottom-2 讓它更貼合螢幕底部安全區 -->
+    <div class="absolute bottom-2 mb-[env(safe-area-inset-bottom)] left-4 right-4 bg-[#1C1C1E]/80 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-[34px] flex justify-between items-center px-4 py-2 max-w-md mx-auto z-40 w-[calc(100%-2rem)] md:w-auto">
       
       <!-- 世界時鐘 (未選中為純白) -->
       <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-2 py-1 cursor-pointer transition-all">
