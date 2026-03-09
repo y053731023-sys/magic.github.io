@@ -143,7 +143,8 @@
     <!-- ⌚️ iOS 擬真主介面 ⌚️ -->
     
     <!-- 時間顯示區 (極細字體) -->
-    <div class="w-full flex justify-center items-center mt-[15vh] mb-12 tabular-nums">
+    <!-- ⬇️ 調整了這裡：將 mt-[15vh] 改為 mt-[26vh] 讓整體介面下移 -->
+    <div class="w-full flex justify-center items-center mt-[26vh] mb-12 tabular-nums">
       <span id="time-display" class="text-[88px] font-[200] tracking-tight leading-none">00:00.00</span>
     </div>
 
@@ -171,24 +172,30 @@
       </div>
     </div>
 
-    <!-- 底部導覽列 (加入 iOS 現代毛玻璃 Glassmorphism 效果) -->
-    <div class="absolute bottom-8 left-4 right-4 bg-[#1C1C1E]/60 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-[34px] flex justify-between items-center px-6 py-[14px] max-w-md mx-auto z-40">
-      <div class="flex flex-col items-center justify-center text-gray-500 gap-[2px]">
+    <!-- 底部導覽列 (恢復膠囊浮動設計，並加上活躍項目的橢圓背景陰影) -->
+    <div class="absolute bottom-4 mb-[env(safe-area-inset-bottom)] left-4 right-4 bg-[#1C1C1E]/75 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-[34px] flex justify-between items-center px-4 py-2 max-w-md mx-auto z-40">
+      
+      <div class="flex flex-col items-center justify-center text-gray-500 gap-[2px] px-2 py-1">
         <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
         <span class="text-[10px] font-medium">世界時鐘</span>
       </div>
-      <div class="flex flex-col items-center justify-center text-gray-500 gap-[2px]">
+      
+      <div class="flex flex-col items-center justify-center text-gray-500 gap-[2px] px-2 py-1">
         <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <span class="text-[10px] font-medium">鬧鐘</span>
       </div>
-      <div class="flex flex-col items-center justify-center text-[#FF9500] gap-[2px]">
+      
+      <!-- 🌟 活躍狀態的碼錶，加入橢圓背景陰影 (bg-[#FF9500]/15) -->
+      <div class="flex flex-col items-center justify-center text-[#FF9500] gap-[2px] bg-[#FF9500]/15 px-6 py-[6px] rounded-full">
         <svg class="w-[26px] h-[26px]" fill="currentColor" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
         <span class="text-[10px] font-medium">碼錶</span>
       </div>
-      <div class="flex flex-col items-center justify-center text-gray-500 gap-[2px]">
+
+      <div class="flex flex-col items-center justify-center text-gray-500 gap-[2px] px-2 py-1">
         <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0V6m0 6h6m-6 0H6a9 9 0 1118 0 9 9 0 01-18 0z"></path></svg>
         <span class="text-[10px] font-medium">計時器</span>
       </div>
+      
     </div>
 
   </div>
