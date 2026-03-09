@@ -140,59 +140,137 @@
       </div>
     </div>
 
-    <!-- ⌚️ iOS 擬真主介面 ⌚️ -->
-    
-    <!-- 時間顯示區 (極細字體) -->
-    <!-- ⬇️ 調整了這裡：將 mt-[15vh] 改為 mt-[26vh] 讓整體介面下移 -->
-    <div class="w-full flex justify-center items-center mt-[26vh] mb-12 tabular-nums">
-      <span id="time-display" class="text-[88px] font-[200] tracking-tight leading-none">00:00.00</span>
-    </div>
-
-    <!-- 按鈕區與分頁點點 -->
-    <div class="flex justify-between items-center w-full px-5 max-w-md mb-2">
-      <button id="btn-lap-reset" class="w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#333333] text-white text-[17px] focus:outline-none active:opacity-60 transition-opacity">
-        重置
-      </button>
-
-      <!-- 裝飾用點點 -->
-      <div class="flex gap-2 mb-2">
-        <div class="w-[8px] h-[8px] bg-white rounded-full"></div>
-        <div class="w-[8px] h-[8px] bg-[#333333] rounded-full"></div>
+    <!-- 🌍 假介面：世界時鐘 -->
+    <div id="view-world-clock" class="hidden w-full h-full flex-col max-w-md mx-auto pt-[8vh] px-4">
+      <h1 class="text-[34px] font-bold text-white mb-2">世界時鐘</h1>
+      <div class="flex flex-col mt-4 border-t border-gray-800 pt-4">
+        <div class="flex justify-between items-center mb-2">
+          <div class="flex flex-col">
+            <span class="text-gray-400 text-sm font-medium">今天，+0 小時</span>
+            <span class="text-2xl text-white">台北</span>
+          </div>
+          <span class="text-[44px] font-light text-white">11:00</span>
+        </div>
       </div>
-
-      <button id="btn-start-stop" class="w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#082A12] text-[#32D74B] text-[17px] focus:outline-none active:opacity-60 transition-opacity">
-        開始
-      </button>
-    </div>
-
-    <!-- 計圈列表區 (含紅綠極值顏色) -->
-    <div class="w-full max-w-md flex-1 overflow-y-auto px-4 pb-32 no-scrollbar">
-      <div id="laps-container" class="border-t border-gray-800 mt-2">
-        <!-- Laps here -->
+      <div class="flex flex-col mt-2 border-t border-gray-800 pt-4">
+        <div class="flex justify-between items-center mb-2">
+          <div class="flex flex-col">
+            <span class="text-gray-400 text-sm font-medium">昨天，-12 小時</span>
+            <span class="text-2xl text-white">紐約</span>
+          </div>
+          <span class="text-[44px] font-light text-white">23:00</span>
+        </div>
       </div>
     </div>
 
-    <!-- 底部導覽列 (恢復膠囊浮動設計，並加上活躍項目的橢圓背景陰影) -->
-    <div class="absolute bottom-4 mb-[env(safe-area-inset-bottom)] left-4 right-4 bg-[#1C1C1E]/75 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-[34px] flex justify-between items-center px-4 py-2 max-w-md mx-auto z-40">
+    <!-- ⏰ 假介面：鬧鐘 -->
+    <div id="view-alarm" class="hidden w-full h-full flex-col max-w-md mx-auto pt-[8vh] px-4">
+      <h1 class="text-[34px] font-bold text-white mb-4">鬧鐘</h1>
+      <div class="flex justify-between items-center border-b border-gray-800 py-4">
+        <div class="flex flex-col">
+          <div class="flex items-end gap-1">
+            <span class="text-5xl font-light text-gray-500">07:00</span>
+          </div>
+          <span class="text-gray-500 text-sm mt-1">鬧鐘</span>
+        </div>
+        <div class="w-[51px] h-[31px] rounded-full bg-[#333333] border border-gray-600 relative">
+          <div class="w-[27px] h-[27px] bg-gray-400 rounded-full absolute left-[1px] top-[1px]"></div>
+        </div>
+      </div>
+      <div class="flex justify-between items-center border-b border-gray-800 py-4">
+        <div class="flex flex-col">
+          <div class="flex items-end gap-1">
+            <span class="text-5xl font-light text-white">08:00</span>
+          </div>
+          <span class="text-white text-sm mt-1">鬧鐘</span>
+        </div>
+        <div class="w-[51px] h-[31px] rounded-full bg-[#32D74B] relative">
+          <div class="w-[27px] h-[27px] bg-white rounded-full absolute right-[1px] top-[1px] shadow"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⏳ 假介面：計時器 -->
+    <div id="view-timer" class="hidden w-full h-full flex-col max-w-md mx-auto pt-[15vh] px-4 items-center">
+      <div class="flex gap-4 items-center justify-center text-white text-3xl font-light mb-16">
+         <div class="flex flex-col items-center">
+           <span class="text-5xl bg-[#1C1C1E] rounded-xl px-5 py-4 font-normal">00</span>
+           <span class="text-sm mt-2 font-bold text-gray-400">小時</span>
+         </div>
+         <span class="text-gray-500 mb-8">:</span>
+         <div class="flex flex-col items-center">
+           <span class="text-5xl bg-[#1C1C1E] rounded-xl px-5 py-4 font-normal">15</span>
+           <span class="text-sm mt-2 font-bold text-gray-400">分鐘</span>
+         </div>
+         <span class="text-gray-500 mb-8">:</span>
+         <div class="flex flex-col items-center">
+           <span class="text-5xl bg-[#1C1C1E] rounded-xl px-5 py-4 font-normal">00</span>
+           <span class="text-sm mt-2 font-bold text-gray-400">秒</span>
+         </div>
+      </div>
+      <div class="flex justify-between items-center w-full px-5 max-w-md mb-8">
+        <button class="w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#333333] text-gray-400 text-[17px] opacity-50">取消</button>
+        <button class="w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#082A12] text-[#32D74B] text-[17px]">開始</button>
+      </div>
+    </div>
+
+    <!-- ⌚️ iOS 擬真主介面 (碼錶) ⌚️ -->
+    <div id="view-stopwatch" class="w-full h-full flex flex-col items-center">
+      <!-- 時間顯示區 -->
+      <div class="w-full flex justify-center items-center mt-[26vh] mb-12 tabular-nums">
+        <span id="time-display" class="text-[88px] font-[200] tracking-tight leading-none">00:00.00</span>
+      </div>
+
+      <!-- 按鈕區與分頁點點 -->
+      <div class="flex justify-between items-center w-full px-5 max-w-md mb-2">
+        <!-- 初始顯示分圈，並帶有半透明未啟動效果 -->
+        <button id="btn-lap-reset" class="w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#333333] text-white text-[17px] focus:outline-none active:opacity-60 transition-opacity opacity-50">
+          分圈
+        </button>
+
+        <!-- 裝飾用點點 -->
+        <div class="flex gap-2 mb-2">
+          <div class="w-[8px] h-[8px] bg-white rounded-full"></div>
+          <div class="w-[8px] h-[8px] bg-[#333333] rounded-full"></div>
+        </div>
+
+        <button id="btn-start-stop" class="w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#082A12] text-[#32D74B] text-[17px] focus:outline-none active:opacity-60 transition-opacity">
+          開始
+        </button>
+      </div>
+
+      <!-- 計圈列表區 (含紅綠極值顏色) -->
+      <div class="w-full max-w-md flex-1 overflow-y-auto px-4 pb-28 no-scrollbar">
+        <div id="laps-container" class="border-t border-gray-800 mt-2">
+          <!-- Laps here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部導覽列 (支援多頁面切換) -->
+    <div class="absolute bottom-1 mb-[env(safe-area-inset-bottom)] left-4 right-4 bg-[#1C1C1E]/75 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-[34px] flex justify-between items-center px-4 py-2 max-w-md mx-auto z-40 w-[calc(100%-2rem)] md:w-auto">
       
-      <div class="flex flex-col items-center justify-center text-gray-500 gap-[2px] px-2 py-1">
-        <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
+      <!-- 世界時鐘 (純白 icon) -->
+      <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-2 py-1 cursor-pointer">
+        <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path><path d="M2 12h20"></path></svg>
         <span class="text-[10px] font-medium">世界時鐘</span>
       </div>
       
-      <div class="flex flex-col items-center justify-center text-gray-500 gap-[2px] px-2 py-1">
-        <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <!-- 鬧鐘 (經典雙鈴鐺圖示，純白 icon) -->
+      <div id="tab-alarm" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-2 py-1 cursor-pointer">
+        <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2 2"></path><path d="M5 3L2 6"></path><path d="M19 3l3 3"></path></svg>
         <span class="text-[10px] font-medium">鬧鐘</span>
       </div>
       
-      <!-- 🌟 活躍狀態的碼錶，加入橢圓背景陰影 (bg-[#FF9500]/15) -->
-      <div class="flex flex-col items-center justify-center text-[#FF9500] gap-[2px] bg-[#FF9500]/15 px-6 py-[6px] rounded-full">
+      <!-- 🌟 活躍狀態的碼錶 (橘字 + 灰色背景 bg-[#333333]) -->
+      <div id="tab-stopwatch" class="tab-btn flex flex-col items-center justify-center text-[#FF9500] gap-[2px] bg-[#333333] px-6 py-[6px] rounded-full cursor-pointer">
         <svg class="w-[26px] h-[26px]" fill="currentColor" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
         <span class="text-[10px] font-medium">碼錶</span>
       </div>
 
-      <div class="flex flex-col items-center justify-center text-gray-500 gap-[2px] px-2 py-1">
-        <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0V6m0 6h6m-6 0H6a9 9 0 1118 0 9 9 0 01-18 0z"></path></svg>
+      <!-- 計時器 (按鈕與旋鈕圖示，純白 icon) -->
+      <div id="tab-timer" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-2 py-1 cursor-pointer">
+        <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2 2"></path><path d="M12 2h0"></path><path d="M10 2h4"></path></svg>
         <span class="text-[10px] font-medium">計時器</span>
       </div>
       
@@ -299,6 +377,29 @@
       return null;
     };
 
+    // --- UI 切換頁籤功能 (假介面) ---
+    const tabViews = ['world-clock', 'alarm', 'stopwatch', 'timer'];
+    tabViews.forEach(tab => {
+      document.getElementById(`tab-${tab}`).addEventListener('click', () => {
+        tabViews.forEach(t => {
+          const view = document.getElementById(`view-${t}`);
+          const btn = document.getElementById(`tab-${t}`);
+          
+          if (t === tab) {
+            view.classList.remove('hidden');
+            view.classList.add('flex');
+            btn.classList.add('text-[#FF9500]', 'bg-[#333333]', 'px-6', 'rounded-full');
+            btn.classList.remove('text-white', 'px-2');
+          } else {
+            view.classList.add('hidden');
+            view.classList.remove('flex');
+            btn.classList.add('text-white', 'px-2');
+            btn.classList.remove('text-[#FF9500]', 'bg-[#333333]', 'px-6', 'rounded-full');
+          }
+        });
+      });
+    });
+
     // --- UI 更新函數 ---
     const renderTime = () => {
       const { mins, secs, ms } = formatTime(time);
@@ -307,7 +408,15 @@
     };
 
     const renderButtons = () => {
-      dom.btnLapReset.textContent = isRunning ? '計圈' : '重置';
+      // 根據要求：一開始顯示「分圈」，運行時顯示「分圈」，只有在暫停且時間大於0時才顯示「重置」
+      if (isRunning) {
+        dom.btnLapReset.textContent = '分圈';
+      } else if (time === 0) {
+        dom.btnLapReset.textContent = '分圈';
+      } else {
+        dom.btnLapReset.textContent = '重置';
+      }
+      
       dom.btnStartStop.textContent = isRunning ? '停止' : '開始';
       
       if (isRunning) {
@@ -316,6 +425,13 @@
       } else {
         // iOS 開始按鈕樣式
         dom.btnStartStop.className = "w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#082A12] text-[#32D74B] text-[17px] focus:outline-none active:opacity-60 transition-opacity";
+      }
+
+      // 初始狀態下，重置/分圈按鈕應呈現半透明
+      if (!isRunning && time === 0) {
+        dom.btnLapReset.classList.add('opacity-50');
+      } else {
+        dom.btnLapReset.classList.remove('opacity-50');
       }
     };
 
@@ -545,8 +661,11 @@
         newLaps = [{ time: exactCurrentTime, id: Date.now() }, ...laps];
         laps = newLaps;
       } else {
-        time = 0; laps = []; accumulatedTime = 0; newAccumulated = 0; newLaps = [];
-        renderTime();
+        // 重置歸零
+        if (time > 0) {
+          time = 0; laps = []; accumulatedTime = 0; newAccumulated = 0; newLaps = [];
+          renderTime();
+        }
       }
       renderLaps();
       pushStateToCloud(isRunning, newStart, newAccumulated, newLaps);
