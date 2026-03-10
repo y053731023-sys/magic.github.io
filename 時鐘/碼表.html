@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>碼錶</title>
+  <title>時鐘</title>
   
+  <!-- 🌟 iOS 網頁 App 專屬設定 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="時鐘">
   
+  <!-- Icon 設定 -->
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
   <link rel="icon" type="image/png" href="./apple-touch-icon.png">
 
@@ -16,13 +18,7 @@
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    /* 🌟 終極 Safari 隱形 Bar 殺手：鎖死視窗，精準匹配真實螢幕 */
-    html, body {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      width: 100%; height: 100%;
-      overflow: hidden;
+    body {
       touch-action: none;
       -webkit-user-select: none;
       user-select: none;
@@ -32,10 +28,9 @@
     }
   </style>
 </head>
-<body>
+<body class="overflow-hidden w-full h-dvh flex justify-center bg-black">
 
-  <!-- RWD 核心容器：模擬真實手機寬度並置中 -->
-  <div class="w-full h-full max-w-[430px] mx-auto relative flex flex-col bg-black">
+  <div class="w-full h-full max-w-[430px] relative flex flex-col bg-black">
     
     <!-- 隱藏的魔術師觸發區 (右上角) -->
     <div id="secret-zone" class="absolute top-0 right-0 w-24 h-24 z-50 opacity-0 cursor-pointer"></div>
@@ -194,15 +189,14 @@
     </div>
 
     <!-- ⌚️ iOS 原生擬真主介面 (碼錶) ⌚️ -->
-    <!-- 修正：使用 absolute 佈局，讓高度不會被 Safari 網址列干擾 -->
     <div id="view-stopwatch" class="absolute inset-0 flex flex-col items-center pb-[100px]">
       
-      <!-- 時間顯示區: 修正 mt-[20vh] 讓計時器高度完美下沉，並加上 clamp 防斷行 -->
-      <div class="flex-none w-full flex justify-center items-center mt-[20vh] mb-[8vh] px-2">
+      <!-- 時間顯示區 (調整 mt-[22vh] 下沉到完美位置) -->
+      <div class="flex-none w-full flex justify-center items-center mt-[22vh] mb-[6vh] px-2">
         <span id="time-display" class="font-[200] tracking-tight leading-none text-white tabular-nums" style="font-size: clamp(64px, 20vw, 88px);">00:00.00</span>
       </div>
 
-      <!-- 雙環按鈕區: 固定寬度排版 -->
+      <!-- 雙環按鈕區 -->
       <div class="flex-none flex justify-between items-center w-full px-4 max-w-md">
         <button id="btn-lap-reset" class="w-[84px] h-[84px] rounded-full border-2 border-[#333333] p-[2px] focus:outline-none transition-opacity">
           <div id="btn-lap-reset-inner" class="w-full h-full rounded-full bg-[#333333] flex items-center justify-center text-[#8E8E93] text-[17px]">
@@ -222,10 +216,9 @@
         </button>
       </div>
 
-      <!-- 原生分隔線 -->
       <div class="w-[calc(100%-2rem)] max-w-md h-[1px] bg-[#2C2C2E] mt-6 flex-none"></div>
 
-      <!-- 計圈列表區: flex-1 自動填滿剩餘高度 -->
+      <!-- 計圈列表區 -->
       <div class="w-full max-w-md flex-1 overflow-y-auto px-4 no-scrollbar">
         <div id="laps-container" class="mt-1">
           <!-- Laps here -->
@@ -233,10 +226,8 @@
       </div>
     </div>
 
-    <!-- 🌟 底部導覽列 (浮動膠囊狀) -->
-    <!-- 修正：利用 max(16px, env) 確保它極致貼合 Home 橫條，不受 Safari 縮放影響 -->
-    <div class="absolute left-4 right-4 bg-[#1C1C1E]/80 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-[34px] flex justify-between items-center px-4 py-2 z-40" 
-         style="bottom: max(16px, env(safe-area-inset-bottom));">
+    <!-- 🌟 底部導覽列 (浮動膠囊狀，極致貼底) -->
+    <div class="absolute bottom-2 mb-[env(safe-area-inset-bottom)] left-4 right-4 bg-[#1C1C1E]/80 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-[34px] flex justify-between items-center px-4 py-2 z-40">
       
       <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-2 py-1 cursor-pointer transition-all">
         <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
@@ -382,7 +373,6 @@
       });
     });
 
-    // --- UI 更新函數 ---
     const renderTime = () => {
       const { mins, secs, ms } = formatTime(time);
       const sep = useComma ? ',' : '.';
@@ -390,11 +380,10 @@
     };
 
     const renderButtons = () => {
-      dom.btnLapResetInner.textContent = '分圈';
-
       if (isRunning) {
         dom.btnLapResetOuter.className = "w-[84px] h-[84px] rounded-full border-2 border-[#333333] p-[2px] focus:outline-none active:opacity-60 transition-opacity";
         dom.btnLapResetInner.className = "w-full h-full rounded-full bg-[#333333] flex items-center justify-center text-white text-[17px]";
+        dom.btnLapResetInner.textContent = '分圈';
 
         dom.btnStartStopOuter.className = "w-[84px] h-[84px] rounded-full border-2 border-[#320E0B] p-[2px] focus:outline-none active:opacity-60 transition-opacity";
         dom.btnStartStopInner.className = "w-full h-full rounded-full bg-[#320E0B] flex items-center justify-center text-[#FF453A] text-[17px]";
@@ -403,6 +392,7 @@
         if (time === 0) {
           dom.btnLapResetOuter.className = "w-[84px] h-[84px] rounded-full border-2 border-[#333333] p-[2px] focus:outline-none transition-opacity";
           dom.btnLapResetInner.className = "w-full h-full rounded-full bg-[#333333] flex items-center justify-center text-[#8E8E93] text-[17px]";
+          dom.btnLapResetInner.textContent = '分圈';
         } else {
           dom.btnLapResetOuter.className = "w-[84px] h-[84px] rounded-full border-2 border-[#333333] p-[2px] focus:outline-none active:opacity-60 transition-opacity";
           dom.btnLapResetInner.className = "w-full h-full rounded-full bg-[#333333] flex items-center justify-center text-white text-[17px]";
