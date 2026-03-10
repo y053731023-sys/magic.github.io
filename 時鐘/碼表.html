@@ -2,11 +2,9 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <!-- 加入 viewport-fit=cover 確保滿版覆蓋瀏海與底部橫條 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>碼錶</title>
   
-  <!-- 🌟 實戰終極偽裝：全螢幕 App 模式與專屬 Icon -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="時鐘">
@@ -18,7 +16,13 @@
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    body {
+    
+    /* 🌟 終極 Safari 隱形 Bar 殺手：鎖死視窗，精準匹配真實螢幕 */
+    html, body {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
       touch-action: none;
       -webkit-user-select: none;
       user-select: none;
@@ -28,11 +32,10 @@
     }
   </style>
 </head>
-<!-- 使用 h-dvh 處理手機瀏覽器動態高度，並置中整個 App -->
-<body class="overflow-hidden w-full h-dvh flex justify-center bg-black">
+<body>
 
-  <!-- RWD 核心容器：限制最大寬度，讓平板/電腦顯示如同手機，手機則滿版 -->
-  <div class="w-full h-full max-w-[430px] relative flex flex-col bg-black overflow-hidden shadow-2xl">
+  <!-- RWD 核心容器：模擬真實手機寬度並置中 -->
+  <div class="w-full h-full max-w-[430px] mx-auto relative flex flex-col bg-black">
     
     <!-- 隱藏的魔術師觸發區 (右上角) -->
     <div id="secret-zone" class="absolute top-0 right-0 w-24 h-24 z-50 opacity-0 cursor-pointer"></div>
@@ -117,7 +120,7 @@
     </div>
 
     <!-- 🌍 假介面：世界時鐘 -->
-    <div id="view-world-clock" class="hidden w-full h-full flex-col pt-[8vh] px-4">
+    <div id="view-world-clock" class="hidden absolute inset-0 flex-col pt-[8vh] px-4">
       <h1 class="text-[34px] font-bold text-white mb-2 flex-none">世界時鐘</h1>
       <div class="flex flex-col mt-4 border-t border-[#2C2C2E] pt-4 flex-none">
         <div class="flex justify-between items-center mb-2">
@@ -140,7 +143,7 @@
     </div>
 
     <!-- ⏰ 假介面：鬧鐘 -->
-    <div id="view-alarm" class="hidden w-full h-full flex-col pt-[8vh] px-4">
+    <div id="view-alarm" class="hidden absolute inset-0 flex-col pt-[8vh] px-4">
       <h1 class="text-[34px] font-bold text-white mb-4 flex-none">鬧鐘</h1>
       <div class="flex justify-between items-center border-b border-[#2C2C2E] py-4 flex-none">
         <div class="flex flex-col">
@@ -163,24 +166,24 @@
     </div>
 
     <!-- ⏳ 假介面：計時器 -->
-    <div id="view-timer" class="hidden w-full h-full flex-col pt-[15vh] px-4 items-center">
-      <div class="flex gap-4 items-center justify-center text-white text-3xl font-light mb-16 flex-none">
+    <div id="view-timer" class="hidden absolute inset-0 flex-col pt-[15vh] px-4 items-center">
+      <div class="flex gap-4 items-center justify-center text-white text-3xl font-light mb-16 flex-none w-full">
          <div class="flex flex-col items-center">
-           <span class="text-[min(12vw,3rem)] bg-[#1C1C1E] rounded-xl px-5 py-4 font-normal">00</span>
+           <span class="text-[clamp(2.5rem,10vw,3rem)] bg-[#1C1C1E] rounded-xl px-5 py-4 font-normal">00</span>
            <span class="text-sm mt-2 font-bold text-[#8E8E93]">小時</span>
          </div>
          <span class="text-[#8E8E93] mb-8">:</span>
          <div class="flex flex-col items-center">
-           <span class="text-[min(12vw,3rem)] bg-[#1C1C1E] rounded-xl px-5 py-4 font-normal">15</span>
+           <span class="text-[clamp(2.5rem,10vw,3rem)] bg-[#1C1C1E] rounded-xl px-5 py-4 font-normal">15</span>
            <span class="text-sm mt-2 font-bold text-[#8E8E93]">分鐘</span>
          </div>
          <span class="text-[#8E8E93] mb-8">:</span>
          <div class="flex flex-col items-center">
-           <span class="text-[min(12vw,3rem)] bg-[#1C1C1E] rounded-xl px-5 py-4 font-normal">00</span>
+           <span class="text-[clamp(2.5rem,10vw,3rem)] bg-[#1C1C1E] rounded-xl px-5 py-4 font-normal">00</span>
            <span class="text-sm mt-2 font-bold text-[#8E8E93]">秒</span>
          </div>
       </div>
-      <div class="flex justify-between items-center w-full px-1 max-w-md mb-8 flex-none">
+      <div class="flex justify-between items-center w-full px-2 max-w-md mb-8 flex-none">
         <div class="w-[84px] h-[84px] rounded-full border-2 border-[#333333] p-[2px]">
           <div class="w-full h-full rounded-full bg-[#333333] flex items-center justify-center text-[#8E8E93] text-[17px] opacity-50">取消</div>
         </div>
@@ -191,16 +194,16 @@
     </div>
 
     <!-- ⌚️ iOS 原生擬真主介面 (碼錶) ⌚️ -->
-    <!-- RWD: 使用 flex-col，讓內容依照螢幕高度彈性分配 -->
-    <div id="view-stopwatch" class="w-full h-full flex flex-col items-center relative pb-[100px]">
+    <!-- 修正：使用 absolute 佈局，讓高度不會被 Safari 網址列干擾 -->
+    <div id="view-stopwatch" class="absolute inset-0 flex flex-col items-center pb-[100px]">
       
-      <!-- 時間顯示區: 高度彈性佔比，並利用 clamp 設定響應式字體 -->
-      <div class="flex-none h-[35%] w-full flex justify-center items-center">
-        <span id="time-display" class="font-[200] tracking-tight leading-none text-white tabular-nums" style="font-size: clamp(60px, 21vw, 92px);">00:00.00</span>
+      <!-- 時間顯示區: 修正 mt-[20vh] 讓計時器高度完美下沉，並加上 clamp 防斷行 -->
+      <div class="flex-none w-full flex justify-center items-center mt-[20vh] mb-[8vh] px-2">
+        <span id="time-display" class="font-[200] tracking-tight leading-none text-white tabular-nums" style="font-size: clamp(64px, 20vw, 88px);">00:00.00</span>
       </div>
 
-      <!-- 雙環按鈕區: 固定高度，響應式寬度內距 -->
-      <div class="flex-none flex justify-between items-center w-full px-4">
+      <!-- 雙環按鈕區: 固定寬度排版 -->
+      <div class="flex-none flex justify-between items-center w-full px-4 max-w-md">
         <button id="btn-lap-reset" class="w-[84px] h-[84px] rounded-full border-2 border-[#333333] p-[2px] focus:outline-none transition-opacity">
           <div id="btn-lap-reset-inner" class="w-full h-full rounded-full bg-[#333333] flex items-center justify-center text-[#8E8E93] text-[17px]">
             分圈
@@ -220,39 +223,36 @@
       </div>
 
       <!-- 原生分隔線 -->
-      <div class="w-[calc(100%-2rem)] h-[1px] bg-[#2C2C2E] mt-6 flex-none"></div>
+      <div class="w-[calc(100%-2rem)] max-w-md h-[1px] bg-[#2C2C2E] mt-6 flex-none"></div>
 
-      <!-- 計圈列表區: flex-1 讓它自動填滿剩餘高度，適應任何手機長度 -->
-      <div class="w-full flex-1 overflow-y-auto px-4 no-scrollbar">
+      <!-- 計圈列表區: flex-1 自動填滿剩餘高度 -->
+      <div class="w-full max-w-md flex-1 overflow-y-auto px-4 no-scrollbar">
         <div id="laps-container" class="mt-1">
           <!-- Laps here -->
         </div>
       </div>
     </div>
 
-    <!-- 🌟 底部導覽列 (浮動膠囊狀，絕對不滿版，帶有灰色背景橢圓) -->
-    <!-- RWD: 在外層容器內使用 absolute 置底 -->
-    <div class="absolute bottom-2 mb-[env(safe-area-inset-bottom)] left-4 right-4 bg-[#1C1C1E]/80 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-[34px] flex justify-between items-center px-4 py-2 z-40">
+    <!-- 🌟 底部導覽列 (浮動膠囊狀) -->
+    <!-- 修正：利用 max(16px, env) 確保它極致貼合 Home 橫條，不受 Safari 縮放影響 -->
+    <div class="absolute left-4 right-4 bg-[#1C1C1E]/80 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-[34px] flex justify-between items-center px-4 py-2 z-40" 
+         style="bottom: max(16px, env(safe-area-inset-bottom));">
       
-      <!-- 世界時鐘 -->
       <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-2 py-1 cursor-pointer transition-all">
         <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
         <span class="text-[10px] font-medium mt-1">世界時鐘</span>
       </div>
       
-      <!-- 鬧鐘 -->
       <div id="tab-alarm" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-2 py-1 cursor-pointer transition-all">
         <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 100-18 9 9 0 000 18z" /><path d="M12 7v5l2.5 2.5" /><path d="M19.5 5.5L21 7M4.5 5.5L3 7" stroke-linecap="round"/></svg>
         <span class="text-[10px] font-medium mt-1">鬧鐘</span>
       </div>
       
-      <!-- 碼錶 -->
       <div id="tab-stopwatch" class="tab-btn flex flex-col items-center justify-center text-[#FF9500] gap-[2px] bg-[#333333] px-6 py-[6px] rounded-[24px] cursor-pointer transition-all">
         <svg class="w-[26px] h-[26px]" fill="currentColor" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
         <span class="text-[10px] font-medium mt-0">碼錶</span>
       </div>
 
-      <!-- 計時器 -->
       <div id="tab-timer" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-2 py-1 cursor-pointer transition-all">
         <svg class="w-[26px] h-[26px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 3v2M12 12l3-3M21 12h-2" stroke-linecap="round"/></svg>
         <span class="text-[10px] font-medium mt-1">計時器</span>
