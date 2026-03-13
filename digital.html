@@ -176,9 +176,12 @@
 </div>
 
 <script>
+    let hasUserTapped = false; // 追蹤使用者是否手動設定過焦點
+
     let magicState = {
         suit: '♥', value: '7',
-        targetX: window.innerWidth / 2, targetY: window.innerHeight / 2,
+        targetX: window.innerWidth / 2 || 150, 
+        targetY: window.innerHeight / 2 || 300,
         isRevealing: false, revealProgress: 0,
         isFrozen: false, scale: 1, rotation: 0
     };
@@ -198,9 +201,14 @@
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        // 如果使用者還沒點擊過，就確保目標座標在畫面正中央 (防呆，避免縮在左上角)
+        if (!hasUserTapped) {
+            magicState.targetX = canvas.width / 2;
+            magicState.targetY = canvas.height / 2;
+        }
     }
     window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+    resizeCanvas(); // 初始化執行一次
 
     async function startCamera(facingMode = 'environment') {
         if (video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
@@ -250,6 +258,7 @@
     let initialTouchDist = 0, initialScale = 1, initialTouchAngle = 0, initialRotation = 0;
 
     touchArea.addEventListener('touchstart', (e) => {
+        hasUserTapped = true; // 標記已點擊
         if (e.touches.length === 1) {
             magicState.targetX = e.touches[0].clientX;
             magicState.targetY = e.touches[0].clientY;
@@ -281,7 +290,7 @@
     }, { passive: false });
 
     // ==========================================
-    // 🚀 核心黑科技：卡片智慧偵測演算法 (Ray-casting)
+    // 🚀 核心黑科技：卡片智慧偵測演算法 (Ray-casting) - 已強化容錯
     // ==========================================
     function autoDetectCardBounds(videoElement, tapX, tapY, canvasW, canvasH) {
         if (videoElement.videoWidth === 0) return null;
@@ -290,7 +299,6 @@
         tempCanvas.width = canvasW; tempCanvas.height = canvasH;
         const tCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
         
-        // 完美模擬 CSS object-fit: cover，確保像素座標與視覺完全一致
         const videoRatio = videoElement.videoWidth / videoElement.videoHeight;
         const canvasRatio = canvasW / canvasH;
         let drawW, drawH, startX, startY;
@@ -306,7 +314,6 @@
         const imgData = tCtx.getImageData(0, 0, canvasW, canvasH);
         const data = imgData.data;
         
-        // 取得像素亮度 (Grayscale Luma)
         const getLuma = (x, y) => {
             x = Math.floor(x); y = Math.floor(y);
             if (x < 0 || x >= canvasW || y < 0 || y >= canvasH) return 0;
@@ -314,45 +321,42 @@
             return data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114;
         };
 
-        const edgeThreshold = 18; // 邊緣突變閾值 (感測卡片與背景/手掌的色差)
+        const edgeThreshold = 25; // 提高閾值，避免紙張紋理干擾
         
-        // 發射虛擬射線尋找邊緣
         function castRay(dx, dy) {
             let x = tapX, y = tapY;
-            let baseLuma = getLuma(x, y); // 以對焦點的亮度為基準
+            let baseLuma = getLuma(x, y);
             let steps = 0;
+            
+            // 重要防呆：盲跳過起點周圍 15px，防止把魔術師的「手指陰影」誤判為卡片邊界
+            x += dx * 15;
+            y += dy * 15;
+            steps += 15;
             
             while (x > 5 && x < canvasW - 5 && y > 5 && y < canvasH - 5 && steps < Math.max(canvasW, canvasH)) {
                 x += dx; y += dy; steps++;
-                
-                // 取周圍 3 點平均值，防止雜訊干擾
                 let avgLuma = (getLuma(x, y) + getLuma(x - dy*2, y + dx*2) + getLuma(x + dy*2, y - dx*2)) / 3;
-
-                // 如果亮度發生劇烈變化，代表撞到邊緣 (例如白卡邊緣的陰影或手指)
                 if (Math.abs(avgLuma - baseLuma) > edgeThreshold) return {x, y};
-                
-                // 漸進式適應光源變化
                 baseLuma = baseLuma * 0.85 + avgLuma * 0.15; 
             }
             return {x, y};
         }
 
-        // 向四個方向發射射線
         const left = castRay(-1, 0);
         const right = castRay(1, 0);
         const top = castRay(0, -1);
         const bottom = castRay(0, 1);
 
-        // 重新計算完美的幾何中心
         const centerX = (left.x + right.x) / 2;
         const centerY = (top.y + bottom.y) / 2;
         
-        // 根據偵測到的實體卡片寬度，精準計算數位墨水的縮放比例
         const detectedWidth = right.x - left.x;
-        let autoScale = detectedWidth / 170; // 170 是我們繪製墨水的基礎視覺寬度
-        autoScale = Math.max(0.5, Math.min(autoScale, 2.5)); // 安全限制
+        const detectedHeight = bottom.y - top.y;
+        
+        let autoScale = detectedWidth / 170; 
+        autoScale = Math.max(0.5, Math.min(autoScale, 2.5));
 
-        return { x: centerX, y: centerY, scale: autoScale };
+        return { x: centerX, y: centerY, scale: autoScale, width: detectedWidth, height: detectedHeight };
     }
 
     // AR 墨水渲染引擎
@@ -368,7 +372,7 @@
         const isRed = magicState.suit === '♥' || magicState.suit === '♦';
 
         ctx.save();
-        ctx.globalCompositeOperation = 'multiply'; // 色彩增值：完美融合實體紙張紋理
+        ctx.globalCompositeOperation = 'multiply';
         ctx.globalAlpha = textOpacity;
         
         ctx.translate(x, y);
@@ -379,17 +383,14 @@
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // 中央點數
         ctx.font = 'bold 80px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.fillText(magicState.value + magicState.suit, 0, 10);
 
-        // 左上角標籤
         ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.fillText(magicState.value, -75, -110);
         ctx.font = '30px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.fillText(magicState.suit, -75, -80);
         
-        // 右下角倒立標籤
         ctx.save();
         ctx.rotate(Math.PI);
         ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, sans-serif';
@@ -427,22 +428,26 @@
         setTimeout(() => { flash.style.opacity = '0'; }, 10);
         setTimeout(() => { flash.remove(); }, 300);
 
-        // 凍結畫面
-        video.pause();
-        magicState.isFrozen = true;
-
-        // 🚀 執行 AI 自動對位演算
+        // 🚀 在影片凍結「前」執行 AI 運算，避免有些手機暫停時會回傳黑畫面
         try {
             const autoDetected = autoDetectCardBounds(video, magicState.targetX, magicState.targetY, canvas.width, canvas.height);
-            if (autoDetected) {
+            
+            // 安全驗證：如果卡片長寬太小 (可能把手指或雜點當成卡片)，就放棄 AI，改用你點擊的位置
+            if (autoDetected && autoDetected.width > 60 && autoDetected.height > 60) {
                 magicState.targetX = autoDetected.x;
                 magicState.targetY = autoDetected.y;
                 magicState.scale = autoDetected.scale;
-                console.log("自動對位成功:", autoDetected);
+                console.log("自動對位成功");
+            } else {
+                console.warn("偵測範圍過小，回退為手動對位");
             }
         } catch (err) {
-            console.warn("自動對位略過，採用手動設定座標", err);
+            console.warn("自動對位錯誤，採用手動座標", err);
         }
+
+        // 凍結畫面
+        video.pause();
+        magicState.isFrozen = true;
 
         // 延遲 2 秒浮現墨水
         setTimeout(() => {
