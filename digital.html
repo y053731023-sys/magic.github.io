@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Magic Camera - 變色還原版</title>
+  
+  <script>
+    window.addEventListener('unhandledrejection', function(event) {
+      console.warn('捕獲到未處理的拒絕:', event.reason);
+      event.preventDefault();
+      window.addEventListener('DOMContentLoaded', () => {
+        const errorUI = document.getElementById('camera-error');
+        if (errorUI) errorUI.style.display = 'flex';
+      });
+    });
+  </script>
+
+  <!-- 引入必要框架 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body { margin: 0; overflow: hidden; background-color: #000; }
+    
+    /* 相機 UI 疊層 */
+    #camera-ui-layer {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 9999; pointer-events: none; display: none; flex-direction: column; justify-content: space-between;
+    }
+    .camera-top-bar {
+      background: rgba(0, 0, 0, 0.6); padding: 1rem; display: flex; justify-content: space-between; align-items: center; pointer-events: auto;
+    }
+    .camera-bottom-bar {
+      background: rgba(0, 0, 0, 0.8); padding: 2rem 1rem; display: flex; flex-direction: column; align-items: center; pointer-events: auto;
+    }
+    .shutter-effect {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: white; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.1s ease-out;
+    }
+    .a-enter-vr { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- ================= 階段 1：設定與即時訓練介面 ================= -->
+  <div id="setup-screen" class="absolute inset-0 z-[20000] bg-gray-900 flex flex-col items-center justify-center p-8 text-white">
+    <div class="w-16 h-16 bg-red-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-red-500/50">
+      <i data-lucide="scan-face" class="w-8 h-8 text-white"></i>
+    </div>
+    <h1 class="text-3xl font-bold mb-4 text-center">魔術相機設定</h1>
+    <p class="text-gray-400 mb-8 text-center text-sm">
+      請上傳您實體卡片的照片。<br>
+      <span class="text-yellow-400 font-bold">小提示：盡量只拍卡片本身，避免背景雜物，追蹤會更精準！</span>
+    </p>
+
+    <!-- 觸發上傳檔案 -->
+    <button id="init-upload-btn" class="px-8 py-4 bg-blue-600 rounded-full font-bold text-lg hover:bg-blue-500 shadow-lg shadow-blue-500/50 transition flex items-center gap-3 active:scale-95">
+      <i data-lucide="image-plus"></i>
+      選擇卡片照片
+    </button>
+    <input type="file" id="card-upload" accept="image/*" class="hidden">
+
+    <!-- 訓練進度條 -->
+    <div id="progress-container" class="hidden w-full max-w-xs mt-8 flex-col items-center">
+      <p class="text-sm text-yellow-400 mb-2 font-mono" id="progress-text">正在分析特徵並建立模型...</p>
+      <div class="w-full h-3 bg-gray-700 rounded-full overflow-hidden border border-gray-600">
+        <div id="progress-bar" class="h-full bg-yellow-400 w-0 transition-all duration-200"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 階段 2：錯誤提示 ================= -->
+  <div id="camera-error" class="hidden absolute inset-0 z-[10001] bg-black bg-opacity-90 flex-col items-center justify-center p-6 text-center text-white pointer-events-auto">
+    <i data-lucide="camera-off" class="w-16 h-16 text-red-500 mb-4"></i>
+    <h2 class="text-xl font-bold mb-2">無法存取相機</h2>
+    <p class="text-gray-300 mb-6 text-sm">請允許相機權限，或者在新分頁中開啟此頁面。</p>
+    <button onclick="document.getElementById('camera-error').style.display='none'" class="px-6 py-2 bg-gray-800 rounded-full hover:bg-gray-700 border border-gray-600">我知道了</button>
+  </div>
+  
+  <div id="flash-overlay" class="shutter-effect"></div>
+
+  <!-- ================= 階段 3：動態注入的 AR 場景容器 ================= -->
+  <div id="ar-container" class="absolute inset-0 z-0"></div>
+
+  <!-- ================= 階段 4：偽裝相機 UI ================= -->
+  <div id="camera-ui-layer">
+    <div class="camera-top-bar text-white">
+      <!-- 觸發魔術的隱蔽按鈕 (閃光燈) -->
+      <button id="secret-trigger" class="p-2 rounded-full hover:bg-white/20 active:bg-white/40 transition">
+        <i data-lucide="zap"></i>
+      </button>
+      <button class="p-2"><i data-lucide="chevron-up"></i></button>
+      <button onclick="location.reload()" class="p-2 rounded-full hover:bg-white/20 active:bg-white/40 transition">
+        <i data-lucide="refresh-ccw"></i>
+      </button>
+    </div>
+    
+    <div class="flex-1 flex items-center justify-center opacity-50">
+      <div class="w-32 h-32 border border-yellow-400 rounded-sm relative hidden" id="focus-box">
+        <div class="absolute -top-3 left-1/2 -translate-x-1/2 text-yellow-400"><i data-lucide="sun" class="w-4 h-4"></i></div>
+      </div>
+    </div>
+
+    <div class="camera-bottom-bar text-white w-full">
+      <div class="flex space-x-6 text-sm font-semibold mb-6 opacity-80">
+        <span>CINEMATIC</span><span>VIDEO</span><span class="text-yellow-400">PHOTO</span><span>PORTRAIT</span><span>PANO</span>
+      </div>
+      <div class="flex justify-between items-center w-full px-8">
+        <div class="w-12 h-12 bg-gray-700 rounded-md border border-gray-500 overflow-hidden">
+            <img id="gallery-thumb" src="" alt="gallery" class="w-full h-full object-cover hidden">
+        </div>
+        <button id="shutter-btn" class="w-20 h-20 bg-white rounded-full border-4 border-gray-300 ring-4 ring-black outline outline-2 outline-white active:scale-95 transition-transform"></button>
+        <button class="p-3 bg-gray-800 rounded-full"><i data-lucide="refresh-cw"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const initUploadBtn = document.getElementById('init-upload-btn');
+    const fileInput = document.getElementById('card-upload');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const setupScreen = document.getElementById('setup-screen');
+    const cameraUiLayer = document.getElementById('camera-ui-layer');
+    const galleryThumb = document.getElementById('gallery-thumb');
+
+    initUploadBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      initUploadBtn.style.display = 'none';
+      progressContainer.style.display = 'flex';
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const img = new Image();
+        img.onload = async () => {
+          
+          // 【關鍵修復】: 限制圖片最大寬度為 800px，防止手機記憶體不足導致 AI 引擎崩潰
+          const MAX_WIDTH = 800;
+          let scale = 1;
+          if (img.width > MAX_WIDTH) {
+              scale = MAX_WIDTH / img.width;
+          }
+          const drawWidth = img.width * scale;
+          const drawHeight = img.height * scale;
+          const aspect = (drawHeight / drawWidth).toFixed(3);
+          
+          // 產生最佳化後的原圖
+          const canvasRed = document.createElement('canvas');
+          canvasRed.width = drawWidth; canvasRed.height = drawHeight;
+          const ctxRed = canvasRed.getContext('2d');
+          ctxRed.drawImage(img, 0, 0, drawWidth, drawHeight);
+          const optimizedSrc = canvasRed.toDataURL('image/jpeg', 0.8);
+
+          // 產生變色後的藍圖
+          const canvasBlue = document.createElement('canvas');
+          canvasBlue.width = drawWidth; canvasBlue.height = drawHeight;
+          const ctxBlue = canvasBlue.getContext('2d');
+          ctxBlue.filter = 'hue-rotate(210deg) saturate(1.2)';
+          ctxBlue.drawImage(img, 0, 0, drawWidth, drawHeight);
+          const myCardBlue = canvasBlue.toDataURL('image/jpeg', 0.8);
+
+          galleryThumb.src = optimizedSrc;
+          galleryThumb.style.display = 'block';
+
+          // 使用最佳化過的小圖進行 AI 訓練
+          const optimizedImg = new Image();
+          optimizedImg.onload = async () => {
+              try {
+                const compiler = new window.MINDAR.IMAGE.Compiler();
+                await compiler.compileImageTargets([optimizedImg], (progress) => {
+                  progressBar.style.width = progress.toFixed(2) + '%';
+                  if(progress > 95) document.getElementById('progress-text').innerText = "啟動 AR 相機中...";
+                });
+
+                const exportedData = compiler.exportData();
+                const blob = new Blob([exportedData], { type: 'application/octet-stream' });
+                const targetUrl = URL.createObjectURL(blob);
+
+                // 啟動 AR，我們只需要顯示藍色版本即可
+                startARScene(targetUrl, myCardBlue, aspect);
+
+              } catch (error) {
+                console.error(error);
+                alert('模型編譯失敗。');
+                initUploadBtn.style.display = 'flex';
+                progressContainer.style.display = 'none';
+              }
+          };
+          optimizedImg.src = optimizedSrc;
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // 動態安全注入 AR 場景
+    function startARScene(targetUrl, blueSrc, aspect) {
+      const arContainer = document.getElementById('ar-container');
+      
+      // 將場景注入，預設卡牌材質直接設為藍色 (blueSrc)
+      arContainer.innerHTML = `
+        <a-scene mindar-image="imageTargetSrc: ${targetUrl}; uiLoading: no; uiScanning: no;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+          <a-assets timeout="10000">
+            <img id="card-face" src="${blueSrc}" crossorigin="anonymous">
+          </a-assets>
+          <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+          <a-entity mindar-image-target="targetIndex: 0">
+            <!-- 設定 virtual-card 預設為可見 -->
+            <a-plane id="virtual-card" src="#card-face" position="0 0 0" height="${aspect}" width="1" rotation="0 0 0" visible="true"></a-plane>
+          </a-entity>
+        </a-scene>
+      `;
+
+      setupScreen.style.display = 'none';
+      cameraUiLayer.style.display = 'flex';
+
+      // 綁定閃光燈還原邏輯
+      bindMagicTrigger();
+    }
+
+    // 將按鈕功能改為切換 AR 顯示/隱藏
+    function bindMagicTrigger() {
+      const secretTrigger = document.getElementById('secret-trigger');
+      
+      // 複製按鈕以清除舊的事件綁定
+      const newTrigger = secretTrigger.cloneNode(true);
+      secretTrigger.parentNode.replaceChild(newTrigger, secretTrigger);
+      
+      let isARVisible = true;
+
+      newTrigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        const virtualCard = document.getElementById('virtual-card');
+        if (virtualCard) {
+            isARVisible = !isARVisible;
+            // 點擊後，直接將虛擬卡片設為隱藏 (false)，露出真實世界的卡片
+            virtualCard.setAttribute('visible', isARVisible);
+            
+            // 如果您點了快門 (或需要額外特效)，它就像瞬間變魔術一樣消失/出現
+        }
+      });
+    }
+
+    // 裝飾用假快門特效
+    const shutterBtn = document.getElementById('shutter-btn');
+    const flashOverlay = document.getElementById('flash-overlay');
+    shutterBtn.addEventListener('click', () => {
+      flashOverlay.style.opacity = '1';
+      setTimeout(() => { flashOverlay.style.opacity = '0'; }, 100);
+    });
+
+    document.addEventListener('click', (e) => {
+      if(cameraUiLayer.style.display === 'flex' && e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+        const focusBox = document.getElementById('focus-box');
+        focusBox.style.display = 'block';
+        focusBox.style.left = (e.clientX - 64) + 'px';
+        focusBox.style.top = (e.clientY - 64) + 'px';
+        setTimeout(() => { focusBox.style.display = 'none'; }, 1500);
+      }
+    });
+  </script>
+</body>
+</html>
