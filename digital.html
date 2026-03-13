@@ -52,8 +52,11 @@
     </div>
     <h1 class="text-3xl font-bold mb-4 text-center">魔術相機設定</h1>
     <p class="text-gray-400 mb-8 text-center text-sm">
-      請上傳您實體卡片的照片。<br>
-      <span class="text-yellow-400 font-bold">小提示：盡量只拍卡片本身，避免背景雜物，追蹤會更精準！</span>
+      請上傳您實體 <span class="text-blue-400 font-bold">藍色卡片</span> 的照片。<br>
+      <span class="text-yellow-400 font-bold text-base bg-black/50 p-2 rounded block mt-2">
+        ⚠️ 致命警告：請務必將照片「完美裁切」到只剩卡片！<br>
+        如果拍到任何桌面或背景，AR 追蹤將會嚴重失準！
+      </span>
     </p>
 
     <!-- 觸發上傳檔案 -->
@@ -153,20 +156,21 @@
           const drawHeight = img.height * scale;
           const aspect = (drawHeight / drawWidth).toFixed(3);
           
-          // 產生最佳化後的原圖
+          // 產生最佳化後的原圖 (藍色)
+          const canvasOriginal = document.createElement('canvas');
+          canvasOriginal.width = drawWidth; canvasOriginal.height = drawHeight;
+          const ctxOriginal = canvasOriginal.getContext('2d');
+          ctxOriginal.drawImage(img, 0, 0, drawWidth, drawHeight);
+          const optimizedSrc = canvasOriginal.toDataURL('image/jpeg', 0.8);
+
+          // 產生變色後的紅圖 (修正：將藍色轉為紅色)
+          // 藍色色相約為 240度，紅色為 360(0)度，所以旋轉約 120~130 度即可將藍變紅
           const canvasRed = document.createElement('canvas');
           canvasRed.width = drawWidth; canvasRed.height = drawHeight;
           const ctxRed = canvasRed.getContext('2d');
+          ctxRed.filter = 'hue-rotate(130deg) saturate(1.5) contrast(1.1)'; 
           ctxRed.drawImage(img, 0, 0, drawWidth, drawHeight);
-          const optimizedSrc = canvasRed.toDataURL('image/jpeg', 0.8);
-
-          // 產生變色後的藍圖
-          const canvasBlue = document.createElement('canvas');
-          canvasBlue.width = drawWidth; canvasBlue.height = drawHeight;
-          const ctxBlue = canvasBlue.getContext('2d');
-          ctxBlue.filter = 'hue-rotate(210deg) saturate(1.2)';
-          ctxBlue.drawImage(img, 0, 0, drawWidth, drawHeight);
-          const myCardBlue = canvasBlue.toDataURL('image/jpeg', 0.8);
+          const myCardRed = canvasRed.toDataURL('image/jpeg', 0.8);
 
           galleryThumb.src = optimizedSrc;
           galleryThumb.style.display = 'block';
@@ -185,8 +189,8 @@
                 const blob = new Blob([exportedData], { type: 'application/octet-stream' });
                 const targetUrl = URL.createObjectURL(blob);
 
-                // 啟動 AR，我們只需要顯示藍色版本即可
-                startARScene(targetUrl, myCardBlue, aspect);
+                // 啟動 AR，我們預設顯示變色後的「紅色版本」
+                startARScene(targetUrl, myCardRed, aspect);
 
               } catch (error) {
                 console.error(error);
@@ -203,14 +207,15 @@
     });
 
     // 動態安全注入 AR 場景
-    function startARScene(targetUrl, blueSrc, aspect) {
+    function startARScene(targetUrl, redSrc, aspect) {
       const arContainer = document.getElementById('ar-container');
       
-      // 將場景注入，預設卡牌材質直接設為藍色 (blueSrc)
+      // 將場景注入，預設卡牌材質設為紅色 (redSrc)
+      // 加入 filterMinCF 與 filterBeta 參數來提升追蹤的靈敏度與即時性
       arContainer.innerHTML = `
-        <a-scene mindar-image="imageTargetSrc: ${targetUrl}; uiLoading: no; uiScanning: no;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        <a-scene mindar-image="imageTargetSrc: ${targetUrl}; filterMinCF:0.0001; filterBeta: 0.001; missTolerance: 5; uiLoading: no; uiScanning: no;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
           <a-assets timeout="10000">
-            <img id="card-face" src="${blueSrc}" crossorigin="anonymous">
+            <img id="card-face" src="${redSrc}" crossorigin="anonymous">
           </a-assets>
           <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
           <a-entity mindar-image-target="targetIndex: 0">
@@ -222,6 +227,14 @@
 
       setupScreen.style.display = 'none';
       cameraUiLayer.style.display = 'flex';
+
+      // 【修復版面黑邊問題】：強制觸發視窗重整，讓 MindAR 重新計算手機螢幕比例
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 500);
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 1500);
 
       // 綁定閃光燈還原邏輯
       bindMagicTrigger();
