@@ -16,16 +16,8 @@
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    /* 加入這段終極鎖死設定 */
-    html, body {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%; /* 鎖定實體可用高度，不受 Safari 工具列伸縮影響 */
-      overflow: hidden;
-      touch-action: none; /* 禁用原生的下拉更新或滑動 */
+    body {
+      touch-action: none;
       -webkit-user-select: none;
       user-select: none;
       font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -34,9 +26,9 @@
     }
   </style>
 </head>
-<body class="bg-black flex justify-center">
+<body class="fixed inset-0 bg-black overflow-hidden flex justify-center" style="width: 100vw; height: 100vh;">
 
-  <div class="absolute inset-0 w-full h-full max-w-[430px] mx-auto flex flex-col bg-black">
+  <div class="relative w-full h-full max-w-[430px] flex flex-col bg-black">
     
     <!-- 隱藏的魔術師觸發區 -->
     <div id="secret-zone" class="absolute top-0 right-0 w-24 h-24 z-50 opacity-0 cursor-pointer"></div>
@@ -214,7 +206,7 @@
         <div class="absolute w-[95%] h-[36px] bg-[#2C2C2E]/60 rounded-[8px] z-0"></div>
         <div class="flex w-[95%] max-w-[360px] justify-between z-10 text-[22px] font-normal">
           
-          <!-- 小時 -->
+          <!-- 小時 (上方為空白，數字靠右對齊單位) -->
           <div class="flex flex-col items-start w-1/3 pl-1 sm:pl-2">
             <div class="h-[36px] w-[40px]"></div>
             <div class="h-[36px] w-[40px]"></div>
@@ -316,16 +308,16 @@
       </div>
     </div>
 
-    <!-- 🌟 底部導覽列 -->
-    <div class="absolute bottom-0 left-0 right-0 w-full flex justify-center z-50" style="padding-bottom: calc(env(safe-area-inset-bottom) + 12px);">
-      <div class="w-[calc(100%-2rem)] max-w-[400px] bg-[#1C1C1E]/90 backdrop-blur-3xl border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px]">
+    <!-- 🌟 底部導覽列 (雙層鎖死結構，徹底解決 PWA 高度陷阱) -->
+    <div class="absolute bottom-0 left-0 right-0 w-full z-40 flex justify-center" style="padding-bottom: calc(env(safe-area-inset-bottom) + 12px); padding-left: 16px; padding-right: 16px;">
+      <div class="w-full max-w-[400px] bg-[#1C1C1E]/90 backdrop-blur-3xl border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px]">
         
-        <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-[#8E8E93] gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
+        <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
           <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
           <span class="text-[10px] font-medium mt-[2px]">世界時鐘</span>
         </div>
         
-        <div id="tab-alarm" class="tab-btn flex flex-col items-center justify-center text-[#8E8E93] gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
+        <div id="tab-alarm" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
           <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 100-18 9 9 0 000 18z" /><path d="M12 7v5l2.5 2.5" /><path d="M19.5 5.5L21 7M4.5 5.5L3 7" stroke-linecap="round"/></svg>
           <span class="text-[10px] font-medium mt-[2px]">鬧鐘</span>
         </div>
@@ -335,7 +327,7 @@
           <span class="text-[10px] font-medium mt-[2px]">碼錶</span>
         </div>
 
-        <div id="tab-timer" class="tab-btn flex flex-col items-center justify-center text-[#8E8E93] gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
+        <div id="tab-timer" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
           <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 3v2M12 12l3-3M21 12h-2" stroke-linecap="round"/></svg>
           <span class="text-[10px] font-medium mt-[2px]">計時器</span>
         </div>
@@ -470,7 +462,7 @@
       return null;
     };
 
-    // --- 頁籤切換邏輯 (更新為處理 #8E8E93 灰色) ---
+    // --- 頁籤切換邏輯 ---
     const tabViews = ['world-clock', 'alarm', 'stopwatch', 'timer'];
     tabViews.forEach(tab => {
       document.getElementById(`tab-${tab}`).addEventListener('click', () => {
@@ -479,11 +471,12 @@
           const btn = document.getElementById(`tab-${t}`);
           if (t === tab) {
             view.classList.remove('hidden'); view.classList.add('flex');
+            // 更新：同步 JS 中的 padding 設定，以維持完美的橢圓比例
             btn.classList.add('text-[#FF9500]', 'bg-[#333333]', 'px-[22px]', 'rounded-[24px]');
-            btn.classList.remove('text-[#8E8E93]', 'px-3');
+            btn.classList.remove('text-white', 'px-3');
           } else {
             view.classList.add('hidden'); view.classList.remove('flex');
-            btn.classList.add('text-[#8E8E93]', 'px-3');
+            btn.classList.add('text-white', 'px-3');
             btn.classList.remove('text-[#FF9500]', 'bg-[#333333]', 'px-[22px]', 'rounded-[24px]');
           }
         });
