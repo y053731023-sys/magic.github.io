@@ -26,9 +26,9 @@
     }
   </style>
 </head>
-<body class="fixed inset-0 overflow-hidden w-full bg-black flex justify-center">
+<body class="fixed inset-0 bg-black overflow-hidden flex justify-center" style="width: 100vw; height: 100vh;">
 
-  <div class="absolute inset-0 w-full max-w-[430px] mx-auto flex flex-col bg-black">
+  <div class="relative w-full h-full max-w-[430px] flex flex-col bg-black">
     
     <!-- 隱藏的魔術師觸發區 -->
     <div id="secret-zone" class="absolute top-0 right-0 w-24 h-24 z-50 opacity-0 cursor-pointer"></div>
@@ -298,30 +298,31 @@
       </div>
     </div>
 
-    <!-- 🌟 底部導覽列 (徹底鎖死視窗底部，精準貼合安全區域) -->
-    <div class="absolute left-4 right-4 max-w-[400px] mx-auto bg-[#1C1C1E]/90 backdrop-blur-3xl border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px] z-40" style="bottom: max(12px, env(safe-area-inset-bottom));">
-      
-      <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
-        <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
-        <span class="text-[10px] font-medium mt-[2px]">世界時鐘</span>
-      </div>
-      
-      <div id="tab-alarm" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
-        <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 100-18 9 9 0 000 18z" /><path d="M12 7v5l2.5 2.5" /><path d="M19.5 5.5L21 7M4.5 5.5L3 7" stroke-linecap="round"/></svg>
-        <span class="text-[10px] font-medium mt-[2px]">鬧鐘</span>
-      </div>
-      
-      <!-- 碼錶 (微調 px 與 py 比例，讓背景變成更精緻的橢圓形) -->
-      <div id="tab-stopwatch" class="tab-btn flex flex-col items-center justify-center text-[#FF9500] gap-[2px] bg-[#333333] px-[22px] py-[6px] rounded-[24px] cursor-pointer transition-all">
-        <svg class="w-[24px] h-[24px]" fill="currentColor" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
-        <span class="text-[10px] font-medium mt-[2px]">碼錶</span>
-      </div>
+    <!-- 🌟 底部導覽列 (雙層鎖死結構，徹底解決 PWA 高度陷阱) -->
+    <div class="absolute bottom-0 left-0 right-0 w-full z-40 flex justify-center" style="padding-bottom: calc(env(safe-area-inset-bottom) + 12px); padding-left: 16px; padding-right: 16px;">
+      <div class="w-full max-w-[400px] bg-[#1C1C1E]/90 backdrop-blur-3xl border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px]">
+        
+        <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
+          <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
+          <span class="text-[10px] font-medium mt-[2px]">世界時鐘</span>
+        </div>
+        
+        <div id="tab-alarm" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
+          <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 100-18 9 9 0 000 18z" /><path d="M12 7v5l2.5 2.5" /><path d="M19.5 5.5L21 7M4.5 5.5L3 7" stroke-linecap="round"/></svg>
+          <span class="text-[10px] font-medium mt-[2px]">鬧鐘</span>
+        </div>
+        
+        <div id="tab-stopwatch" class="tab-btn flex flex-col items-center justify-center text-[#FF9500] gap-[2px] bg-[#333333] px-[22px] py-[6px] rounded-[24px] cursor-pointer transition-all">
+          <svg class="w-[24px] h-[24px]" fill="currentColor" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+          <span class="text-[10px] font-medium mt-[2px]">碼錶</span>
+        </div>
 
-      <div id="tab-timer" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
-        <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 3v2M12 12l3-3M21 12h-2" stroke-linecap="round"/></svg>
-        <span class="text-[10px] font-medium mt-[2px]">計時器</span>
+        <div id="tab-timer" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
+          <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 3v2M12 12l3-3M21 12h-2" stroke-linecap="round"/></svg>
+          <span class="text-[10px] font-medium mt-[2px]">計時器</span>
+        </div>
+        
       </div>
-      
     </div>
 
   </div>
