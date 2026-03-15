@@ -26,9 +26,9 @@
     }
   </style>
 </head>
-<body class="overflow-hidden w-full h-dvh flex justify-center bg-black">
+<body class="fixed inset-0 overflow-hidden w-full bg-black flex justify-center">
 
-  <div class="w-full h-full max-w-[430px] relative flex flex-col bg-black">
+  <div class="absolute inset-0 w-full max-w-[430px] mx-auto flex flex-col bg-black">
     
     <!-- 隱藏的魔術師觸發區 -->
     <div id="secret-zone" class="absolute top-0 right-0 w-24 h-24 z-50 opacity-0 cursor-pointer"></div>
@@ -298,9 +298,8 @@
       </div>
     </div>
 
-    <!-- 🌟 底部導覽列 (徹底移除雙重推擠，利用 calc 精確下壓，完美貼合 Home 橫條！) -->
-    <div class="absolute left-4 right-4 bg-[#1C1C1E]/90 backdrop-blur-3xl border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px] max-w-[400px] mx-auto z-40"
-         style="bottom: max(12px, calc(env(safe-area-inset-bottom) - 8px));">
+    <!-- 🌟 底部導覽列 (徹底鎖死視窗底部，精準貼合安全區域) -->
+    <div class="absolute left-4 right-4 max-w-[400px] mx-auto bg-[#1C1C1E]/90 backdrop-blur-3xl border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px] z-40" style="bottom: max(12px, env(safe-area-inset-bottom));">
       
       <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
         <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
