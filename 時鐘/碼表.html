@@ -309,31 +309,29 @@
       </div>
     </div>
 
-    <!-- 🌟 底部導覽列 (徹底解決 PWA 裁切問題：使用 fixed 強制綁定實體螢幕) -->
-    <div class="fixed left-0 right-0 z-50 flex justify-center w-full" style="bottom: calc(env(safe-area-inset-bottom) + 12px);">
-      <div class="w-[calc(100%-2rem)] max-w-[400px] bg-[#1C1C1E]/90 backdrop-blur-3xl border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px]">
-        
-        <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-[#8E8E93] gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
-          <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
-          <span class="text-[10px] font-medium mt-[2px]">世界時鐘</span>
-        </div>
-        
-        <div id="tab-alarm" class="tab-btn flex flex-col items-center justify-center text-[#8E8E93] gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
-          <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 100-18 9 9 0 000 18z" /><path d="M12 7v5l2.5 2.5" /><path d="M19.5 5.5L21 7M4.5 5.5L3 7" stroke-linecap="round"/></svg>
-          <span class="text-[10px] font-medium mt-[2px]">鬧鐘</span>
-        </div>
-        
-        <div id="tab-stopwatch" class="tab-btn flex flex-col items-center justify-center text-[#FF9500] gap-[2px] bg-[#333333] px-[22px] py-[6px] rounded-[24px] cursor-pointer transition-all">
-          <svg class="w-[24px] h-[24px]" fill="currentColor" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
-          <span class="text-[10px] font-medium mt-[2px]">碼錶</span>
-        </div>
-
-        <div id="tab-timer" class="tab-btn flex flex-col items-center justify-center text-[#8E8E93] gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
-          <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 3v2M12 12l3-3M21 12h-2" stroke-linecap="round"/></svg>
-          <span class="text-[10px] font-medium mt-[2px]">計時器</span>
-        </div>
-        
+    <!-- 🌟 底部導覽列 (終極解決方案：直接鎖定絕對像素，捨棄 env 變數) -->
+    <div class="absolute left-4 right-4 z-40 bg-[#1C1C1E]/90 backdrop-blur-3xl border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px] max-w-[400px] mx-auto" style="bottom: 20px;">
+      
+      <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
+        <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
+        <span class="text-[10px] font-medium mt-[2px]">世界時鐘</span>
       </div>
+      
+      <div id="tab-alarm" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
+        <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 100-18 9 9 0 000 18z" /><path d="M12 7v5l2.5 2.5" /><path d="M19.5 5.5L21 7M4.5 5.5L3 7" stroke-linecap="round"/></svg>
+        <span class="text-[10px] font-medium mt-[2px]">鬧鐘</span>
+      </div>
+      
+      <div id="tab-stopwatch" class="tab-btn flex flex-col items-center justify-center text-[#FF9500] gap-[2px] bg-[#333333] px-[22px] py-[6px] rounded-[24px] cursor-pointer transition-all">
+        <svg class="w-[24px] h-[24px]" fill="currentColor" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+        <span class="text-[10px] font-medium mt-[2px]">碼錶</span>
+      </div>
+
+      <div id="tab-timer" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
+        <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 3v2M12 12l3-3M21 12h-2" stroke-linecap="round"/></svg>
+        <span class="text-[10px] font-medium mt-[2px]">計時器</span>
+      </div>
+      
     </div>
 
   </div>
@@ -463,7 +461,7 @@
       return null;
     };
 
-    // --- 頁籤切換邏輯 (更新為處理 #8E8E93 灰色) ---
+    // --- 頁籤切換邏輯 ---
     const tabViews = ['world-clock', 'alarm', 'stopwatch', 'timer'];
     tabViews.forEach(tab => {
       document.getElementById(`tab-${tab}`).addEventListener('click', () => {
@@ -472,11 +470,12 @@
           const btn = document.getElementById(`tab-${t}`);
           if (t === tab) {
             view.classList.remove('hidden'); view.classList.add('flex');
+            // 更新：同步 JS 中的 padding 設定，以維持完美的橢圓比例
             btn.classList.add('text-[#FF9500]', 'bg-[#333333]', 'px-[22px]', 'rounded-[24px]');
-            btn.classList.remove('text-[#8E8E93]', 'px-3');
+            btn.classList.remove('text-white', 'px-3');
           } else {
             view.classList.add('hidden'); view.classList.remove('flex');
-            btn.classList.add('text-[#8E8E93]', 'px-3');
+            btn.classList.add('text-white', 'px-3');
             btn.classList.remove('text-[#FF9500]', 'bg-[#333333]', 'px-[22px]', 'rounded-[24px]');
           }
         });
