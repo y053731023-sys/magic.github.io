@@ -81,7 +81,7 @@
             </div>
           </div>
 
-          <!-- 🌟 動態分圈迫牌區 (+/- 按鈕增減) -->
+          <!-- 動態分圈迫牌區 -->
           <div id="panel-laps-force" class="hidden w-full flex-col">
             <div id="dynamic-laps-container" class="flex flex-wrap justify-center items-end gap-x-2 gap-y-4 mb-4">
               <!-- 這裡會由 JS 動態生成圈數欄位 -->
@@ -128,7 +128,7 @@
     </div>
 
     <!-- ⏰ 假介面：鬧鐘 -->
-    <div id="view-alarm" class="hidden absolute inset-0 flex-col pt-[8vh] px-4 pb-[100px] overflow-y-auto no-scrollbar">
+    <div id="view-alarm" class="hidden absolute inset-0 flex-col pt-[6vh] px-4 pb-[100px] overflow-y-auto no-scrollbar">
       <div class="flex justify-between items-center w-full mb-4">
         <button class="text-white text-[15px] font-medium bg-transparent border border-gray-600/50 rounded-[14px] px-3 py-[4px]">編輯</button>
         <button class="text-white text-3xl font-light bg-transparent border border-gray-600/50 rounded-full w-8 h-8 flex items-center justify-center pb-1">+</button>
@@ -298,8 +298,9 @@
       </div>
     </div>
 
-    <!-- 🌟 底部導覽列 -->
-    <div class="absolute bottom-2 mb-[env(safe-area-inset-bottom)] left-4 right-4 bg-[#1C1C1E]/90 backdrop-blur-3xl border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px] max-w-[400px] mx-auto z-40">
+    <!-- 🌟 底部導覽列 (徹底移除雙重推擠，利用 calc 精確下壓，完美貼合 Home 橫條！) -->
+    <div class="absolute left-4 right-4 bg-[#1C1C1E]/90 backdrop-blur-3xl border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px] max-w-[400px] mx-auto z-40"
+         style="bottom: max(12px, calc(env(safe-area-inset-bottom) - 8px));">
       
       <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
         <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
@@ -311,7 +312,8 @@
         <span class="text-[10px] font-medium mt-[2px]">鬧鐘</span>
       </div>
       
-      <div id="tab-stopwatch" class="tab-btn flex flex-col items-center justify-center text-[#FF9500] gap-[2px] bg-[#333333] px-6 py-[6px] rounded-[24px] cursor-pointer transition-all">
+      <!-- 碼錶 (微調 px 與 py 比例，讓背景變成更精緻的橢圓形) -->
+      <div id="tab-stopwatch" class="tab-btn flex flex-col items-center justify-center text-[#FF9500] gap-[2px] bg-[#333333] px-[22px] py-[6px] rounded-[24px] cursor-pointer transition-all">
         <svg class="w-[24px] h-[24px]" fill="currentColor" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
         <span class="text-[10px] font-medium mt-[2px]">碼錶</span>
       </div>
@@ -387,7 +389,6 @@
     let forceTotal = savedSettings.forceTotal || { mins: 4, secs: 15, ms: 22 };
     let useComma = savedSettings.useComma !== undefined ? savedSettings.useComma : false;
     
-    // 🌟 陣列化升級：處理舊版物件，轉換為陣列儲存
     let forceLaps = savedSettings.forceLaps;
     if (forceLaps && !Array.isArray(forceLaps)) {
       forceLaps = [
@@ -460,12 +461,13 @@
           const btn = document.getElementById(`tab-${t}`);
           if (t === tab) {
             view.classList.remove('hidden'); view.classList.add('flex');
-            btn.classList.add('text-[#FF9500]', 'bg-[#333333]', 'px-6', 'rounded-[24px]');
+            // 更新：同步 JS 中的 padding 設定，以維持完美的橢圓比例
+            btn.classList.add('text-[#FF9500]', 'bg-[#333333]', 'px-[22px]', 'rounded-[24px]');
             btn.classList.remove('text-white', 'px-3');
           } else {
             view.classList.add('hidden'); view.classList.remove('flex');
             btn.classList.add('text-white', 'px-3');
-            btn.classList.remove('text-[#FF9500]', 'bg-[#333333]', 'px-6', 'rounded-[24px]');
+            btn.classList.remove('text-[#FF9500]', 'bg-[#333333]', 'px-[22px]', 'rounded-[24px]');
           }
         });
       });
@@ -532,7 +534,7 @@
       }).join('');
     };
 
-    // 🌟 動態渲染分圈輸入框
+    // 動態渲染分圈輸入框
     const renderForceLapsInputs = () => {
       if (!dom.dynamicLapsContainer) return;
       
@@ -550,7 +552,6 @@
       });
       dom.dynamicLapsContainer.innerHTML = html;
 
-      // 綁定輸入事件即時更新陣列
       document.querySelectorAll('.force-lap-input').forEach(input => {
         input.addEventListener('change', (e) => {
           const idx = parseInt(e.target.getAttribute('data-index'));
@@ -598,7 +599,6 @@
       }
     };
 
-    // 🌟 按鈕綁定：增加或減少分圈
     dom.btnAddLap.addEventListener('click', () => {
       forceLaps.push(0);
       renderForceLapsInputs();
@@ -677,7 +677,6 @@
           
           if (data.forceType !== undefined) forceType = data.forceType;
           if (data.forceTotal) forceTotal = data.forceTotal;
-          // 支援舊版物件或新版陣列同步
           if (data.forceLaps) {
             forceLaps = Array.isArray(data.forceLaps) 
               ? data.forceLaps 
@@ -815,7 +814,6 @@
       };
       useComma = dom.commaToggle.checked;
 
-      // 抓取畫面上所有的分圈輸入框
       document.querySelectorAll('.force-lap-input').forEach(input => {
         const idx = parseInt(input.getAttribute('data-index'));
         forceLaps[idx] = parseInt(input.value) || 0;
