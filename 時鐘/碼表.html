@@ -133,7 +133,8 @@
       </div>
     </div>
 
-    <div class="w-full flex justify-center items-center mt-[15vh] mb-12 tabular-nums">
+    <!-- ⬇️ 調整佈局位置：將 mt-[15vh] 增加到 mt-[26vh]，使畫面整體置中對稱 -->
+    <div class="w-full flex justify-center items-center mt-[26vh] mb-12 tabular-nums">
       <span id="time-display" class="text-[88px] font-[200] tracking-tight leading-none">00:00.00</span>
     </div>
 
@@ -183,7 +184,24 @@
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-    // 1. 初始化 Firebase
+    // 🌟 核心防護機制：全球 NTP 標準時間同步 (解決 30 秒誤差)
+    let timeOffset = 0;
+    const syncClock = async () => {
+      try {
+        const res = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+        const data = await res.json();
+        // 計算「真實世界時間」與「手機本機時間」的落差
+        timeOffset = new Date(data.datetime).getTime() - Date.now();
+      } catch(e) {
+        console.log('時間同步失敗，使用本地時間');
+      }
+    };
+    syncClock(); // 網頁載入時自動校時
+
+    // 取得絕對精準時間的函數
+    const getNow = () => Date.now() + timeOffset;
+
+    // 初始化 Firebase
     const getFirebaseConfig = () => {
       if (typeof window.__firebase_config !== 'undefined') return JSON.parse(window.__firebase_config);
       return {
@@ -206,15 +224,12 @@
     }
     const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'magic-stopwatch-html';
 
-    // 2. 處理本機儲存 (LocalStorage) 與 URL 參數
-    // 🌟 從本機讀取上次儲存的設定，如果沒有就給予預設值
     const savedSettings = JSON.parse(localStorage.getItem('magicStopwatchSettings')) || {};
 
     const urlParams = new URLSearchParams(window.location.search);
     let initialRoomId = urlParams.get('room') || savedSettings.roomId || '777';
     let initialRole = urlParams.get('role') || savedSettings.role || 'sender';
 
-    // --- 應用程式狀態 ---
     let isRunning = false;
     let time = 0;
     let laps = [];
@@ -225,7 +240,6 @@
     let showSecretMenu = false;
     let tapCount = 0;
     
-    // 🌟 將狀態變數初始化為讀取到的本機設定
     let forceType = savedSettings.forceType || 'none';
     let forceTotal = savedSettings.forceTotal || { mins: 4, secs: 15, ms: 22 };
     let forceLaps = savedSettings.forceLaps || { lap1: 12, lap2: 34, lap3: 56 };
@@ -237,7 +251,6 @@
     let tapTimeout = null;
     let syncUnsubscribe = null;
 
-    // --- DOM 快取 ---
     const dom = {
       timeDisplay: document.getElementById('time-display'),
       btnLapReset: document.getElementById('btn-lap-reset'),
@@ -260,7 +273,6 @@
       userId: document.getElementById('user-id'),
     };
 
-    // 填入初始房號
     dom.roomIdInput.value = roomId;
 
     const formatTime = (timeInMs) => {
@@ -282,7 +294,6 @@
       return null;
     };
 
-    // --- UI 更新函數 ---
     const renderTime = () => {
       const { mins, secs, ms } = formatTime(time);
       const sep = useComma ? ',' : '.';
@@ -364,7 +375,6 @@
       dom.panelLapsForce.classList.toggle('hidden', forceType !== 'laps');
       dom.commaToggle.checked = useComma;
 
-      // 🌟 將當前儲存的設定值自動填入欄位，讓畫面與資料同步
       document.getElementById('force-total-mins').value = forceTotal.mins.toString().padStart(2, '0');
       document.getElementById('force-total-secs').value = forceTotal.secs.toString().padStart(2, '0');
       document.getElementById('force-total-ms').value = forceTotal.ms.toString().padStart(2, '0');
@@ -401,7 +411,8 @@
 
     const animate = () => {
       if (startTime) {
-        time = accumulatedTime + (Date.now() - startTime);
+        // 🌟 替換為 getNow() 進行無時差校準
+        time = accumulatedTime + (getNow() - startTime);
         renderTime();
       }
       requestRef = requestAnimationFrame(animate);
@@ -409,7 +420,8 @@
 
     const toggleAnimation = () => {
       if (isRunning) {
-        if (role === 'sender') startTime = Date.now();
+        // 🌟 替換為 getNow()
+        if (role === 'sender') startTime = getNow();
         cancelAnimationFrame(requestRef); 
         requestRef = requestAnimationFrame(animate);
       } else cancelAnimationFrame(requestRef);
@@ -424,7 +436,7 @@
           startTimestamp: startTimestamp,
           accumulatedTime: accumulated,
           laps: currentLaps,
-          updatedAt: Date.now()
+          updatedAt: getNow() // 🌟 確保更新時間也使用校準時間
         }, { merge: true });
       } catch(e) {}
     };
@@ -451,6 +463,7 @@
             isRunning = data.isRunning || false;
             laps = data.laps || [];
             accumulatedTime = data.accumulatedTime || 0;
+            // 🌟 接收時的基準時間來自雲端（已由發送端同步世界時間），這邊直接接收使用即可對齊
             startTime = data.startTimestamp || 0;
 
             if (!isRunning) {
@@ -472,14 +485,14 @@
       let newAccumulated = accumulatedTime;
       
       if (isRunning) {
-        newStart = Date.now();
+        newStart = getNow(); // 🌟 替換為 getNow()
         startTime = newStart;
       } else {
-        let exactCurrentTime = accumulatedTime + (Date.now() - startTime);
+        // 🌟 替換為 getNow()
+        let exactCurrentTime = accumulatedTime + (getNow() - startTime);
         let previousTotalTime = laps.length > 0 ? laps[0].time : 0;
         let realLapDuration = exactCurrentTime - previousTotalTime;
         
-        // --- 迫牌核心邏輯 ---
         if (forceType === 'total') {
           newAccumulated = (forceTotal.mins * 60000) + (forceTotal.secs * 1000) + (forceTotal.ms * 10);
         } else if (forceType === 'laps') {
@@ -513,7 +526,8 @@
       let newStart = startTime;
 
       if (isRunning) {
-        let exactCurrentTime = accumulatedTime + (Date.now() - startTime);
+        // 🌟 替換為 getNow()
+        let exactCurrentTime = accumulatedTime + (getNow() - startTime);
         let previousTotalTime = laps.length > 0 ? laps[0].time : 0;
         let realLapDuration = exactCurrentTime - previousTotalTime;
 
@@ -526,7 +540,7 @@
             exactCurrentTime = previousTotalTime + newLapDuration;
           }
         }
-        newLaps = [{ time: exactCurrentTime, id: Date.now() }, ...laps];
+        newLaps = [{ time: exactCurrentTime, id: getNow() }, ...laps]; // 🌟 替換為 getNow()
         laps = newLaps;
       } else {
         time = 0; laps = []; accumulatedTime = 0; newAccumulated = 0; newLaps = [];
@@ -571,7 +585,6 @@
       };
       useComma = dom.commaToggle.checked;
 
-      // 🌟 將當前的所有設定寫入 LocalStorage 本機快取
       localStorage.setItem('magicStopwatchSettings', JSON.stringify({
         roomId: roomId,
         role: role,
@@ -583,7 +596,7 @@
 
       const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'magic_rooms', roomId);
       try {
-        await setDoc(roomRef, { forceType, forceTotal, forceLaps, useComma, updatedAt: Date.now() }, { merge: true });
+        await setDoc(roomRef, { forceType, forceTotal, forceLaps, useComma, updatedAt: getNow() }, { merge: true }); // 🌟
         const oldText = dom.btnSaveSync.textContent;
         dom.btnSaveSync.textContent = "✔️ 設定已同步至全場";
         dom.btnSaveSync.classList.replace('bg-emerald-700', 'bg-green-600');
