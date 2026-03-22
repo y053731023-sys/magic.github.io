@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>備忘錄</title>
+    <!-- 攔截並隱藏 Tailwind CDN 開發者警告，以便魔術網頁能保持「單一檔案」且不用額外打包工具 -->
+    <script>
+        const originalWarn = console.warn;
+        console.warn = function (...args) {
+            if (typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com should not be used in production')) return;
+            originalWarn.apply(console, args);
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-image: none;
+            --bg-width: 100vw;
+            --bg-height: 100vh;
+            --bg-pos-x: 50%;
+            --bg-pos-y: 50%;
+
+            --crop-top: 0%;
+            --crop-bottom: 0%;
+            --crop-left: 0%;
+            --crop-right: 0%;
+
+            --top-space: 15vh;
+            --bottom-space: 12vh;
+            --font-size: 18px;
+            --padding-left: 20px;
+            --line-height: 1.8;
+            --text-color: #000000;
+
+            --secret-x: 90%;
+            --secret-y: 8%;
+            --secret-opacity: 0.6;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            overscroll-behavior: none;
+            -webkit-font-smoothing: antialiased;
+            /* 🌟 讓字體更像蘋果裝置 */
+        }
+
+        #magic-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+        }
+
+        #magic-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: var(--bg-image);
+            background-size: var(--bg-width) var(--bg-height);
+            background-position: var(--bg-pos-x) var(--bg-pos-y);
+            background-repeat: no-repeat;
+            clip-path: inset(var(--crop-top) var(--crop-right) var(--crop-bottom) var(--crop-left));
+            z-index: -1;
+        }
+
+        /* 🌟 iOS 擬真邊緣模糊遮罩：複製圖層做模糊疊加，文字即可在其下滾動 🌟 */
+        .ios-blur-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: var(--bg-image);
+            background-size: var(--bg-width) var(--bg-height);
+            background-position: var(--bg-pos-x) var(--bg-pos-y);
+            background-repeat: no-repeat;
+            z-index: 5;
+            pointer-events: none;
+            opacity: 0.94;
+            /* 微微透明以產生原生透視感 */
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        #magic-bg-top {
+            clip-path: inset(var(--crop-top) var(--crop-right) calc(100% - var(--top-space)) var(--crop-left));
+        }
+
+        #magic-bg-bottom {
+            clip-path: inset(calc(100% - var(--bottom-space)) var(--crop-right) var(--crop-bottom) var(--crop-left));
+        }
+
+        #scrollable-area {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            padding-top: var(--top-space);
+            padding-bottom: var(--bottom-space);
+            box-sizing: border-box;
+            left: 0;
+            right: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-left: var(--padding-left);
+            padding-right: 15px;
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            color: var(--text-color);
+            pointer-events: auto;
+            touch-action: pan-y;
+            outline: none;
+            caret-color: #E2B022;
+            /* 🌟 逼真 iOS 黃色游標 */
+            z-index: 1;
+        }
+
+        /* 🌟 iOS 備忘錄文字選取顏色 */
+        #scrollable-area::selection,
+        #scrollable-area *::selection {
+            background-color: rgba(226, 176, 34, 0.3);
+        }
+
+        #scrollable-area::-webkit-scrollbar {
+            width: 11px;
+        }
+
+        #scrollable-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #scrollable-area::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.35);
+            border-radius: 10px;
+            border: 3px solid transparent;
+            background-clip: content-box;
+        }
+
+        /* 🌟 右上角秘密數字顯示器 (永遠淺灰色) 🌟 */
+        #secret-peek {
+            position: absolute;
+            left: var(--secret-x);
+            top: var(--secret-y);
+            transform: translate(-50%, -50%);
+            font-size: 15px;
+            font-weight: 600;
+            color: rgba(180, 180, 180, 1);
+            background: transparent !important;
+            opacity: var(--secret-opacity);
+            z-index: 9999;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        /* 設定模式下的秘密數字 (純數字，無虛線，保留點擊範圍方便拖曳) */
+        body.setup-mode #secret-peek {
+            pointer-events: auto !important;
+            opacity: 1 !important;
+            border: none !important;
+            /* 移除虛線 */
+            background-color: transparent !important;
+            padding: 20px;
+            cursor: move;
+            text-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 練習模式下保持明顯，但依然為淺灰無底色 */
+        .practice-mode #secret-peek {
+            opacity: 1 !important;
+            font-weight: 800;
+            color: rgba(180, 180, 180, 1);
+        }
+
+        /* 🌟 隱形暗輸入網格提示 (練習模式可見) 🌟 */
+        #virtual-numpad-overlay {
+            position: absolute;
+            top: 30vh;
+            left: 0;
+            width: 100vw;
+            height: 50vh;
+            z-index: 9998;
+            pointer-events: none;
+            /* 由 document 監聽點擊 */
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr 1fr;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .numpad-cell {
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: bold;
+        }
+
+        .numpad-cell.zero {
+            grid-column: span 3;
+        }
+
+        .practice-mode #virtual-numpad-overlay {
+            opacity: 1;
+        }
+
+        /* 設定模式的視覺對齊標記 */
+        .guide-line {
+            position: absolute;
+            left: 0;
+            width: 100vw;
+            height: 2px;
+            background-color: #00ff00;
+            z-index: 9999;
+            display: none;
+            pointer-events: none;
+        }
+
+        body.setup-mode .guide-line {
+            display: block;
+            pointer-events: auto;
+            cursor: ns-resize;
+        }
+
+        .guide-line::before {
+            content: '';
+            position: absolute;
+            top: -25px;
+            bottom: -25px;
+            left: 0;
+            right: 0;
+        }
+
+        .guide-line.top {
+            top: var(--top-space);
+        }
+
+        .guide-line.bottom {
+            bottom: var(--bottom-space);
+        }
+
+        .hidden-el {
+            display: none !important;
+        }
+
+        /* 左上角重設暗門 (隨時雙擊左上角進入設定) */
+        #secret-reset {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+            z-index: 10000;
+        }
+
+        /* 後台設定區 */
+        #setup-ui {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            max-height: 70vh;
+            background-color: rgba(26, 26, 28, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            color: white;
+            z-index: 20000;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 50px;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #setup-ui.minimized {
+            transform: translateY(calc(100% - 80px));
+            overflow: hidden;
+        }
+
+        body.setup-mode #magic-ui {
+            display: block !important;
+            pointer-events: none;
+        }
+
+        body.setup-mode #scrollable-area {
+            background-color: rgba(0, 255, 0, 0.1) !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="magic-ui" class="hidden-el practice-mode">
+        <div id="magic-bg"></div>
+
+        <!-- 🌟 新增 iOS 擬真邊緣模糊遮罩層 🌟 -->
+        <div id="magic-bg-top" class="ios-blur-overlay"></div>
+        <div id="magic-bg-bottom" class="ios-blur-overlay"></div>
+
+        <!-- 視覺對齊標記 (可拖曳) -->
+        <div class="guide-line top" id="line-top"></div>
+        <div class="guide-line bottom" id="line-bottom"></div>
+
+        <!-- 虛擬九宮格輔助顯示 -->
+        <div id="virtual-numpad-overlay">
+            <div class="numpad-cell zero">0</div>
+            <div class="numpad-cell">1</div>
+            <div class="numpad-cell">2</div>
+            <div class="numpad-cell">3</div>
+            <div class="numpad-cell">4</div>
+            <div class="numpad-cell">5</div>
+            <div class="numpad-cell">6</div>
+            <div class="numpad-cell">7</div>
+            <div class="numpad-cell">8</div>
+            <div class="numpad-cell">9</div>
+        </div>
+
+        <!-- 秘密數字顯示器 (淺灰色) -->
+        <div id="secret-peek">1</div>
+
+        <!-- 滾動與編輯區 -->
+        <div id="scrollable-area" contenteditable="true" spellcheck="false" autocomplete="off" autocorrect="off"
+            autocapitalize="off">
+            <div id="note-header" contenteditable="true" style="outline: none;"></div>
+            <div id="list-container" contenteditable="true" style="outline: none; white-space: pre-wrap;"></div>
+        </div>
+
+        <!-- 重設按鈕 (雙擊右上角) -->
+        <div id="secret-reset" ondblclick="enterSetup()"></div>
+    </div>
+
+    <!-- 後台設定介面 -->
+    <div id="setup-ui">
+        <div
+            class="flex justify-between items-center mb-6 border-b border-gray-700 pb-2 sticky top-0 z-10 bg-[#1a1a1c]">
+            <h1 class="text-xl font-bold text-blue-400">⚙️ 草原預言系統</h1>
+            <button onclick="toggleSetup()" id="toggle-btn"
+                class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg text-sm font-bold shadow transition active:scale-95">
+                🔽 收起面板
+            </button>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-gray-800 p-4 rounded-xl">
+                <label class="block text-sm font-semibold mb-2">1. 上傳備忘錄底圖 (截圖)</label>
+                <input type="file" id="upload-bg" accept="image/*" class="w-full text-sm text-gray-400">
+            </div>
+
+            <!-- 標題與日期設定 -->
+            <div class="bg-gray-800 p-4 rounded-xl space-y-3 border border-yellow-700">
+                <label class="block text-sm font-bold text-yellow-400 mb-1 border-b border-gray-600 pb-1">2.
+                    標題與日期設定</label>
+                <input type="text" id="val-note-title" value="百大必聽歌單"
+                    class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white"
+                    placeholder="輸入標題 (實戰時可隨時更改)">
+                <input type="text" id="val-note-date" value=""
+                    class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white"
+                    placeholder="輸入日期 (留白則自動帶入今天)">
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-xl border border-red-900">
+                <label class="block text-sm font-bold text-red-400 mb-2">3. 目標項目 (你要強迫觀眾選的)</label>
+                <input type="text" id="val-force-song" value="七里香 - 周杰倫"
+                    class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
+            </div>
+
+            <!-- 視覺對齊區 -->
+            <div class="bg-gray-800 p-4 rounded-xl space-y-4 border border-green-700">
+                <label class="block text-sm font-semibold mb-2 border-b border-green-700 pb-1 text-green-400">4. 視覺排版
+                    (可直接拖曳畫面上綠線)</label>
+
+                <div class="flex items-center justify-between">
+                    <span class="text-sm">頂部綠線 (Y)</span>
+                    <input type="range" id="val-top-space" min="0" max="40" step="0.5" value="15" class="w-1/2">
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm">底部綠線 (Y)</span>
+                    <input type="range" id="val-bottom-space" min="0" max="30" step="0.5" value="12" class="w-1/2">
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm">左側縮排 (X)</span>
+                    <input type="range" id="val-padding-left" min="0" max="50" step="1" value="20" class="w-1/2">
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm">字體大小</span>
+                    <input type="range" id="val-font-size" min="12" max="30" step="0.5" value="18" class="w-1/2">
+                </div>
+                <div class="flex items-center justify-between mt-2">
+                    <span class="text-sm">文字顏色</span>
+                    <input type="color" id="val-text-color" value="#000000" class="w-10 h-10 rounded cursor-pointer">
+                </div>
+            </div>
+
+            <!-- 秘密數字設定 -->
+            <div class="bg-gray-800 p-4 rounded-xl space-y-4 border border-purple-800">
+                <label class="block text-sm font-semibold mb-2 border-b border-purple-800 pb-1 text-purple-400">5.
+                    秘密數字與九宮格</label>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-300">實戰透明度 (0=完全隱形)</span>
+                    <input type="range" id="val-secret-opacity" min="0" max="1" step="0.05" value="0.6" class="w-1/2">
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-300">水平位置 (X)</span>
+                    <input type="range" id="val-secret-x" min="0" max="100" step="0.5" value="90" class="w-1/2">
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-300">垂直位置 (Y)</span>
+                    <input type="range" id="val-secret-y" min="0" max="100" step="0.5" value="8" class="w-1/2">
+                </div>
+                <div class="flex items-center justify-between mt-2">
+                    <span class="text-sm text-red-400 font-bold">顯示練習九宮格網格</span>
+                    <input type="checkbox" id="val-practice-mode" checked class="w-5 h-5">
+                </div>
+            </div>
+
+            <!-- 🌟 新增：觸發模式獨立開關 🌟 -->
+            <div class="bg-gray-800 p-4 rounded-xl space-y-4 border border-blue-800">
+                <label class="block text-sm font-semibold mb-2 border-b border-blue-800 pb-1 text-blue-400">6. 觸發模式
+                    (可多選)</label>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-300">滾動畫面連動數字</span>
+                    <input type="checkbox" id="val-trigger-scroll" checked class="w-5 h-5">
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-300">九宮格隱形盲按</span>
+                    <input type="checkbox" id="val-trigger-numpad" checked class="w-5 h-5">
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-300">觀眾打字輸入偵測</span>
+                    <input type="checkbox" id="val-trigger-typing" checked class="w-5 h-5">
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-xl">
+                <label class="block text-sm font-semibold mb-2">7. 隨機題庫 (每行一個)</label>
+                <textarea id="val-song-pool" rows="6"
+                    class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm text-gray-300 leading-relaxed">
+晴天 - 周杰倫
+修煉愛情 - 林俊傑
+小幸運 - 田馥甄
+後來 - 劉若英
+如果可以 - 韋禮安
+夜曲 - 周杰倫
+可惜沒如果 - 林俊傑
+倒帶 - 蔡依林
+紅豆 - 王菲
+會呼吸的痛 - 梁靜茹
+十年 - 陳奕迅
+洋蔥 - 楊宗緯
+突然好想你 - 五月天
+演員 - 薛之謙
+泡沫 - 鄧紫棋
+平凡之路 - 朴樹
+童話 - 光良
+愛很簡單 - 陶喆
+王妃 - 蕭敬騰
+愛如潮水 - 張信哲</textarea>
+            </div>
+
+            <!-- 底圖進階微調 -->
+            <details class="bg-gray-800 p-4 rounded-xl space-y-4">
+                <summary class="text-sm font-semibold text-gray-400 cursor-pointer outline-none">進階：底圖變形與裁切修復</summary>
+                <div class="pt-4 space-y-3">
+                    <div class="flex items-center justify-between"><span class="text-xs">寬度縮放 (W)</span><input
+                            type="range" id="val-bg-width" min="50" max="150" step="0.5" value="100" class="w-1/2">
+                    </div>
+                    <div class="flex items-center justify-between"><span class="text-xs">高度縮放 (H)</span><input
+                            type="range" id="val-bg-height" min="50" max="150" step="0.5" value="100" class="w-1/2">
+                    </div>
+                    <div class="flex items-center justify-between"><span class="text-xs">水平位移 (X)</span><input
+                            type="range" id="val-bg-pos-x" min="-50" max="150" step="0.5" value="50" class="w-1/2">
+                    </div>
+                    <div class="flex items-center justify-between"><span class="text-xs">垂直位移 (Y)</span><input
+                            type="range" id="val-bg-pos-y" min="-50" max="150" step="0.5" value="50" class="w-1/2">
+                    </div>
+                    <hr class="border-gray-700">
+                    <div class="flex items-center justify-between"><span class="text-xs">裁切頂部</span><input type="range"
+                            id="val-crop-top" min="0" max="50" step="0.5" value="0" class="w-1/2"></div>
+                    <div class="flex items-center justify-between"><span class="text-xs">裁切底部</span><input type="range"
+                            id="val-crop-bottom" min="0" max="50" step="0.5" value="0" class="w-1/2"></div>
+                </div>
+            </details>
+
+            <button onclick="saveAndStart()"
+                class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition mt-4 mb-10">
+                💾 儲存並進入魔術模式
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const root = document.documentElement;
+        let forceSong = "";
+        let songPool = [];
+        let isPracticeMode = true;
+
+        let secretTargetNumber = 1;
+        let scrollTimeout = null;
+        let isMagicForced = false;
+        let lastVibratedNumber = -1;
+
+        // 🌟 觸發模式控制變數 🌟
+        let triggerScroll = true;
+        let triggerNumpad = true;
+        let triggerTyping = true;
+
+        // 🌟 虛擬九宮格與打字輸入變數 🌟
+        let inputBuffer = "";
+        let typeBuffer = "";
+        let isScrolling = false;
+        let touchStartY = 0;
+
+        const setupUI = document.getElementById('setup-ui');
+        const magicUI = document.getElementById('magic-ui');
+        const scrollArea = document.getElementById('scrollable-area');
+        const listContainer = document.getElementById('list-container');
+        const secretPeek = document.getElementById('secret-peek');
+
+        window.onload = () => {
+            // 🌟 確保初始載入時，直接讀取 HTML 內的預設題庫與目標歌曲 🌟
+            forceSong = document.getElementById('val-force-song').value;
+            songPool = document.getElementById('val-song-pool').value.split('\n').map(s => s.trim()).filter(s => s !== "");
+
+            const saved = localStorage.getItem('magic_notes_pro_v9');
+            if (saved) {
+                const config = JSON.parse(saved);
+                applyConfig(config);
+                startMagicMode();
+            } else {
+                enterSetup();
+            }
+            bindLivePreview();
+            initDraggableItems();
+            initVirtualNumpad();
+        };
+
+        // --- 🌟 全螢幕虛擬九宮格定位演算法 🌟 ---
+        function initVirtualNumpad() {
+            document.addEventListener('touchstart', (e) => {
+                if (document.body.classList.contains('setup-mode')) return;
+                touchStartY = e.touches[0].clientY;
+                isScrolling = false;
+            }, { passive: true });
+
+            document.addEventListener('touchmove', (e) => {
+                if (document.body.classList.contains('setup-mode')) return;
+                if (Math.abs(e.touches[0].clientY - touchStartY) > 10) {
+                    isScrolling = true;
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchend', (e) => {
+                if (!triggerNumpad) return; // 🌟 檢查九宮格觸發是否開啟
+                if (document.body.classList.contains('setup-mode') || isScrolling || isMagicForced) return;
+
+                // 如果正在編輯文字，不要觸發九宮格，以免干擾打字選字
+                if (document.activeElement && document.activeElement.isContentEditable) return;
+
+                let clientX = e.changedTouches[0].clientX;
+                let clientY = e.changedTouches[0].clientY;
+                let xPercent = (clientX / window.innerWidth) * 100;
+                let yPercent = (clientY / window.innerHeight) * 100;
+
+                // 九宮格區域 (30vh 到 80vh)
+                if (yPercent >= 30 && yPercent <= 80) {
+                    let num = -1;
+                    let row = Math.floor((yPercent - 30) / 12.5);
+
+                    if (row === 0) {
+                        num = 0;
+                    } else if (row >= 1 && row <= 3) {
+                        let col = Math.floor(xPercent / 33.33);
+                        num = (row - 1) * 3 + col + 1;
+                    }
+
+                    if (num !== -1) {
+                        handleSecretInput(num);
+                    }
+                }
+            });
+        }
+
+        // 處理九宮格輸入
+        function handleSecretInput(num) {
+            inputBuffer += num.toString();
+            if (inputBuffer.length > 2) inputBuffer = inputBuffer.slice(-2);
+
+            let parsedNum = parseInt(inputBuffer);
+            if (parsedNum >= 1 && parsedNum <= 100) {
+                secretTargetNumber = parsedNum;
+                secretPeek.innerText = parsedNum;
+                if (navigator.vibrate) navigator.vibrate(15);
+            }
+
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                if (inputBuffer !== "") {
+                    if (secretTargetNumber >= 1 && secretTargetNumber <= 100) {
+                        executeForce();
+                    }
+                    inputBuffer = "";
+                }
+            }, 2000);
+        }
+
+        // --- 🌟 打字自動觸發邏輯 🌟 ---
+        scrollArea.addEventListener('input', (e) => {
+            if (!triggerTyping) return; // 🌟 檢查打字觸發是否開啟
+            if (isMagicForced || document.body.classList.contains('setup-mode')) return;
+
+            // 擷取使用者打的每一個字元
+            if (e.data && /^\d$/.test(e.data)) {
+                typeBuffer += e.data;
+                if (typeBuffer.length > 2) typeBuffer = typeBuffer.slice(-2);
+
+                let parsedNum = parseInt(typeBuffer);
+                if (parsedNum >= 1 && parsedNum <= 100) {
+                    secretTargetNumber = parsedNum;
+                    secretPeek.innerText = parsedNum;
+                    if (navigator.vibrate) navigator.vibrate(5);
+
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        executeForce();
+                    }, 2000);
+                }
+            } else if (e.data) {
+                // 輸入非數字，重置 Buffer
+                typeBuffer = "";
+            }
+        });
+
+        // --- 🌟 拖曳綠線與秘密數字 🌟 ---
+        function initDraggableItems() {
+            makeDraggable('line-top', '--top-space', 'val-top-space', false, true);
+            makeDraggable('line-bottom', '--bottom-space', 'val-bottom-space', true, true);
+            makeDraggable('secret-peek', null, null, false, false);
+        }
+
+        function makeDraggable(elId, varName, sliderId, isBottom, isVerticalOnly) {
+            const el = document.getElementById(elId);
+            let isDragging = false;
+
+            const startDrag = (e) => {
+                if (!document.body.classList.contains('setup-mode')) return;
+                isDragging = true;
+                e.preventDefault();
+            };
+
+            const doDrag = (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                let vh = (clientY / window.innerHeight) * 100;
+                vh = Math.max(0, Math.min(100, vh));
+
+                if (isVerticalOnly) {
+                    if (isBottom) vh = 100 - vh;
+                    root.style.setProperty(varName, vh + 'vh');
+                    document.getElementById(sliderId).value = vh;
+                } else {
+                    let vw = (clientX / window.innerWidth) * 100;
+                    vw = Math.max(0, Math.min(100, vw));
+                    root.style.setProperty('--secret-x', vw + '%');
+                    root.style.setProperty('--secret-y', vh + '%');
+                    document.getElementById('val-secret-x').value = vw;
+                    document.getElementById('val-secret-y').value = vh;
+                }
+            };
+
+            const endDrag = () => { isDragging = false; };
+
+            el.addEventListener('touchstart', startDrag, { passive: false });
+            document.addEventListener('touchmove', doDrag, { passive: false });
+            document.addEventListener('touchend', endDrag);
+
+            el.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', doDrag);
+            document.addEventListener('mouseup', endDrag);
+        }
+
+        // --- 🌟 畫面滾動連動數字與自動觸發 🌟 ---
+        scrollArea.addEventListener('scroll', () => {
+            if (!triggerScroll) return; // 🌟 檢查滾動觸發是否開啟
+            if (isMagicForced || document.body.classList.contains('setup-mode')) return;
+            if (document.activeElement && document.activeElement.isContentEditable) return; // 打字時不觸發滾動
+
+            let maxScroll = scrollArea.scrollHeight - scrollArea.clientHeight;
+            if (maxScroll <= 0) return;
+
+            let percentage = Math.max(0, Math.min(1, scrollArea.scrollTop / maxScroll));
+            let currentNumber = Math.round(percentage * 99) + 1;
+
+            if (currentNumber !== lastVibratedNumber && currentNumber >= 1 && currentNumber <= 100) {
+                if (navigator.vibrate) navigator.vibrate(5);
+                lastVibratedNumber = currentNumber;
+                secretTargetNumber = currentNumber;
+                secretPeek.innerText = currentNumber;
+
+                // 同步清空其他輸入 buffer，避免衝突
+                inputBuffer = "";
+                typeBuffer = "";
+            }
+
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                executeForce();
+            }, 2000);
+        });
+
+        function bindLivePreview() {
+            const textSliders = ['top-space', 'bottom-space', 'font-size', 'padding-left'];
+            textSliders.forEach(id => {
+                document.getElementById(`val-${id}`).addEventListener('input', (e) => {
+                    const unit = id.includes('space') ? 'vh' : 'px';
+                    root.style.setProperty(`--${id}`, e.target.value + unit);
+                });
+            });
+
+            const bgSliders = ['bg-width', 'bg-height', 'bg-pos-x', 'bg-pos-y'];
+            bgSliders.forEach(id => {
+                document.getElementById(`val-${id}`).addEventListener('input', (e) => {
+                    let unit = '%';
+                    if (id.includes('width')) unit = 'vw';
+                    if (id.includes('height')) unit = 'vh';
+                    root.style.setProperty(`--${id}`, e.target.value + unit);
+                });
+            });
+
+            const cropSliders = ['crop-top', 'crop-bottom'];
+            cropSliders.forEach(id => {
+                document.getElementById(`val-${id}`).addEventListener('input', (e) => {
+                    root.style.setProperty(`--${id}`, e.target.value + '%');
+                });
+            });
+
+            const secretSliders = ['secret-x', 'secret-y'];
+            secretSliders.forEach(id => {
+                document.getElementById(`val-${id}`).addEventListener('input', (e) => {
+                    root.style.setProperty(`--${id}`, e.target.value + '%');
+                });
+            });
+
+            document.getElementById('val-secret-opacity').addEventListener('input', (e) => {
+                root.style.setProperty('--secret-opacity', e.target.value);
+            });
+
+            document.getElementById('val-text-color').addEventListener('input', (e) => {
+                root.style.setProperty('--text-color', e.target.value);
+            });
+
+            // 🌟 新增：標題、日期、題庫、強迫歌曲的即時同步預覽 🌟
+            const textInputs = ['val-note-title', 'val-note-date', 'val-force-song', 'val-song-pool'];
+            textInputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', () => {
+                    forceSong = document.getElementById('val-force-song').value;
+                    songPool = document.getElementById('val-song-pool').value.split('\n').map(s => s.trim()).filter(s => s !== "");
+                    generateInitialList(); // 即時重新渲染歌單
+                });
+            });
+        }
+
+        document.getElementById('upload-bg').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.createElement('canvas');
+                    // 🌟 將最大寬度降至 600px，確保多數手機截圖能大幅縮小體積
+                    const MAX_WIDTH = 600;
+                    let scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    // 🌟 動態壓縮：如果 Base64 檔案還是太大，就進一步降低畫質
+                    let quality = 0.7;
+                    let dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    
+                    // 確保檔案大小 (Base64 字串長度) 控制在約 1.5MB 以內 (安全 localStorage 限制)
+                    while (dataUrl.length > 2000000 && quality > 0.1) {
+                        quality -= 0.15;
+                        dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    }
+                    root.style.setProperty('--bg-image', `url(${dataUrl})`);
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        function saveAndStart() {
+            const bgImage = getComputedStyle(root).getPropertyValue('--bg-image');
+            if (bgImage === 'none' || !bgImage) {
+                alert('請先上傳備忘錄的底圖截圖！');
+                return;
+            }
+
+            const config = {
+                bgImage: bgImage,
+                bgWidth: document.getElementById('val-bg-width').value,
+                bgHeight: document.getElementById('val-bg-height').value,
+                bgPosX: document.getElementById('val-bg-pos-x').value,
+                bgPosY: document.getElementById('val-bg-pos-y').value,
+                cropTop: document.getElementById('val-crop-top').value,
+                cropBottom: document.getElementById('val-crop-bottom').value,
+                topSpace: document.getElementById('val-top-space').value,
+                bottomSpace: document.getElementById('val-bottom-space').value,
+                fontSize: document.getElementById('val-font-size').value,
+                paddingLeft: document.getElementById('val-padding-left').value,
+                textColor: document.getElementById('val-text-color').value,
+
+                noteTitle: document.getElementById('val-note-title').value,
+                noteDate: document.getElementById('val-note-date').value,
+
+                secretX: document.getElementById('val-secret-x').value,
+                secretY: document.getElementById('val-secret-y').value,
+                secretOpacity: document.getElementById('val-secret-opacity').value,
+
+                // 🌟 儲存觸發模式設定 🌟
+                triggerScroll: document.getElementById('val-trigger-scroll').checked,
+                triggerNumpad: document.getElementById('val-trigger-numpad').checked,
+                triggerTyping: document.getElementById('val-trigger-typing').checked,
+
+                forceSong: document.getElementById('val-force-song').value,
+                songPool: document.getElementById('val-song-pool').value,
+                practiceMode: document.getElementById('val-practice-mode').checked
+            };
+
+            try {
+                localStorage.setItem('magic_notes_pro_v9', JSON.stringify(config));
+                applyConfig(config);
+                startMagicMode();
+            } catch (e) {
+                alert('儲存失敗，請嘗試裁切圖片。');
+            }
+        }
+
+        function applyConfig(config) {
+            root.style.setProperty('--bg-image', config.bgImage);
+
+            if (config.bgWidth) {
+                root.style.setProperty('--bg-width', config.bgWidth + 'vw');
+                root.style.setProperty('--bg-height', config.bgHeight + 'vh');
+                root.style.setProperty('--bg-pos-x', config.bgPosX + '%');
+                root.style.setProperty('--bg-pos-y', config.bgPosY + '%');
+                document.getElementById('val-bg-width').value = config.bgWidth;
+                document.getElementById('val-bg-height').value = config.bgHeight;
+                document.getElementById('val-bg-pos-x').value = config.bgPosX;
+                document.getElementById('val-bg-pos-y').value = config.bgPosY;
+            }
+
+            if (config.cropTop !== undefined) {
+                root.style.setProperty('--crop-top', config.cropTop + '%');
+                root.style.setProperty('--crop-bottom', config.cropBottom + '%');
+                document.getElementById('val-crop-top').value = config.cropTop;
+                document.getElementById('val-crop-bottom').value = config.cropBottom;
+            }
+
+            if (config.secretX !== undefined) {
+                root.style.setProperty('--secret-x', config.secretX + '%');
+                root.style.setProperty('--secret-y', config.secretY + '%');
+                root.style.setProperty('--secret-opacity', config.secretOpacity);
+                document.getElementById('val-secret-x').value = config.secretX;
+                document.getElementById('val-secret-y').value = config.secretY;
+                document.getElementById('val-secret-opacity').value = config.secretOpacity;
+            }
+
+            root.style.setProperty('--top-space', config.topSpace + 'vh');
+            root.style.setProperty('--bottom-space', config.bottomSpace + 'vh');
+            root.style.setProperty('--font-size', config.fontSize + 'px');
+            root.style.setProperty('--padding-left', config.paddingLeft + 'px');
+            root.style.setProperty('--text-color', config.textColor);
+
+            if (config.noteTitle !== undefined) document.getElementById('val-note-title').value = config.noteTitle;
+            if (config.noteDate !== undefined) document.getElementById('val-note-date').value = config.noteDate;
+
+            // 🌟 讀取並套用觸發模式設定 🌟
+            if (config.triggerScroll !== undefined) {
+                document.getElementById('val-trigger-scroll').checked = config.triggerScroll;
+                document.getElementById('val-trigger-numpad').checked = config.triggerNumpad;
+                document.getElementById('val-trigger-typing').checked = config.triggerTyping;
+            }
+
+            document.getElementById('val-force-song').value = config.forceSong;
+            document.getElementById('val-song-pool').value = config.songPool;
+            document.getElementById('val-top-space').value = config.topSpace;
+            document.getElementById('val-bottom-space').value = config.bottomSpace;
+            document.getElementById('val-font-size').value = config.fontSize;
+            document.getElementById('val-padding-left').value = config.paddingLeft;
+            document.getElementById('val-text-color').value = config.textColor;
+            document.getElementById('val-practice-mode').checked = config.practiceMode;
+
+            triggerScroll = document.getElementById('val-trigger-scroll').checked;
+            triggerNumpad = document.getElementById('val-trigger-numpad').checked;
+            triggerTyping = document.getElementById('val-trigger-typing').checked;
+
+            forceSong = config.forceSong;
+            songPool = config.songPool.split('\n').map(s => s.trim()).filter(s => s !== "");
+            isPracticeMode = config.practiceMode;
+        }
+
+        function enterSetup() {
+            document.body.classList.add('setup-mode');
+            setupUI.classList.remove('hidden-el');
+            setupUI.classList.remove('minimized');
+            magicUI.classList.remove('hidden-el');
+            document.getElementById('toggle-btn').innerText = "🔽 收起面板";
+
+            if (!listContainer.innerText) generateInitialList();
+        }
+
+        function startMagicMode() {
+            document.body.classList.remove('setup-mode');
+            setupUI.classList.add('hidden-el');
+            magicUI.classList.remove('hidden-el');
+
+            if (isPracticeMode) {
+                magicUI.classList.add('practice-mode');
+            } else {
+                magicUI.classList.remove('practice-mode');
+            }
+
+            isMagicForced = false;
+            clearTimeout(scrollTimeout);
+            clearTimeout(inputTimeout);
+            scrollArea.scrollTop = 0;
+            secretTargetNumber = 1;
+            lastVibratedNumber = -1;
+            inputBuffer = "";
+            typeBuffer = "";
+
+            secretPeek.innerText = "1";
+            secretPeek.style.opacity = 'var(--secret-opacity)';
+
+            generateInitialList();
+        }
+
+        function toggleSetup() {
+            setupUI.classList.toggle('minimized');
+            const btn = document.getElementById('toggle-btn');
+            if (setupUI.classList.contains('minimized')) {
+                btn.innerText = "🔼 展开面板";
+            } else {
+                btn.innerText = "🔽 收起面板";
+            }
+        }
+
+        function executeForce() {
+            if (isMagicForced) return;
+            isMagicForced = true;
+
+            let currentText = listContainer.innerText;
+            let regex = new RegExp('^(' + secretTargetNumber + '\\.\\s+)(.*)$', 'm');
+
+            if (regex.test(currentText)) {
+                currentText = currentText.replace(regex, '$1' + forceSong);
+                listContainer.innerText = currentText;
+            } else {
+                listContainer.innerText += `\n${secretTargetNumber}. ${forceSong}`;
+            }
+
+            if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+
+            secretPeek.style.opacity = '0';
+            scrollArea.blur();
+            document.getElementById('note-header').blur();
+            listContainer.blur();
+        }
+
+        function generateInitialList() {
+            const noteTitle = document.getElementById('val-note-title').value;
+            const noteDate = document.getElementById('val-note-date').value ||
+                new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' }) + ' ' +
+                new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+
+            document.getElementById('note-header').innerHTML = `
+                <div style="text-align:center; color:#8e8e93; font-size:0.75em; margin-bottom:15px; font-weight:600; letter-spacing: -0.2px;">${noteDate}</div>
+                <div style="font-size:1.8em; font-weight:700; margin-bottom:20px; color:var(--text-color); letter-spacing: -0.5px; line-height: 1.2;">${noteTitle}</div>
+            `;
+
+            let pool = [...songPool];
+            if (pool.length < 5) pool = ["歌曲A", "歌曲B", "歌曲C", "歌曲D", "歌曲E"];
+
+            let randomItems = [];
+            while (randomItems.length < 100) {
+                let item = pool[Math.floor(Math.random() * pool.length)];
+                if (item !== forceSong) randomItems.push(item);
+            }
+
+            for (let i = randomItems.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [randomItems[i], randomItems[j]] = [randomItems[j], randomItems[i]];
+            }
+
+            let htmlContent = "";
+            for (let i = 0; i < 100; i++) {
+                htmlContent += `${i + 1}. ${randomItems[i]}\n`;
+            }
+            listContainer.innerText = htmlContent;
+        }
+
+    </script>
+</body>
+
+</html>
