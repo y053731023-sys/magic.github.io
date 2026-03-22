@@ -68,6 +68,7 @@
             <option value="none">關閉迫牌 (Normal Mode)</option>
             <option value="total">總時間迫牌 (Total Force)</option>
             <option value="laps">分圈毫秒迫牌 (Dynamic Laps)</option>
+            <option value="sum">秒數總和迫牌 (Seconds Sum Force)</option>
           </select>
 
           <!-- 總時間迫牌區 -->
@@ -90,6 +91,14 @@
             <div class="flex justify-center items-center gap-4 border-t border-indigo-900/50 pt-4">
               <button id="btn-remove-lap" class="w-10 h-10 flex items-center justify-center bg-red-900/30 text-red-500 border border-red-800/50 rounded-full font-bold text-xl focus:outline-none active:bg-red-900/60 transition-colors">-</button>
               <button id="btn-add-lap" class="w-10 h-10 flex items-center justify-center bg-emerald-900/30 text-emerald-500 border border-emerald-800/50 rounded-full font-bold text-xl focus:outline-none active:bg-emerald-900/60 transition-colors">+</button>
+            </div>
+          </div>
+
+          <!-- 🌟 秒數總和迫牌區 -->
+          <div id="panel-sum-force" class="hidden w-full flex-col">
+            <div class="flex flex-col items-center justify-center mb-2">
+              <span class="text-xs text-gray-400 mb-2">目標總和 (秒 + 毫秒 = ?)</span>
+              <input type="number" id="force-sum-target" placeholder="20" class="w-20 bg-black border border-gray-700 rounded p-2 text-white text-center tabular-nums focus:border-indigo-500 focus:outline-none" min="0" max="999">
             </div>
           </div>
         </div>
@@ -398,6 +407,7 @@
     let forceType = savedSettings.forceType || 'none';
     let forceTotal = savedSettings.forceTotal || { mins: 4, secs: 15, ms: 22 };
     let useComma = savedSettings.useComma !== undefined ? savedSettings.useComma : false;
+    let forceSumTarget = savedSettings.forceSumTarget !== undefined ? parseInt(savedSettings.forceSumTarget) : 20;
     
     let forceLaps = savedSettings.forceLaps;
     if (forceLaps && !Array.isArray(forceLaps)) {
@@ -431,6 +441,8 @@
       forceTypeSelect: document.getElementById('force-type-select'),
       panelTotalForce: document.getElementById('panel-total-force'),
       panelLapsForce: document.getElementById('panel-laps-force'),
+      panelSumForce: document.getElementById('panel-sum-force'),
+      forceSumTarget: document.getElementById('force-sum-target'),
       dynamicLapsContainer: document.getElementById('dynamic-laps-container'),
       btnAddLap: document.getElementById('btn-add-lap'),
       btnRemoveLap: document.getElementById('btn-remove-lap'),
@@ -597,12 +609,15 @@
       dom.forceTypeSelect.value = forceType;
       dom.panelTotalForce.classList.toggle('hidden', forceType !== 'total');
       dom.panelLapsForce.classList.toggle('hidden', forceType !== 'laps');
+      dom.panelSumForce.classList.toggle('hidden', forceType !== 'sum');
       
       dom.commaToggle.checked = useComma;
 
       document.getElementById('force-total-mins').value = forceTotal.mins.toString().padStart(2, '0');
       document.getElementById('force-total-secs').value = forceTotal.secs.toString().padStart(2, '0');
       document.getElementById('force-total-ms').value = forceTotal.ms.toString().padStart(2, '0');
+      
+      dom.forceSumTarget.value = forceSumTarget.toString();
 
       if (forceType === 'laps') {
         renderForceLapsInputs();
@@ -687,6 +702,7 @@
           
           if (data.forceType !== undefined) forceType = data.forceType;
           if (data.forceTotal) forceTotal = data.forceTotal;
+          if (data.forceSumTarget !== undefined) forceSumTarget = data.forceSumTarget;
           if (data.forceLaps) {
             forceLaps = Array.isArray(data.forceLaps) 
               ? data.forceLaps 
@@ -752,6 +768,16 @@
           } else {
             newAccumulated = exactCurrentTime;
           }
+        } else if (forceType === 'sum') {
+          const m = Math.floor(realLapDuration / 60000);
+          const s = Math.floor((realLapDuration % 60000) / 1000);
+          let targetMs = forceSumTarget - s;
+          // 防止觀眾停在比目標還要大的秒數，做循環處理保證毫秒介於 00~99 之間
+          if (targetMs < 0) targetMs = (targetMs % 100 + 100) % 100;
+          if (targetMs > 99) targetMs = targetMs % 100;
+          
+          let newLapDuration = (m * 60000) + (s * 1000) + (targetMs * 10);
+          newAccumulated = previousTotalTime + newLapDuration;
         } else {
           newAccumulated = exactCurrentTime;
         }
@@ -784,6 +810,15 @@
             let newLapDuration = (m * 60000) + (s * 1000) + (forcedMs * 10);
             exactCurrentTime = previousTotalTime + newLapDuration;
           }
+        } else if (forceType === 'sum') {
+          const m = Math.floor(realLapDuration / 60000);
+          const s = Math.floor((realLapDuration % 60000) / 1000);
+          let targetMs = forceSumTarget - s;
+          if (targetMs < 0) targetMs = (targetMs % 100 + 100) % 100;
+          if (targetMs > 99) targetMs = targetMs % 100;
+          
+          let newLapDuration = (m * 60000) + (s * 1000) + (targetMs * 10);
+          exactCurrentTime = previousTotalTime + newLapDuration;
         }
         newLaps = [{ time: exactCurrentTime, id: getNow() }, ...laps];
         laps = newLaps;
@@ -823,6 +858,7 @@
         ms: parseInt(document.getElementById('force-total-ms').value) || 0
       };
       useComma = dom.commaToggle.checked;
+      forceSumTarget = parseInt(dom.forceSumTarget.value) || 0;
 
       document.querySelectorAll('.force-lap-input').forEach(input => {
         const idx = parseInt(input.getAttribute('data-index'));
@@ -835,12 +871,13 @@
         forceType: forceType,
         forceTotal: forceTotal,
         forceLaps: forceLaps,
-        useComma: useComma
+        useComma: useComma,
+        forceSumTarget: forceSumTarget
       }));
 
       const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'magic_rooms', roomId);
       try {
-        await setDoc(roomRef, { forceType, forceTotal, forceLaps, useComma, updatedAt: getNow() }, { merge: true });
+        await setDoc(roomRef, { forceType, forceTotal, forceLaps, useComma, forceSumTarget, updatedAt: getNow() }, { merge: true });
         const oldText = dom.btnSaveSync.textContent;
         dom.btnSaveSync.textContent = "✔️ 設定已同步至全場";
         dom.btnSaveSync.classList.replace('bg-emerald-700', 'bg-green-600');
