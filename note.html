@@ -535,6 +535,18 @@
         const secretPeek = document.getElementById('secret-peek');
 
         window.onload = () => {
+            // 🌟 處理手機版雙擊左上角進入設定（手機原生 ondblclick 常失效） 🌟
+            const secretReset = document.getElementById('secret-reset');
+            let lastTapTime = 0;
+            secretReset.addEventListener('touchstart', (e) => {
+                const now = new Date().getTime();
+                if (now - lastTapTime < 400) {
+                    enterSetup();
+                    e.preventDefault();
+                }
+                lastTapTime = now;
+            });
+
             // 🌟 確保初始載入時，直接讀取 HTML 內的預設題庫與目標歌曲 🌟
             forceSong = document.getElementById('val-force-song').value;
             songPool = document.getElementById('val-song-pool').value.split('\n').map(s => s.trim()).filter(s => s !== "");
@@ -693,6 +705,7 @@
             el.addEventListener('touchstart', startDrag, { passive: false });
             document.addEventListener('touchmove', doDrag, { passive: false });
             document.addEventListener('touchend', endDrag);
+            document.addEventListener('touchcancel', endDrag); // 🌟 加這個防卡死
 
             el.addEventListener('mousedown', startDrag);
             document.addEventListener('mousemove', doDrag);
