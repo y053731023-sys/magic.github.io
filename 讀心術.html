@@ -215,48 +215,10 @@
         /* 牌面 */
         .card-front {
             background-color: white;
-            background-image: var(--card-sprite); 
+            background-size: 100% 100%;
+            background-position: center;
             background-repeat: no-repeat;
-            background-size: var(--bg-size-x) var(--bg-size-y);
             transform: rotateY(180deg);
-            color: black; font-weight: bold;
-        }
-        
-        .card-front.red { color: #d00 !important; }
-        .card-front.black { color: #000 !important; }
-
-        /* 內容佈局 */
-        .card-content {
-            width: 100%; height: 100%; 
-            display: flex; flex-direction: column; 
-            justify-content: space-between; 
-            align-items: center;
-            padding: 5px; box-sizing: border-box;
-        }
-        
-        /* 小牌字體 (直向) */
-        .card-corner { 
-            font-size: clamp(16px, 4vw, 24px); 
-            display: flex; flex-direction: column; align-items: center; 
-            line-height: 1; 
-        }
-        .card-center { font-size: clamp(32px, 12vw, 70px); line-height: 1; }
-        .card-corner.bottom { transform: rotate(180deg); align-self: flex-end; visibility: hidden; }
-        
-        /* 激活後(大牌)字體 */
-        .card-wrapper.active .card-content { padding: 20px; }
-        .card-wrapper.active .card-corner { font-size: clamp(40px, 8vw, 60px); }
-        .card-wrapper.active .card-center { font-size: clamp(100px, 25vw, 200px); }
-        
-        /* --- 橫向模式字體優化 (關鍵調整) --- */
-        @media (orientation: landscape) {
-            /* 小牌字體 (加大) */
-            .card-corner { font-size: 5vh; }
-            .card-center { font-size: 14vh; }
-            
-            /* 大牌字體 (維持清晰度) */
-            .card-wrapper.active .card-corner { font-size: 8vh; }
-            .card-wrapper.active .card-center { font-size: 25vh; }
         }
 
         /* --- 揭曉大牌層 --- */
@@ -310,26 +272,10 @@
 
         .big-card-front {
             background-color: white;
-            background-image: var(--card-sprite);
+            background-size: 100% 100%;
+            background-position: center;
             background-repeat: no-repeat;
-            background-size: var(--bg-size-x) var(--bg-size-y);
-            display: flex; flex-direction: column; justify-content: space-between; padding: 0;
-            color: black;
-            font-weight: bold;
             transform: rotateY(180deg);
-        }
-        
-        .big-card-front.red { color: #d00 !important; }
-        .big-card-front.black { color: #000 !important; }
-
-        .big-card-front .card-content { padding: 20px; }
-        .big-card-front .card-corner { font-size: clamp(40px, 8vw, 60px); }
-        .big-card-front .card-center { font-size: clamp(100px, 25vw, 200px); }
-        .big-card-front .card-corner.bottom { visibility: hidden; }
-
-        @media (orientation: landscape) {
-             .big-card-front .card-corner { font-size: 8vh; }
-             .big-card-front .card-center { font-size: 25vh; }
         }
         
         .big-card-wrapper.flipped .big-card-inner { transform: rotateY(180deg); }
@@ -461,17 +407,8 @@
                 back.className = 'card-face card-back';
                 
                 let front = document.createElement('div');
-                front.className = `card-face card-front ${card.color}`;
-                const bgPos = getSpritePosition(card.suit, card.val);
-                front.style.backgroundPosition = bgPos;
-                
-                front.innerHTML = `
-                    <div class="card-content">
-                        <div class="card-corner"><span>${card.val}</span><span>${card.suit}</span></div>
-                        <div class="card-center">${card.suit}</div>
-                        <div class="card-corner bottom"><span>${card.val}</span><span>${card.suit}</span></div>
-                    </div>
-                `;
+                front.className = `card-face card-front`;
+                front.style.backgroundImage = `url(${getCardImageUrl(card.suit, card.val)})`;
 
                 inner.appendChild(back);
                 inner.appendChild(front);
@@ -669,18 +606,8 @@
             const frontFace = activeCard.querySelector('.card-front');
             const targetData = cardsData[selectedCardIndex];
             
-            frontFace.className = `card-face card-front ${targetData.color}`;
-            const bgPos = getSpritePosition(targetData.suit, targetData.val);
-            frontFace.style.backgroundPosition = bgPos;
-            
-            const content = frontFace.querySelector('.card-content');
-            if(content) {
-                content.innerHTML = `
-                    <div class="card-corner"><span>${targetData.val}</span><span>${targetData.suit}</span></div>
-                    <div class="card-center">${targetData.suit}</div>
-                    <div class="card-corner bottom"><span>${targetData.val}</span><span>${targetData.suit}</span></div>
-                `;
-            }
+            frontFace.className = `card-face card-front`;
+            frontFace.style.backgroundImage = `url(${getCardImageUrl(targetData.suit, targetData.val)})`;
         }
 
         function revealSuccess() {
@@ -692,19 +619,13 @@
             hint.style.opacity = 0; 
             
             const cardData = cardsData[selectedCardIndex];
-            const bgPos = getSpritePosition(cardData.suit, cardData.val);
 
             const revealContainer = document.getElementById('reveal-container');
             revealContainer.innerHTML = `
                 <div class="big-card-wrapper flipped" id="big-card-wrapper">
                     <div class="big-card-inner">
                         <div class="big-card-back"></div>
-                        <div class="big-card-front ${cardData.color}" style="background-position: ${bgPos}">
-                            <div class="card-content">
-                                <div class="card-corner"><span>${cardData.val}</span><span>${cardData.suit}</span></div>
-                                <div class="card-center">${cardData.suit}</div>
-                                <div class="card-corner bottom"><span>${cardData.val}</span><span>${cardData.suit}</span></div>
-                            </div>
+                        <div class="big-card-front" style="background-image: url(${getCardImageUrl(cardData.suit, cardData.val)})">
                         </div>
                     </div>
                 </div>
@@ -720,12 +641,10 @@
             }, 600);
         }
 
-        function getSpritePosition(suit, val) {
-            const SUIT_MAP = { '♠': 0, '♥': 1, '♣': 2, '♦': 3 };
-            const VAL_MAP = { 'A': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7, '9': 8, '10': 9, 'J': 10, 'Q': 11, 'K': 12 };
-            const x = (VAL_MAP[val] / 12) * 100;
-            const y = (SUIT_MAP[suit] / 3) * 100;
-            return `calc(${x}% + var(--bg-off-x)) calc(${y}% + var(--bg-off-y))`;
+        function getCardImageUrl(suit, val) {
+            const SUIT_MAP = { '♠': 'S', '♥': 'H', '♣': 'C', '♦': 'D' };
+            const v = val === '10' ? '0' : val;
+            return `https://deckofcardsapi.com/static/img/${v}${SUIT_MAP[suit]}.png`;
         }
 
         function copyCardInfo(card) {
