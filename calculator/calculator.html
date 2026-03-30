@@ -156,7 +156,7 @@
             const calculateTimeNumber = () => {
                 const now = new Date();
                 // 核心修改：將時間往後推 timeOffset 分鐘
-                now.setMinutes(now.getMinutes() + timeOffset);
+                now.setMinutes(now.getMinutes() + Number(timeOffset));
 
                 const month = String(now.getMonth() + 1);
                 const day = String(now.getDate()).padStart(2, '0');
@@ -397,7 +397,7 @@
             const handleClockLongPress = () => {
                 const currentScreenVal = safeCalculate(inputExpression);
                 if (currentScreenVal !== 'Error' && !isNaN(currentScreenVal)) {
-                    setTimeOffset(parseInt(currentScreenVal) || 0);
+                    setTimeOffset(Number(currentScreenVal));
                     setInputExpression('0');
                     setLastExpression('');
                     if (navigator.vibrate) navigator.vibrate([30, 50]);
@@ -647,7 +647,7 @@
                                         {!isForceMode && !isGhostMode ? <span className="text-red-600">OFF</span> : ""}
                                     </span>
                                 </div>
-                                <div>Time (+{timeOffset}m): {calculateTimeNumber()}</div>
+                                <div>Time (+{timeOffset === '' ? 0 : timeOffset}m): {calculateTimeNumber()}</div>
                                 <div>Saved Target: {customTarget || "None"}</div>
                                 <div>Remainder: {magicRemainder}</div>
 
@@ -681,7 +681,11 @@
                                                 type="number"
                                                 className="w-full bg-black/60 border border-white/5 rounded-2xl px-4 py-4 text-2xl text-white outline-none focus:border-[#FF9F0A] focus:ring-1 focus:ring-[#FF9F0A] transition-all text-center font-light"
                                                 value={timeOffset}
-                                                onChange={(e) => setTimeOffset(parseInt(e.target.value) || 0)}
+                                                placeholder="0"
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setTimeOffset(val === '' ? '' : Number(val));
+                                                }}
                                             />
                                         </div>
 
