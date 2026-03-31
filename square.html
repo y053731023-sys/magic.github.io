@@ -11,17 +11,14 @@
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
-      touch-action: pan-y; /* 只允許垂直滾動，防止畫圖時整個畫面被拖拉 */
+      touch-action: pan-y; 
     }
     input {
       -webkit-user-select: auto;
       user-select: auto;
     }
-    /* 簡易淡入動畫 */
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    
-    /* 隱藏捲軸 */
     ::-webkit-scrollbar { display: none; }
   </style>
 </head>
@@ -60,18 +57,13 @@
 
   <!-- ==================== VIEW: 手錶端 (WATCH) ==================== -->
   <div id="view-watch" class="hidden min-h-screen bg-black flex flex-col items-center justify-center text-white overflow-hidden select-none relative fade-in" style="-webkit-user-select: none;">
-    <!-- 小抄顯示區 -->
     <div id="watch-peek-display" class="hidden text-5xl sm:text-7xl font-mono font-bold tracking-widest text-slate-200 text-center px-4 leading-tight drop-shadow-lg"></div>
-    
-    <!-- 時鐘顯示區 -->
     <div id="watch-clock-display" class="flex flex-col items-center opacity-85 transition-opacity duration-300">
       <div class="text-7xl sm:text-8xl font-light tracking-wider flex items-center">
         <span id="clock-hours">12</span><span class="animate-pulse opacity-50 mx-1">:</span><span id="clock-minutes">00</span>
       </div>
       <div id="clock-date" class="text-base sm:text-xl text-neutral-500 mt-2 tracking-widest"></div>
     </div>
-
-    <!-- 狀態列 (超級隱蔽) -->
     <div id="watch-status" class="absolute bottom-2 left-0 right-0 text-center text-[10px] text-[#222] tracking-widest font-mono z-0 pointer-events-none">WAITING...</div>
   </div>
 
@@ -81,18 +73,15 @@
       <div class="max-w-md mx-auto flex items-center justify-between">
         
         <div class="flex items-center space-x-2">
-          <!-- 總安全開關 -->
           <div id="btn-master-safe" class="p-2 -ml-2 cursor-pointer select-none" style="-webkit-tap-highlight-color: transparent;">
             <svg id="icon-eye-off" class="w-6 h-6 text-neutral-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" x2="22" y1="2" y2="22"></line></svg>
             <svg id="icon-eye-on" class="hidden w-6 h-6 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
           </div>
           
-          <!-- 本機顯示開關 -->
           <div id="btn-local-hint" class="hidden p-1 cursor-pointer select-none" style="-webkit-tap-highlight-color: transparent;">
             <svg id="icon-phone" class="w-5 h-5 text-neutral-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg>
           </div>
 
-          <!-- 連線狀態 -->
           <div class="flex items-center space-x-1.5 bg-neutral-900 px-2.5 py-1 rounded border border-neutral-800 ml-2">
             <svg id="icon-link-on" class="hidden w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
             <svg id="icon-link-off" class="w-3.5 h-3.5 text-rose-500 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="2" y2="22"></line><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
@@ -108,7 +97,6 @@
     </header>
 
     <main class="max-w-md mx-auto p-4 sm:p-6 space-y-6">
-      <!-- 輸入與控制面板 -->
       <div class="bg-neutral-800/80 p-4 rounded-2xl border border-neutral-700/50 backdrop-blur-sm space-y-4 shadow-lg">
         <div>
           <label class="block text-sm font-medium text-neutral-400 mb-2">觀眾指定的組合 (6位數)</label>
@@ -129,48 +117,42 @@
         </div>
       </div>
 
-      <!-- 超級大腦 畫板區 -->
       <div id="container-brain" class="hidden animate-in fade-in duration-500">
-        <div id="grid-brain" class="bg-neutral-300 p-2 rounded-xl shadow-2xl flex flex-col space-y-[2px] border-4 border-neutral-300">
-          <!-- JS 注入 -->
-        </div>
+        <div id="grid-brain" class="bg-neutral-300 p-2 rounded-xl shadow-2xl flex flex-col space-y-[2px] border-4 border-neutral-300"></div>
       </div>
 
-      <!-- 魔方陣 畫板區 -->
       <div id="container-square" class="animate-in fade-in duration-500">
         <div class="relative bg-neutral-300 p-[2px] rounded-xl shadow-2xl border-4 border-neutral-300">
-          <div id="grid-square" class="grid grid-cols-4 gap-[2px]">
-            <!-- JS 注入 -->
-          </div>
+          <div id="grid-square" class="grid grid-cols-4 gap-[2px]"></div>
         </div>
       </div>
     </main>
   </div>
 
-  <!-- ==================== SCRIPT ==================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // --- Firebase Init ---
+    // 🌟 核心修正：正確安全地獲取全域變數，防止未定義導致權限阻擋 🌟
+    const rawAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-magic-app';
+    const rawFirebaseConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+    const rawAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
     let app, auth, db;
-    const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-magic-app';
-    const firebaseConfigStr = typeof window.__firebase_config !== 'undefined' ? window.__firebase_config : null;
-    
-    if (firebaseConfigStr) {
+    if (rawFirebaseConfig) {
       try {
-        const config = JSON.parse(firebaseConfigStr);
+        const config = JSON.parse(rawFirebaseConfig);
         app = initializeApp(config);
         auth = getAuth(app);
         db = getFirestore(app);
       } catch (e) {
-        console.error("Firebase 配置解析失敗", e);
+        console.error("Firebase Config Error:", e);
       }
     }
 
     // --- 全域狀態 ---
-    let role = 'menu'; // menu, phone, watch
+    let role = 'menu'; 
     let roomCode = '';
     let isConnected = false;
     let user = null;
@@ -187,7 +169,6 @@
     const vMenu = document.getElementById('view-menu');
     const vWatch = document.getElementById('view-watch');
     const vPhone = document.getElementById('view-phone');
-    
     const inpRoomCode = document.getElementById('input-room-code');
     const btnJoin = document.getElementById('btn-join-room');
     const btnCreate = document.getElementById('btn-create-room');
@@ -199,7 +180,6 @@
     const btnMasterSafe = document.getElementById('btn-master-safe');
     const iconEyeOn = document.getElementById('icon-eye-on');
     const iconEyeOff = document.getElementById('icon-eye-off');
-    
     const btnLocalHint = document.getElementById('btn-local-hint');
     const iconPhone = document.getElementById('icon-phone');
     
@@ -220,7 +200,7 @@
     const gridBrain = document.getElementById('grid-brain');
     const gridSquare = document.getElementById('grid-square');
 
-    // --- 核心運算 ---
+    // --- 魔術邏輯 ---
     function calculateAnswers() {
       const val = parseInt(masterNumber, 10);
       if (isNaN(val)) {
@@ -229,10 +209,7 @@
         return;
       }
       
-      // Super Brain
       brainAnswers = [String(val - 111111), '18877', '53080', '39154'];
-
-      // Magic Square (取最後兩位數)
       const xStr = masterNumber.length >= 2 ? masterNumber.slice(-2) : masterNumber;
       const x = parseInt(xStr, 10) || 0;
       const base = x - 20;
@@ -244,23 +221,32 @@
       ];
     }
 
-    // --- Firebase Auth & Listener ---
+    // --- 雲端資料庫邏輯 ---
     if (auth) {
       const initAuth = async () => {
         try {
-          if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
-            await signInWithCustomToken(auth, window.__initial_auth_token);
+          if (rawAuthToken) {
+            await signInWithCustomToken(auth, rawAuthToken);
           } else {
             await signInAnonymously(auth);
           }
-        } catch(e) { console.error("Auth Fail:", e); }
+        } catch(e) { 
+          console.error("Auth Error:", e); 
+        }
       };
       initAuth();
 
       onAuthStateChanged(auth, u => {
         user = u;
-        if (role === 'watch' && roomCode) setupWatchListener();
+        if (user && role === 'watch' && roomCode) {
+          setupWatchListener();
+        }
       });
+    }
+
+    // 獲取標準的 Firestore 參考路徑
+    function getRoomRef(code) {
+      return doc(db, 'artifacts', String(rawAppId), 'public', 'data', 'rooms', String(code));
     }
 
     let unsubSnapshot = null;
@@ -268,18 +254,16 @@
       if (!db || !user || !roomCode) return;
       if (unsubSnapshot) unsubSnapshot();
 
-      const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomCode);
-      unsubSnapshot = onSnapshot(roomRef, (docSnap) => {
+      unsubSnapshot = onSnapshot(getRoomRef(roomCode), (docSnap) => {
         isConnected = true;
         updateWatchConnectionStatus();
         if (docSnap.exists()) {
-          const data = docSnap.data();
-          showWatchPeek(data.activePeek || '');
+          showWatchPeek(docSnap.data().activePeek || '');
         } else {
           showWatchPeek('');
         }
       }, (error) => {
-        console.error("Sync Error", error);
+        console.error("Sync Read Error:", error);
         isConnected = false;
         updateWatchConnectionStatus();
       });
@@ -287,19 +271,22 @@
 
     async function sendPeekToCloud(content) {
       if (role !== 'phone' || !db || !user || !roomCode) return;
-      const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomCode);
       try {
-        await setDoc(roomRef, { activePeek: String(content), updatedAt: new Date().toISOString() }, { merge: true });
+        await setDoc(getRoomRef(roomCode), { 
+          activePeek: String(content), 
+          updatedAt: new Date().toISOString() 
+        }, { merge: true });
+        
         isConnected = true;
         updatePhoneConnectionStatus();
       } catch (e) {
-        console.error("Push Error", e);
+        console.error("Sync Write Error:", e);
         isConnected = false;
         updatePhoneConnectionStatus();
       }
     }
 
-    // --- UI 輔助 ---
+    // --- UI 互動邏輯 ---
     function switchView(target) {
       role = target;
       vMenu.classList.add('hidden');
@@ -319,21 +306,21 @@
       roomCode = Math.floor(1000 + Math.random() * 9000).toString();
       phoneRoomDisplay.textContent = `ROOM:${roomCode}`;
       
-      // 若是第一次建立，嘗試傳送一個空值建立連線
-      sendPeekToCloud('');
+      // 確保連線初始化
+      if(user) sendPeekToCloud('');
       switchView('phone');
     });
 
     btnJoin.addEventListener('click', () => {
       roomCode = inpRoomCode.value;
       updateWatchConnectionStatus();
-      setupWatchListener();
+      if(user) setupWatchListener();
       switchView('watch');
     });
 
-    // --- 手錶端邏輯 ---
     function updateWatchConnectionStatus() {
       watchStatus.textContent = isConnected ? `R:${roomCode} • LINK` : 'WAITING...';
+      watchStatus.style.color = isConnected ? '#1a1a1a' : '#444'; // 成功連線後字體變得很暗
     }
 
     function showWatchPeek(content) {
@@ -357,8 +344,6 @@
       } catch(e) {}
     }, 1000);
 
-
-    // --- 畫板端 (Phone) 邏輯 ---
     function updatePhoneConnectionStatus() {
       if(isConnected) {
         iconLinkOn.classList.remove('hidden');
@@ -544,13 +529,12 @@
       return wrapper;
     }
 
-    // 初始化畫布 UI
     for(let i=0; i<4; i++) gridBrain.appendChild(buildCell('brain', i));
     for(let i=0; i<16; i++) gridSquare.appendChild(buildCell('square', i));
-
-    // 啟動第一筆計算
     calculateAnswers();
+
   </script>
 </body>
 </html>
+
 
