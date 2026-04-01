@@ -51,6 +51,8 @@
         <div id="grid-square" class="grid grid-cols-4 relative w-full aspect-square bg-white">
           <!-- 全域虛線網格 (密碼載體) -->
           <svg id="master-grid-lines" class="absolute inset-0 w-full h-full pointer-events-none z-20"></svg>
+          <!-- 全域手寫板 -->
+          <svg id="master-drawing-board" class="absolute inset-0 w-full h-full z-30 touch-none pointer-events-none"></svg>
           <!-- JS 注入格子 -->
         </div>
         <!-- 展演驗證動畫 -->
@@ -125,7 +127,15 @@
     let squareStep = 0;
 
     const greyCellsIndices = [3, 4, 10, 13];
-    const fillSeq1D = [0, 1, 2, 3, 4, 8, 12, 5, 6, 7, 9, 13, 10, 11, 14, 15];
+    let fillSeq1D = [0, 1, 2, 3, 4, 8, 12, 5, 6, 7, 9, 13, 10, 11, 14, 15];
+
+    function shuffleRevealSeq() {
+      fillSeq1D = Array.from({length: 16}, (_, i) => i);
+      for (let i = fillSeq1D.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [fillSeq1D[i], fillSeq1D[j]] = [fillSeq1D[j], fillSeq1D[i]];
+      }
+    }
 
     // --- DOM 節點 ---
     const btnMasterSafe = document.getElementById('btn-master-safe');
@@ -329,6 +339,13 @@
         frontToolbar.classList.remove('opacity-0', 'pointer-events-none');
       }
 
+      const masterDrawingBoard = document.getElementById('master-drawing-board');
+      if (appMode === 'draw' || appMode === 'erase') {
+        masterDrawingBoard.style.pointerEvents = 'auto';
+      } else {
+        masterDrawingBoard.style.pointerEvents = 'none';
+      }
+
       // 更新畫布格子狀態
       renderCellsMode();
     }
@@ -350,6 +367,7 @@
     // 輸入改變
     inpMasterNum.addEventListener('input', (e) => {
       masterNumber = e.target.value;
+      localStorage.setItem('square_master_number', masterNumber);
       calculateAnswers();
       updatePracticeState(); // 更新展演模式的數字
       updateDottedGrid();
@@ -357,11 +375,83 @@
 
     let autoRevealInterval = null;
 
+    // --- 全域畫板邏輯 ---
+    const masterDrawingBoard = document.getElementById('master-drawing-board');
+    let isGlobalDrawing = false;
+    let globalPolyline = null;
+
+    function eraseAtPoint(e) {
+      if (e.target && e.target.tagName === 'polyline') {
+        e.target.remove();
+      } else {
+        const elements = document.elementsFromPoint(e.clientX, e.clientY);
+        elements.forEach(el => {
+          if(el.tagName === 'polyline') el.remove();
+        });
+      }
+
+      masterDrawingBoard.style.pointerEvents = 'none';
+      const under = document.elementFromPoint(e.clientX, e.clientY);
+      masterDrawingBoard.style.pointerEvents = 'auto'; // restore
+
+      const cell = under?.closest('.cell-wrapper');
+      if (cell) {
+        const inp = cell.querySelector('.cell-input');
+        const txt = cell.querySelector('.cell-text');
+        if(inp) inp.value = '';
+        if(txt) txt.textContent = '';
+      }
+    }
+
+    masterDrawingBoard.addEventListener('pointerdown', (e) => {
+      masterDrawingBoard.setPointerCapture(e.pointerId);
+      isGlobalDrawing = true;
+
+      if (appMode === 'draw') {
+        globalPolyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        globalPolyline.setAttribute('fill', 'none');
+        globalPolyline.setAttribute('stroke', '#1e293b');
+        globalPolyline.setAttribute('stroke-width', '5');
+        globalPolyline.setAttribute('stroke-linecap', 'round');
+        globalPolyline.setAttribute('stroke-linejoin', 'round');
+        masterDrawingBoard.appendChild(globalPolyline);
+
+        const rect = masterDrawingBoard.getBoundingClientRect();
+        const pt1 = masterDrawingBoard.createSVGPoint(); pt1.x = e.clientX - rect.left; pt1.y = e.clientY - rect.top;
+        const pt2 = masterDrawingBoard.createSVGPoint(); pt2.x = e.clientX - rect.left + 0.1; pt2.y = e.clientY - rect.top;
+        globalPolyline.points.appendItem(pt1);
+        globalPolyline.points.appendItem(pt2);
+      } else if (appMode === 'erase') {
+        eraseAtPoint(e);
+      }
+    });
+
+    masterDrawingBoard.addEventListener('pointermove', (e) => {
+      if (!isGlobalDrawing) return;
+
+      if (appMode === 'draw') {
+        const rect = masterDrawingBoard.getBoundingClientRect();
+        const pt = masterDrawingBoard.createSVGPoint();
+        pt.x = e.clientX - rect.left;
+        pt.y = e.clientY - rect.top;
+        globalPolyline.points.appendItem(pt);
+      } else if (appMode === 'erase') {
+        eraseAtPoint(e);
+      }
+    });
+
+    masterDrawingBoard.addEventListener('pointerup', (e) => {
+      if (isGlobalDrawing) {
+        isGlobalDrawing = false;
+        masterDrawingBoard.releasePointerCapture(e.pointerId);
+      }
+    });
+
     // 清空操作邏輯
     const handleClearBoard = () => {
       document.querySelectorAll('.cell-input').forEach(el => el.value = '');
       document.querySelectorAll('.cell-text').forEach(el => el.textContent = '');
-      document.querySelectorAll('.cell-svg').forEach(el => el.innerHTML = '');
+      document.getElementById('master-drawing-board').innerHTML = '';
       squareStep = 0;
       if (autoRevealInterval) {
         clearInterval(autoRevealInterval);
@@ -376,6 +466,7 @@
     // --- 展演模式點擊推進 ---
     gridSquareWrapper.addEventListener('click', () => {
       if (appMode === 'practice' && squareStep === 0 && !autoRevealInterval) {
+        shuffleRevealSeq(); // 每次開始展演前重新打亂順序
         autoRevealInterval = setInterval(() => {
           if (squareStep < 16) {
             squareStep++;
@@ -414,82 +505,15 @@
         <!-- 自由輸入與手寫 -->
         <input type="text" class="cell-input absolute inset-0 w-full h-full bg-transparent text-center ${textClass} font-bold text-slate-800 outline-none z-10 placeholder-transparent focus:bg-slate-50/50 transition-colors tracking-widest hidden" style="-webkit-user-select: text; user-select: text;" />
         <div class="cell-text absolute inset-0 flex items-center justify-center ${textClass} font-bold text-slate-800 pointer-events-none tracking-widest hidden"></div>
-        <svg class="cell-svg absolute inset-0 w-full h-full pointer-events-none z-10"></svg>
         
       `;
 
       const input = wrapper.querySelector('.cell-input');
       const textDiv = wrapper.querySelector('.cell-text');
-      const svg = wrapper.querySelector('.cell-svg');
-      const peekLayer = wrapper.querySelector('.cell-peek');
-      const peekText = wrapper.querySelector('.cell-peek span');
 
       // 同步輸入框內容到下層 div
       input.addEventListener('input', (e) => { textDiv.textContent = e.target.value; });
 
-      // --- 繪圖邏輯 ---
-      let isDrawing = false;
-      let currentPolyline = null;
-
-      // 統一的指標事件 (滑鼠+觸控)
-      wrapper.addEventListener('pointerdown', (e) => {
-        if (appMode === 'draw') {
-          wrapper.setPointerCapture(e.pointerId);
-          isDrawing = true;
-          
-          currentPolyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-          currentPolyline.setAttribute('fill', 'none');
-          currentPolyline.setAttribute('stroke', '#1e293b');
-          currentPolyline.setAttribute('stroke-width', '5');
-          currentPolyline.setAttribute('stroke-linecap', 'round');
-          currentPolyline.setAttribute('stroke-linejoin', 'round');
-          svg.appendChild(currentPolyline);
-
-          const rect = wrapper.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          
-          const pt1 = svg.createSVGPoint(); pt1.x = x; pt1.y = y;
-          const pt2 = svg.createSVGPoint(); pt2.x = x + 0.1; pt2.y = y; // 點一下也能有筆跡
-          currentPolyline.points.appendItem(pt1);
-          currentPolyline.points.appendItem(pt2);
-        } else if (appMode === 'erase') {
-          wrapper.setPointerCapture(e.pointerId);
-          isDrawing = true; // Use as isErasing flag
-          input.value = '';
-          textDiv.textContent = '';
-          svg.innerHTML = '';
-        }
-      });
-
-      wrapper.addEventListener('pointermove', (e) => {
-        if (!isDrawing) return;
-        
-        if (appMode === 'draw') {
-          const rect = wrapper.getBoundingClientRect();
-          const pt = svg.createSVGPoint();
-          pt.x = e.clientX - rect.left;
-          pt.y = e.clientY - rect.top;
-          currentPolyline.points.appendItem(pt);
-        } else if (appMode === 'erase') {
-          const target = document.elementFromPoint(e.clientX, e.clientY);
-          const currentWrapper = target?.closest('.cell-wrapper');
-          if (currentWrapper) {
-            currentWrapper.querySelector('.cell-input').value = '';
-            currentWrapper.querySelector('.cell-text').textContent = '';
-            currentWrapper.querySelector('.cell-svg').innerHTML = '';
-          }
-        }
-      });
-
-      const endPointer = (e) => {
-        if (isDrawing) {
-          isDrawing = false;
-          wrapper.releasePointerCapture(e.pointerId);
-        }
-      };
-
-      wrapper.addEventListener('pointerup', endPointer);
       wrapper.addEventListener('contextmenu', (e) => {
         if (isPeekerEnabled) e.preventDefault(); // 有開機關時阻擋選單
       });
@@ -504,26 +528,21 @@
       wrappers.forEach(wrapper => {
         const input = wrapper.querySelector('.cell-input');
         const textDiv = wrapper.querySelector('.cell-text');
-        const svg = wrapper.querySelector('.cell-svg');
         const practiceLayer = wrapper.querySelector('.cell-practice');
-        const seqText = wrapper.querySelector('.cell-seq');
 
         if (appMode === 'draw' || appMode === 'erase') {
           input.classList.add('hidden');
           textDiv.classList.remove('hidden'); // 保留顯示之前打的字
-          svg.style.pointerEvents = 'none'; // pointer 事件由 wrapper 統一接管
           practiceLayer.classList.add('hidden');
         } 
         else if (appMode === 'type') {
           input.classList.remove('hidden');
           textDiv.classList.add('hidden');
-          svg.style.pointerEvents = 'none';
           practiceLayer.classList.add('hidden');
         } 
         else if (appMode === 'practice') {
           input.classList.add('hidden');
           textDiv.classList.add('hidden');
-          svg.style.pointerEvents = 'none';
           practiceLayer.classList.remove('hidden');
         }
       });
@@ -574,6 +593,12 @@
     }
 
     // --- 初始化執行 ---
+    const savedNum = localStorage.getItem('square_master_number');
+    if (savedNum) {
+      masterNumber = savedNum;
+      inpMasterNum.value = savedNum;
+    }
+
     for(let i=0; i<16; i++) gridSquare.appendChild(buildCell('square', i));
     
     calculateAnswers();
