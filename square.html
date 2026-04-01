@@ -32,50 +32,21 @@
 
   <!-- ==================== 頂部導航 & 隱藏機關 ==================== -->
   <header class="bg-neutral-950 border-b border-neutral-800 p-4 sticky top-0 z-50">
-    <div class="max-w-md mx-auto flex items-center justify-between">
+    <div class="w-full max-w-md md:max-w-2xl lg:max-w-4xl mx-auto flex items-center justify-center">
       
       <!-- 🌟 總安全開關 (Master Safe Switch) 🌟 -->
-      <div id="btn-master-safe" class="p-2 -ml-2 cursor-pointer select-none group" style="-webkit-tap-highlight-color: transparent;">
-        <!-- 閉眼 (安全鎖定) -->
-        <svg id="icon-eye-off" class="w-6 h-6 text-neutral-800 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" x2="22" y1="2" y2="22"></line></svg>
-        <!-- 睜眼 (機關待命) -->
-        <svg id="icon-eye-on" class="hidden w-6 h-6 text-neutral-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      <div id="btn-master-safe" class="p-2 cursor-pointer select-none group" style="-webkit-tap-highlight-color: transparent;">
+        <!-- 固定記號 (長按開啟後台) -->
+        <svg class="w-6 h-6 text-neutral-800 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path></svg>
       </div>
 
-      </div>
     </div>
   </header>
 
-  <main class="max-w-md mx-auto p-4 sm:p-6 space-y-6">
+  <main class="w-full max-w-md md:max-w-2xl lg:max-w-4xl mx-auto p-4 sm:p-6 md:p-8 lg:p-12 flex flex-col justify-center min-h-[85vh]">
     
-    <!-- ==================== 統一的輸入區與控制面板 ==================== -->
-    <div class="bg-neutral-800/80 p-4 rounded-2xl border border-neutral-700/50 backdrop-blur-sm space-y-4 shadow-lg">
-      <div>
-        <label class="block text-sm font-medium text-neutral-400 mb-2">觀眾指定的組合 (6位數)</label>
-        <input id="input-master-number" type="number" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-2xl font-bold text-center text-emerald-400 focus:outline-none focus:border-emerald-500 transition-colors tracking-widest" placeholder="">
-      </div>
-
-      <div class="flex justify-between items-center pt-2 border-t border-neutral-700/50">
-        <div class="flex bg-neutral-900 rounded-lg p-1 space-x-1">
-          <button id="mode-draw" class="flex items-center px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white shadow-sm">
-            <svg class="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 3-3 7 7-3 3"></path><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="m2 2 7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg> 手寫
-          </button>
-          <button id="mode-type" class="flex items-center px-3 py-2 rounded-md text-sm transition-colors text-neutral-400 hover:text-white">
-            <svg class="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" x2="15" y1="20" y2="20"></line><line x1="12" x2="12" y1="4" y2="20"></line></svg> 輸入
-          </button>
-          <button id="mode-practice" class="flex items-center px-3 py-2 rounded-md text-sm transition-colors text-neutral-400 hover:text-white">
-            <svg class="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg> 展演
-          </button>
-        </div>
-
-        <button id="btn-clear" class="p-2 text-neutral-400 hover:text-rose-400 transition-colors bg-neutral-900 rounded-lg" title="清空畫布">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg>
-        </button>
-      </div>
-    </div>
-
     <!-- ==================== 魔方陣 (耆那之眼) 視圖 ==================== -->
-    <div id="container-square" class="animate-in fade-in duration-500">
+    <div id="container-square" class="animate-in fade-in duration-500 w-full mt-4">
       <div id="grid-square-wrapper" class="relative bg-neutral-100 p-2 sm:p-3 rounded-xl shadow-2xl cursor-default border-4 border-neutral-700">
         <div id="grid-square" class="grid grid-cols-4 relative w-full aspect-square bg-white">
           <!-- 全域虛線網格 (密碼載體) -->
@@ -90,15 +61,64 @@
           </div>
         </div>
       </div>
+      
+      <!-- 前台操作列 (橡皮擦與清空) -->
+      <div id="front-toolbar" class="flex justify-end mt-4 space-x-3 transition-opacity duration-300">
+        <button id="btn-front-erase" class="flex items-center justify-center p-3 rounded-full bg-neutral-800 text-neutral-400 shadow-xl transition-all" title="自行擦除">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg>
+        </button>
+        <button id="btn-front-clear" class="flex items-center justify-center p-3 rounded-full bg-neutral-800 text-rose-500 hover:text-rose-400 shadow-xl transition-all" title="全部清除">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </div>
+      
     </div>
 
   </main>
 
+  <!-- ==================== 隱藏的後台設定 (Settings Modal) ==================== -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300">
+    <div class="bg-neutral-900 border border-neutral-700/50 rounded-2xl p-6 w-full max-w-sm space-y-6 shadow-2xl relative">
+      <button id="btn-close-settings" class="absolute top-4 right-4 text-neutral-400 hover:text-white transition-colors">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      
+      <h2 class="text-xl font-bold text-neutral-200 text-center mb-2">後台設定</h2>
+      
+      <div>
+        <label class="block text-sm font-medium text-neutral-400 mb-2">觀眾指定的組合 (6位數)</label>
+        <input id="input-master-number" type="number" class="w-full bg-neutral-800 border border-neutral-600 rounded-xl px-4 py-3 text-2xl font-bold text-center text-emerald-400 focus:outline-none focus:border-emerald-500 transition-colors tracking-widest" placeholder="">
+      </div>
+
+      <div class="flex justify-between items-center pt-2 border-t border-neutral-700/50">
+        <div class="flex bg-neutral-800 rounded-lg p-1 space-x-1 w-full justify-between">
+          <button id="mode-draw" class="flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors bg-neutral-600 text-white shadow-sm flex-1 justify-center">
+            <svg class="w-4 h-4 sm:mr-1.5 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 3-3 7 7-3 3"></path><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="m2 2 7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg> 手寫
+          </button>
+          <button id="mode-type" class="flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors text-neutral-400 hover:text-white flex-1 justify-center">
+            <svg class="w-4 h-4 sm:mr-1.5 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" x2="15" y1="20" y2="20"></line><line x1="12" x2="12" y1="4" y2="20"></line></svg> 輸入
+          </button>
+          <button id="mode-practice" class="flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors text-neutral-400 hover:text-white flex-1 justify-center">
+            <svg class="w-4 h-4 sm:mr-1.5 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"></path></svg> 展演
+          </button>
+        </div>
+      </div>
+      
+      <div class="flex justify-center pt-4">
+        <button id="btn-clear" class="flex items-center space-x-2 px-4 py-3 text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 transition-colors bg-neutral-800/80 rounded-xl w-full justify-center">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg>
+          <span class="font-bold">清空畫布</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== SCRIPT ==================== -->
   <script>
     // --- 全域狀態 ---
-    let appMode = 'draw'; // 'draw' | 'type' | 'practice'
-    let isPeekerEnabled = false;
+    let appMode = 'draw'; // 'draw' | 'type' | 'practice' | 'erase'
+    let previousMode = 'draw';
+    let isPeekerEnabled = true; // 記號常駐開啟
     let masterNumber = '';
     
     let squareAnswers = Array(16).fill('');
@@ -109,14 +129,16 @@
 
     // --- DOM 節點 ---
     const btnMasterSafe = document.getElementById('btn-master-safe');
-    const iconEyeOn = document.getElementById('icon-eye-on');
-    const iconEyeOff = document.getElementById('icon-eye-off');
 
     const modeDraw = document.getElementById('mode-draw');
     const modeType = document.getElementById('mode-type');
     const modePractice = document.getElementById('mode-practice');
     const btnClear = document.getElementById('btn-clear');
     const inpMasterNum = document.getElementById('input-master-number');
+
+    const btnFrontErase = document.getElementById('btn-front-erase');
+    const btnFrontClear = document.getElementById('btn-front-clear');
+    const frontToolbar = document.getElementById('front-toolbar');
 
     const gridSquare = document.getElementById('grid-square');
     const gridSquareWrapper = document.getElementById('grid-square-wrapper');
@@ -182,60 +204,148 @@
     };
 
     // --- 計算邏輯 ---
+    // 內建的多套 4x4 魔方陣 (幻和 34，且 13,14,15,16 皆分布在不同的行列與對角線上)
+    const baseTemplates = [
+      [
+        4, 5, 11, 14,
+        15, 10, 8, 1,
+        6, 3, 13, 12,
+        9, 16, 2, 7
+      ],
+      [
+        8, 11, 14, 1,
+        13, 2, 7, 12,
+        3, 16, 9, 6,
+        10, 5, 4, 15
+      ]
+    ];
+
+    // 取得 8 種對稱變換的其中一種
+    function getSymmetry(arr, symType) {
+      const getIdx = (r, c) => {
+        switch(symType) {
+          case 0: return r*4 + c;                 // 原版
+          case 1: return (3-c)*4 + r;             // 旋轉 90度
+          case 2: return (3-r)*4 + (3-c);         // 旋轉 180度
+          case 3: return c*4 + (3-r);             // 旋轉 270度
+          case 4: return (3-r)*4 + c;             // 水平翻轉
+          case 5: return r*4 + (3-c);             // 垂直翻轉
+          case 6: return c*4 + r;                 // 主對角線翻轉
+          case 7: return (3-c)*4 + (3-r);         // 副對角線翻轉
+          default: return r*4 + c;
+        }
+      };
+      let res = new Array(16);
+      for(let r=0; r<4; r++){
+        for(let c=0; c<4; c++){
+          res[r*4 + c] = arr[getIdx(r, c)];
+        }
+      }
+      return res;
+    }
+
+    let currentBaseArray = baseTemplates[0];
+
+    function randomizeTemplate() {
+      const baseIdx = Math.floor(Math.random() * baseTemplates.length);
+      const symIdx = Math.floor(Math.random() * 8);
+      currentBaseArray = getSymmetry(baseTemplates[baseIdx], symIdx);
+    }
+
     function calculateAnswers() {
       const val = parseInt(masterNumber, 10);
       if (isNaN(val)) {
         squareAnswers = Array(16).fill('');
         return;
       }
-      
 
       // 魔方陣 (取最後兩位)
       const xStr = masterNumber.length >= 2 ? masterNumber.slice(-2) : masterNumber;
       const x = parseInt(xStr, 10) || 0;
-      const base = x - 20;
-      squareAnswers = [
-        4, 5, 11, base,
-        base + 1, 10, 8, 1,
-        6, 3, base - 1, 12,
-        9, base + 2, 2, 7
-      ];
+      
+      randomizeTemplate(); // 每次輸入都隨機換基礎結構
+
+      const S = x < 34 ? 34 : x; // 如果總和小於基底幻和 34，預設使用 34，避免負數
+      const D = S - 34;          // 計算差值
+      const Q = Math.floor(D / 4); // 取得四等分的商數
+      const R = D % 4;           // 取得餘數
+
+      // 平均分配差值：
+      // 在這些具備特殊對稱性的魔方陣中，數字 13, 14, 15, 16 剛好平均分布在每一行、每一列、及對角線上。
+      // 因此將餘數加在這些極端值上，既能均勻吸收餘數不破壞幻和，又不會與其他格子產生重複數字。
+      squareAnswers = currentBaseArray.map(n => {
+        if (n >= 13) return n + Q + R;
+        else return n + Q;
+      });
     }
 
     // --- UI 互動邏輯 ---
     
-    // 總安全開關
-    btnMasterSafe.addEventListener('click', () => {
-      isPeekerEnabled = !isPeekerEnabled;
-      if(isPeekerEnabled) {
-        iconEyeOn.classList.remove('hidden');
-        iconEyeOff.classList.add('hidden');
-      } else {
-        iconEyeOn.classList.add('hidden');
-        iconEyeOff.classList.remove('hidden');
-      }
-      updateDottedGrid(); // 刷新網格，顯示黑點
+    // 總安全開關 (長按開啟後台，短按切換機關)
+    let eyePressTimer = null;
+    let eyeLongPressed = false;
+    
+    btnMasterSafe.addEventListener('pointerdown', (e) => {
+      eyeLongPressed = false;
+      eyePressTimer = setTimeout(() => {
+        eyeLongPressed = true;
+        document.getElementById('settings-modal').classList.remove('hidden');
+      }, 600); // 600ms 長按觸發
+    });
+    
+    btnMasterSafe.addEventListener('pointerup', () => clearTimeout(eyePressTimer));
+    btnMasterSafe.addEventListener('pointerleave', () => clearTimeout(eyePressTimer));
+
+    
+    document.getElementById('btn-close-settings').addEventListener('click', () => {
+      document.getElementById('settings-modal').classList.add('hidden');
     });
 
     // 模式切換
     function updateModeUI() {
       // 重置按鈕樣式
       [modeDraw, modeType, modePractice].forEach(btn => {
-        btn.className = "flex items-center px-3 py-2 rounded-md text-sm transition-colors text-neutral-400 hover:text-white";
+        btn.className = "flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors text-neutral-400 hover:text-white flex-1 justify-center";
       });
       
       // 更新對應模式的按鈕樣式
-      if (appMode === 'draw') modeDraw.className = "flex items-center px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white shadow-sm";
-      if (appMode === 'type') modeType.className = "flex items-center px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white shadow-sm";
-      if (appMode === 'practice') modePractice.className = "flex items-center px-3 py-2 rounded-md text-sm transition-colors bg-amber-500/20 text-amber-500 shadow-sm";
+      if (appMode === 'draw') modeDraw.className = "flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white shadow-sm flex-1 justify-center";
+      if (appMode === 'type') modeType.className = "flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white shadow-sm flex-1 justify-center";
+      if (appMode === 'practice') modePractice.className = "flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors bg-amber-500/20 text-amber-500 shadow-sm flex-1 justify-center";
+
+      // 更新前台橡皮擦樣式
+      if (appMode === 'erase') {
+        btnFrontErase.classList.remove('bg-neutral-800', 'text-neutral-400');
+        btnFrontErase.classList.add('bg-neutral-600', 'text-white');
+      } else {
+        btnFrontErase.classList.remove('bg-neutral-600', 'text-white');
+        btnFrontErase.classList.add('bg-neutral-800', 'text-neutral-400');
+      }
+
+      // 展演模式下隱藏前台操作列
+      if (appMode === 'practice') {
+        frontToolbar.classList.add('opacity-0', 'pointer-events-none');
+      } else {
+        frontToolbar.classList.remove('opacity-0', 'pointer-events-none');
+      }
 
       // 更新畫布格子狀態
       renderCellsMode();
     }
 
-    modeDraw.addEventListener('click', () => { appMode = 'draw'; updateModeUI(); });
-    modeType.addEventListener('click', () => { appMode = 'type'; updateModeUI(); });
+    modeDraw.addEventListener('click', () => { appMode = 'draw'; previousMode = 'draw'; updateModeUI(); });
+    modeType.addEventListener('click', () => { appMode = 'type'; previousMode = 'type'; updateModeUI(); });
     modePractice.addEventListener('click', () => { appMode = 'practice'; updateModeUI(); });
+
+    btnFrontErase.addEventListener('click', () => {
+      if (appMode === 'erase') {
+        appMode = previousMode; // 關閉擦除，回到上一個模式
+      } else {
+        if (appMode !== 'practice') previousMode = appMode;
+        appMode = 'erase'; // 開啟擦除模式
+      }
+      updateModeUI();
+    });
 
     // 輸入改變
     inpMasterNum.addEventListener('input', (e) => {
@@ -245,20 +355,36 @@
       updateDottedGrid();
     });
 
-    // 清空
-    btnClear.addEventListener('click', () => {
+    let autoRevealInterval = null;
+
+    // 清空操作邏輯
+    const handleClearBoard = () => {
       document.querySelectorAll('.cell-input').forEach(el => el.value = '');
       document.querySelectorAll('.cell-text').forEach(el => el.textContent = '');
       document.querySelectorAll('.cell-svg').forEach(el => el.innerHTML = '');
       squareStep = 0;
+      if (autoRevealInterval) {
+        clearInterval(autoRevealInterval);
+        autoRevealInterval = null;
+      }
       updatePracticeState();
-    });
+    };
+
+    btnClear.addEventListener('click', handleClearBoard);
+    btnFrontClear.addEventListener('click', handleClearBoard);
 
     // --- 展演模式點擊推進 ---
     gridSquareWrapper.addEventListener('click', () => {
-      if (appMode === 'practice' && squareStep < 16) {
-        squareStep++;
-        updatePracticeState();
+      if (appMode === 'practice' && squareStep === 0 && !autoRevealInterval) {
+        autoRevealInterval = setInterval(() => {
+          if (squareStep < 16) {
+            squareStep++;
+            updatePracticeState();
+          } else {
+            clearInterval(autoRevealInterval);
+            autoRevealInterval = null;
+          }
+        }, 600); // 自動彈出間隔時間 0.6s
       }
     });
 
@@ -275,21 +401,15 @@
       wrapper.style.WebkitTouchCallout = 'none';
       wrapper.style.WebkitUserSelect = 'none';
 
-      const textClass = 'text-3xl sm:text-4xl';
-      
-      // 判斷是否為灰格
-      const isGrey = greyCellsIndices.includes(index);
-      const bgClass = isGrey ? 'bg-amber-100 text-amber-700' : 'bg-white text-slate-800';
-      const seqNum = fillSeq1D.indexOf(index) + 1;
+      // 移除原有的灰格與 seqText
+      const bgClass = 'bg-white text-slate-800';
+      const textClass = 'text-4xl sm:text-5xl md:text-6xl lg:text-7xl';
 
       wrapper.innerHTML = `
         <!-- 展演模式顯示 -->
         <div class="cell-practice absolute inset-0 flex items-center justify-center transition-all duration-500 opacity-0 scale-50 ${bgClass}">
           <span class="${textClass} font-bold tracking-widest calc-val"></span>
         </div>
-        
-        <!-- 展演模式提示字 -->
-        <span class="cell-seq absolute text-lg font-medium text-neutral-200 pointer-events-none">${seqNum}</span>
 
         <!-- 自由輸入與手寫 -->
         <input type="text" class="cell-input absolute inset-0 w-full h-full bg-transparent text-center ${textClass} font-bold text-slate-800 outline-none z-10 placeholder-transparent focus:bg-slate-50/50 transition-colors tracking-widest hidden" style="-webkit-user-select: text; user-select: text;" />
@@ -313,7 +433,6 @@
 
       // 統一的指標事件 (滑鼠+觸控)
       wrapper.addEventListener('pointerdown', (e) => {
-        // 1. 處理繪圖
         if (appMode === 'draw') {
           wrapper.setPointerCapture(e.pointerId);
           isDrawing = true;
@@ -334,21 +453,37 @@
           const pt2 = svg.createSVGPoint(); pt2.x = x + 0.1; pt2.y = y; // 點一下也能有筆跡
           currentPolyline.points.appendItem(pt1);
           currentPolyline.points.appendItem(pt2);
+        } else if (appMode === 'erase') {
+          wrapper.setPointerCapture(e.pointerId);
+          isDrawing = true; // Use as isErasing flag
+          input.value = '';
+          textDiv.textContent = '';
+          svg.innerHTML = '';
         }
       });
 
       wrapper.addEventListener('pointermove', (e) => {
-        if (!isDrawing || appMode !== 'draw') return;
+        if (!isDrawing) return;
         
-        const rect = wrapper.getBoundingClientRect();
-        const pt = svg.createSVGPoint();
-        pt.x = e.clientX - rect.left;
-        pt.y = e.clientY - rect.top;
-        currentPolyline.points.appendItem(pt);
+        if (appMode === 'draw') {
+          const rect = wrapper.getBoundingClientRect();
+          const pt = svg.createSVGPoint();
+          pt.x = e.clientX - rect.left;
+          pt.y = e.clientY - rect.top;
+          currentPolyline.points.appendItem(pt);
+        } else if (appMode === 'erase') {
+          const target = document.elementFromPoint(e.clientX, e.clientY);
+          const currentWrapper = target?.closest('.cell-wrapper');
+          if (currentWrapper) {
+            currentWrapper.querySelector('.cell-input').value = '';
+            currentWrapper.querySelector('.cell-text').textContent = '';
+            currentWrapper.querySelector('.cell-svg').innerHTML = '';
+          }
+        }
       });
 
       const endPointer = (e) => {
-        if (appMode === 'draw' && isDrawing) {
+        if (isDrawing) {
           isDrawing = false;
           wrapper.releasePointerCapture(e.pointerId);
         }
@@ -373,26 +508,23 @@
         const practiceLayer = wrapper.querySelector('.cell-practice');
         const seqText = wrapper.querySelector('.cell-seq');
 
-        if (appMode === 'draw') {
+        if (appMode === 'draw' || appMode === 'erase') {
           input.classList.add('hidden');
           textDiv.classList.remove('hidden'); // 保留顯示之前打的字
           svg.style.pointerEvents = 'none'; // pointer 事件由 wrapper 統一接管
           practiceLayer.classList.add('hidden');
-          if(seqText) seqText.classList.add('hidden');
         } 
         else if (appMode === 'type') {
           input.classList.remove('hidden');
           textDiv.classList.add('hidden');
           svg.style.pointerEvents = 'none';
           practiceLayer.classList.add('hidden');
-          if(seqText) seqText.classList.add('hidden');
         } 
         else if (appMode === 'practice') {
           input.classList.add('hidden');
           textDiv.classList.add('hidden');
           svg.style.pointerEvents = 'none';
           practiceLayer.classList.remove('hidden');
-          if(seqText) seqText.classList.remove('hidden');
         }
       });
       
@@ -417,27 +549,28 @@
       // 處理魔方陣進度
       document.querySelectorAll('.cell-wrapper[data-type="square"]').forEach((wrapper, idx) => {
         const practiceLayer = wrapper.querySelector('.cell-practice');
-        const seqText = wrapper.querySelector('.cell-seq');
         const isRevealed = fillSeq1D.indexOf(idx) < squareStep;
         
         if (isRevealed) {
           practiceLayer.classList.remove('opacity-0', 'scale-50');
           practiceLayer.classList.add('opacity-100', 'scale-100');
-          if(seqText) seqText.classList.add('hidden');
         } else {
           practiceLayer.classList.add('opacity-0', 'scale-50');
           practiceLayer.classList.remove('opacity-100', 'scale-100');
-          if(seqText) seqText.classList.remove('hidden');
         }
       });
 
-      if (squareStep >= 16 && masterNumber) {
-        const xStr = masterNumber.length >= 2 ? masterNumber.slice(-2) : masterNumber;
-        squareVerifyText.textContent = xStr;
-        squareVerify.classList.remove('hidden');
-      } else {
-        squareVerify.classList.add('hidden');
-      }
+      // // 原本會在完全解開後顯示總和，依需求隱藏
+      // if (squareStep >= 16 && masterNumber) {
+      //   const xStr = masterNumber.length >= 2 ? masterNumber.slice(-2) : masterNumber;
+      //   squareVerifyText.textContent = xStr;
+      //   squareVerify.classList.remove('hidden');
+      // } else {
+      //   squareVerify.classList.add('hidden');
+      // }
+      
+      // 永遠隱藏總和提示
+      squareVerify.classList.add('hidden');
     }
 
     // --- 初始化執行 ---
