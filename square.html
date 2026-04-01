@@ -3,213 +3,194 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TOP SECRET - 心靈魔術系統</title>
+  <title>TOP SECRET - 終極單機版</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* 防止在行動裝置上長按文字反白或跳出放大鏡 */
+    /* 防干擾與觸控鎖定 */
     body {
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
       touch-action: pan-y; 
+      background-color: #171717; /* neutral-900 */
     }
+    /* 解除輸入框的封印 */
     input {
-      -webkit-user-select: auto;
-      user-select: auto;
+      -webkit-user-select: text !important;
+      user-select: text !important;
     }
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    .zoom-in { animation: zoomIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    
+    /* 隱藏捲軸 */
     ::-webkit-scrollbar { display: none; }
   </style>
 </head>
-<body class="bg-neutral-900 text-neutral-100 font-sans selection:bg-amber-500/30 overflow-x-hidden">
+<body class="text-neutral-100 font-sans selection:bg-amber-500/30 overflow-x-hidden pb-10">
 
-  <!-- ==================== VIEW: 選單 (MENU) ==================== -->
-  <div id="view-menu" class="min-h-screen flex flex-col items-center justify-center p-6 fade-in">
-    <div class="max-w-sm w-full space-y-8">
-      <div class="text-center space-y-2">
-        <svg class="w-12 h-12 text-amber-500 mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-        <h1 class="text-3xl font-bold tracking-widest text-white">TOP SECRET</h1>
-        <p class="text-neutral-400">雙機魔術連線系統</p>
+  <!-- ==================== 頂部導航 & 隱藏機關 ==================== -->
+  <header class="bg-neutral-950 border-b border-neutral-800 p-4 sticky top-0 z-50">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      
+      <!-- 🌟 總安全開關 (Master Safe Switch) 🌟 -->
+      <div id="btn-master-safe" class="p-2 -ml-2 cursor-pointer select-none group" style="-webkit-tap-highlight-color: transparent;">
+        <!-- 閉眼 (安全鎖定) -->
+        <svg id="icon-eye-off" class="w-6 h-6 text-neutral-800 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" x2="22" y1="2" y2="22"></line></svg>
+        <!-- 睜眼 (機關待命) -->
+        <svg id="icon-eye-on" class="hidden w-6 h-6 text-neutral-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
       </div>
 
-      <div class="space-y-4 pt-8">
-        <button id="btn-create-room" class="w-full flex items-center justify-center space-x-3 bg-neutral-800 hover:bg-neutral-700 text-white p-4 rounded-xl border border-neutral-700 transition-all shadow-lg">
-          <svg class="w-6 h-6 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg>
-          <span class="text-lg font-medium tracking-wider">建立畫板 (發送端)</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 sm:p-6 space-y-6">
+    
+    <!-- ==================== 統一的輸入區與控制面板 ==================== -->
+    <div class="bg-neutral-800/80 p-4 rounded-2xl border border-neutral-700/50 backdrop-blur-sm space-y-4 shadow-lg">
+      <div>
+        <label class="block text-sm font-medium text-neutral-400 mb-2">觀眾指定的組合 (6位數)</label>
+        <input id="input-master-number" type="number" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-2xl font-bold text-center text-emerald-400 focus:outline-none focus:border-emerald-500 transition-colors tracking-widest" placeholder="">
+      </div>
+
+      <div class="flex justify-between items-center pt-2 border-t border-neutral-700/50">
+        <div class="flex bg-neutral-900 rounded-lg p-1 space-x-1">
+          <button id="mode-draw" class="flex items-center px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white shadow-sm">
+            <svg class="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 3-3 7 7-3 3"></path><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="m2 2 7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg> 手寫
+          </button>
+          <button id="mode-type" class="flex items-center px-3 py-2 rounded-md text-sm transition-colors text-neutral-400 hover:text-white">
+            <svg class="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" x2="15" y1="20" y2="20"></line><line x1="12" x2="12" y1="4" y2="20"></line></svg> 輸入
+          </button>
+          <button id="mode-practice" class="flex items-center px-3 py-2 rounded-md text-sm transition-colors text-neutral-400 hover:text-white">
+            <svg class="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg> 展演
+          </button>
+        </div>
+
+        <button id="btn-clear" class="p-2 text-neutral-400 hover:text-rose-400 transition-colors bg-neutral-900 rounded-lg" title="清空畫布">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg>
         </button>
+      </div>
+    </div>
 
-        <div class="relative flex items-center py-4">
-          <div class="flex-grow border-t border-neutral-800"></div>
-          <span class="flex-shrink-0 mx-4 text-neutral-500 text-sm">接收答案</span>
-          <div class="flex-grow border-t border-neutral-800"></div>
+    <!-- ==================== 魔方陣 (耆那之眼) 視圖 ==================== -->
+    <div id="container-square" class="animate-in fade-in duration-500">
+      <div id="grid-square-wrapper" class="relative bg-neutral-100 p-2 sm:p-3 rounded-xl shadow-2xl cursor-default border-4 border-neutral-700">
+        <div id="grid-square" class="grid grid-cols-4 relative w-full aspect-square bg-white">
+          <!-- 全域虛線網格 (密碼載體) -->
+          <svg id="master-grid-lines" class="absolute inset-0 w-full h-full pointer-events-none z-20"></svg>
+          <!-- JS 注入格子 -->
         </div>
-
-        <div class="bg-neutral-800 p-4 rounded-xl border border-neutral-700 flex space-x-2 shadow-lg">
-          <input id="input-room-code" type="number" placeholder="輸入配對碼" class="w-full bg-neutral-900 text-white px-4 py-3 rounded-lg outline-none text-center tracking-widest text-xl">
-          <button id="btn-join-room" disabled class="bg-amber-500 text-neutral-900 px-6 rounded-lg font-bold disabled:opacity-50 transition-opacity flex items-center">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.35 3.83a2 2 0 0 1-2 1.82H9.83a2 2 0 0 1-2-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 1h4.35a2 2 0 0 1 2 1.82l.35 3.83"></path></svg>
-          </button>
+        <!-- 展演驗證動畫 -->
+        <div id="square-verify" class="hidden absolute inset-0 pointer-events-none flex items-center justify-center animate-in zoom-in duration-700 bg-neutral-900/50 backdrop-blur-[2px] z-50">
+          <div class="bg-amber-500 text-neutral-900 px-6 py-3 rounded-xl font-bold text-xl flex items-center shadow-xl">
+            <svg class="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            幻和皆為 <span id="square-verify-text" class="ml-2"></span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ==================== VIEW: 手錶端 (WATCH) ==================== -->
-  <div id="view-watch" class="hidden min-h-screen bg-black flex flex-col items-center justify-center text-white overflow-hidden select-none relative fade-in" style="-webkit-user-select: none;">
-    <div id="watch-peek-display" class="hidden text-5xl sm:text-7xl font-mono font-bold tracking-widest text-slate-200 text-center px-4 leading-tight drop-shadow-lg"></div>
-    <div id="watch-clock-display" class="flex flex-col items-center opacity-85 transition-opacity duration-300">
-      <div class="text-7xl sm:text-8xl font-light tracking-wider flex items-center">
-        <span id="clock-hours">12</span><span class="animate-pulse opacity-50 mx-1">:</span><span id="clock-minutes">00</span>
-      </div>
-      <div id="clock-date" class="text-base sm:text-xl text-neutral-500 mt-2 tracking-widest"></div>
-    </div>
-    <div id="watch-status" class="absolute bottom-2 left-0 right-0 text-center text-[10px] text-[#222] tracking-widest font-mono z-0 pointer-events-none">WAITING...</div>
-  </div>
+  </main>
 
-  <!-- ==================== VIEW: 畫板端 (PHONE) ==================== -->
-  <div id="view-phone" class="hidden min-h-screen bg-neutral-900 text-neutral-100 font-sans pb-10 fade-in">
-    <header class="bg-neutral-950 border-b border-neutral-800 p-4 sticky top-0 z-50">
-      <div class="max-w-md mx-auto flex items-center justify-between">
-        
-        <div class="flex items-center space-x-2">
-          <div id="btn-master-safe" class="p-2 -ml-2 cursor-pointer select-none" style="-webkit-tap-highlight-color: transparent;">
-            <svg id="icon-eye-off" class="w-6 h-6 text-neutral-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" x2="22" y1="2" y2="22"></line></svg>
-            <svg id="icon-eye-on" class="hidden w-6 h-6 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-          </div>
-          
-          <div id="btn-local-hint" class="hidden p-1 cursor-pointer select-none" style="-webkit-tap-highlight-color: transparent;">
-            <svg id="icon-phone" class="w-5 h-5 text-neutral-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg>
-          </div>
-
-          <div class="flex items-center space-x-1.5 bg-neutral-900 px-2.5 py-1 rounded border border-neutral-800 ml-2">
-            <svg id="icon-link-on" class="hidden w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-            <svg id="icon-link-off" class="w-3.5 h-3.5 text-rose-500 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="2" y2="22"></line><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-            <span id="phone-room-display" class="text-xs font-mono text-neutral-400 tracking-wider"></span>
-          </div>
-        </div>
-
-        <div class="flex bg-neutral-800 rounded-lg p-1">
-          <button id="tab-brain" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors text-neutral-400 hover:text-white">大腦</button>
-          <button id="tab-square" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-amber-500 text-neutral-950">魔方陣</button>
-        </div>
-      </div>
-    </header>
-
-    <main class="max-w-md mx-auto p-4 sm:p-6 space-y-6">
-      <div class="bg-neutral-800/80 p-4 rounded-2xl border border-neutral-700/50 backdrop-blur-sm space-y-4 shadow-lg">
-        <div>
-          <label class="block text-sm font-medium text-neutral-400 mb-2">觀眾指定的組合 (6位數)</label>
-          <input id="input-master-number" type="number" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-2xl font-bold text-center text-emerald-400 focus:outline-none focus:border-emerald-500 transition-colors tracking-widest">
-        </div>
-        <div class="flex justify-between items-center pt-2 border-t border-neutral-700/50">
-          <div class="flex bg-neutral-900 rounded-lg p-1 space-x-1">
-            <button id="mode-draw" class="flex items-center px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white">
-              <svg class="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 3-3 7 7-3 3"></path><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="m2 2 7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg> 手寫
-            </button>
-            <button id="mode-type" class="flex items-center px-3 py-2 rounded-md text-sm transition-colors text-neutral-400">
-              <svg class="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" x2="15" y1="20" y2="20"></line><line x1="12" x2="12" y1="4" y2="20"></line></svg> 輸入
-            </button>
-          </div>
-          <button id="btn-clear" class="p-2 text-neutral-400 hover:text-rose-400 transition-colors bg-neutral-900 rounded-lg">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg>
-          </button>
-        </div>
-      </div>
-
-      <div id="container-brain" class="hidden animate-in fade-in duration-500">
-        <div id="grid-brain" class="bg-neutral-300 p-2 rounded-xl shadow-2xl flex flex-col space-y-[2px] border-4 border-neutral-300"></div>
-      </div>
-
-      <div id="container-square" class="animate-in fade-in duration-500">
-        <div class="relative bg-neutral-300 p-[2px] rounded-xl shadow-2xl border-4 border-neutral-300">
-          <div id="grid-square" class="grid grid-cols-4 gap-[2px]"></div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // 🌟 核心修正：正確安全地獲取全域變數，防止未定義導致權限阻擋 🌟
-    const rawAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-magic-app';
-    const rawFirebaseConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-    const rawAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-    let app, auth, db;
-    if (rawFirebaseConfig) {
-      try {
-        const config = JSON.parse(rawFirebaseConfig);
-        app = initializeApp(config);
-        auth = getAuth(app);
-        db = getFirestore(app);
-      } catch (e) {
-        console.error("Firebase Config Error:", e);
-      }
-    }
-
+  <!-- ==================== SCRIPT ==================== -->
+  <script>
     // --- 全域狀態 ---
-    let role = 'menu'; 
-    let roomCode = '';
-    let isConnected = false;
-    let user = null;
-    let masterNumber = '';
-    let activeTab = 'magicSquare';
-    let appMode = 'draw';
+    let appMode = 'draw'; // 'draw' | 'type' | 'practice'
     let isPeekerEnabled = false;
-    let showLocalHint = true;
+    let masterNumber = '';
     
     let squareAnswers = Array(16).fill('');
-    let brainAnswers = Array(4).fill('');
+    let squareStep = 0;
+
+    const greyCellsIndices = [3, 4, 10, 13];
+    const fillSeq1D = [0, 1, 2, 3, 4, 8, 12, 5, 6, 7, 9, 13, 10, 11, 14, 15];
 
     // --- DOM 節點 ---
-    const vMenu = document.getElementById('view-menu');
-    const vWatch = document.getElementById('view-watch');
-    const vPhone = document.getElementById('view-phone');
-    const inpRoomCode = document.getElementById('input-room-code');
-    const btnJoin = document.getElementById('btn-join-room');
-    const btnCreate = document.getElementById('btn-create-room');
-
-    const watchClock = document.getElementById('watch-clock-display');
-    const watchPeek = document.getElementById('watch-peek-display');
-    const watchStatus = document.getElementById('watch-status');
-
     const btnMasterSafe = document.getElementById('btn-master-safe');
     const iconEyeOn = document.getElementById('icon-eye-on');
     const iconEyeOff = document.getElementById('icon-eye-off');
-    const btnLocalHint = document.getElementById('btn-local-hint');
-    const iconPhone = document.getElementById('icon-phone');
-    
-    const iconLinkOn = document.getElementById('icon-link-on');
-    const iconLinkOff = document.getElementById('icon-link-off');
-    const phoneRoomDisplay = document.getElementById('phone-room-display');
-
-    const tabBrain = document.getElementById('tab-brain');
-    const tabSquare = document.getElementById('tab-square');
-    const contBrain = document.getElementById('container-brain');
-    const contSquare = document.getElementById('container-square');
 
     const modeDraw = document.getElementById('mode-draw');
     const modeType = document.getElementById('mode-type');
+    const modePractice = document.getElementById('mode-practice');
     const btnClear = document.getElementById('btn-clear');
     const inpMasterNum = document.getElementById('input-master-number');
 
-    const gridBrain = document.getElementById('grid-brain');
     const gridSquare = document.getElementById('grid-square');
+    const gridSquareWrapper = document.getElementById('grid-square-wrapper');
+    
+    const squareVerify = document.getElementById('square-verify');
+    const squareVerifyText = document.getElementById('square-verify-text');
 
-    // --- 魔術邏輯 ---
+    // --- 虛線邊界與密碼網格 ---
+    // 效能優化版：先拼接字串最後再一次性寫入 DOM
+    const updateDottedGrid = () => {
+        const squareSvg = document.getElementById('master-grid-lines');
+        if (!squareSvg) return;
+        
+        const numDots = 10;
+        let squareHTML = '';
+        
+        const drawSegment = (isHoriz, startIndex, endIndex, fixedIndex, targetDigit) => {
+            const step = (endIndex - startIndex) / numDots;
+            const highlightIdx = targetDigit === 0 ? 10 : targetDigit; 
+            
+            for (let i = 1; i <= numDots; i++) {
+                const isHighlight = (isPeekerEnabled && targetDigit !== -1 && i === highlightIdx);
+                const pos = startIndex + (i - 0.5) * step;
+                
+                // 極限低對比度，顏色完全一致，僅依賴些微的粗細與透明度差異
+                const size = isHighlight ? 2.8 : 2.5;
+                const opacity = isHighlight ? 0.6 : 0.45;
+                const color = '#404040';
+                
+                let cx = isHoriz ? pos : fixedIndex;
+                let cy = isHoriz ? fixedIndex : pos;
+                squareHTML += `<rect x="${cx}%" y="${cy}%" width="${size}" height="${size}" transform="translate(-${size/2}, -${size/2})" fill="${color}" opacity="${opacity}"/>`;
+            }
+        };
+
+        for (let row = 0; row < 4; row++) {
+            for (let col = 0; col < 4; col++) {
+                const index = row * 4 + col;
+                const ans = squareAnswers[index];
+                
+                let tens = -1, ones = -1;
+                if (ans !== undefined && ans !== '') {
+                    const val = parseInt(String(ans), 10);
+                    tens = Math.floor(val / 10);
+                    ones = val % 10;
+                }
+                
+                drawSegment(true, col*25, (col+1)*25, row*25, tens);
+                drawSegment(false, row*25, (row+1)*25, (col+1)*25, ones);
+            }
+        }
+        
+        // 外圍
+        for (let col = 0; col < 4; col++) {
+            drawSegment(true, col*25, (col+1)*25, 100, -1);
+        }
+        for (let row = 0; row < 4; row++) {
+            drawSegment(false, row*25, (row+1)*25, 0, -1);
+        }
+        
+        // 一次性渲染
+        squareSvg.innerHTML = squareHTML;
+    };
+
+    // --- 計算邏輯 ---
     function calculateAnswers() {
       const val = parseInt(masterNumber, 10);
       if (isNaN(val)) {
         squareAnswers = Array(16).fill('');
-        brainAnswers = Array(4).fill('');
         return;
       }
       
-      brainAnswers = [String(val - 111111), '18877', '53080', '39154'];
+
+      // 魔方陣 (取最後兩位)
       const xStr = masterNumber.length >= 2 ? masterNumber.slice(-2) : masterNumber;
       const x = parseInt(xStr, 10) || 0;
       const base = x - 20;
@@ -221,229 +202,100 @@
       ];
     }
 
-    // --- 雲端資料庫邏輯 ---
-    if (auth) {
-      const initAuth = async () => {
-        try {
-          if (rawAuthToken) {
-            await signInWithCustomToken(auth, rawAuthToken);
-          } else {
-            await signInAnonymously(auth);
-          }
-        } catch(e) { 
-          console.error("Auth Error:", e); 
-        }
-      };
-      initAuth();
-
-      onAuthStateChanged(auth, u => {
-        user = u;
-        if (user && role === 'watch' && roomCode) {
-          setupWatchListener();
-        }
-      });
-    }
-
-    // 獲取標準的 Firestore 參考路徑
-    function getRoomRef(code) {
-      return doc(db, 'artifacts', String(rawAppId), 'public', 'data', 'rooms', String(code));
-    }
-
-    let unsubSnapshot = null;
-    function setupWatchListener() {
-      if (!db || !user || !roomCode) return;
-      if (unsubSnapshot) unsubSnapshot();
-
-      unsubSnapshot = onSnapshot(getRoomRef(roomCode), (docSnap) => {
-        isConnected = true;
-        updateWatchConnectionStatus();
-        if (docSnap.exists()) {
-          showWatchPeek(docSnap.data().activePeek || '');
-        } else {
-          showWatchPeek('');
-        }
-      }, (error) => {
-        console.error("Sync Read Error:", error);
-        isConnected = false;
-        updateWatchConnectionStatus();
-      });
-    }
-
-    async function sendPeekToCloud(content) {
-      if (role !== 'phone' || !db || !user || !roomCode) return;
-      try {
-        await setDoc(getRoomRef(roomCode), { 
-          activePeek: String(content), 
-          updatedAt: new Date().toISOString() 
-        }, { merge: true });
-        
-        isConnected = true;
-        updatePhoneConnectionStatus();
-      } catch (e) {
-        console.error("Sync Write Error:", e);
-        isConnected = false;
-        updatePhoneConnectionStatus();
-      }
-    }
-
     // --- UI 互動邏輯 ---
-    function switchView(target) {
-      role = target;
-      vMenu.classList.add('hidden');
-      vWatch.classList.add('hidden');
-      vPhone.classList.add('hidden');
-      if(target === 'menu') vMenu.classList.remove('hidden');
-      if(target === 'watch') vWatch.classList.remove('hidden');
-      if(target === 'phone') vPhone.classList.remove('hidden');
-    }
-
-    inpRoomCode.addEventListener('input', (e) => {
-      e.target.value = e.target.value.slice(0, 4);
-      btnJoin.disabled = e.target.value.length !== 4;
-    });
-
-    btnCreate.addEventListener('click', () => {
-      roomCode = Math.floor(1000 + Math.random() * 9000).toString();
-      phoneRoomDisplay.textContent = `ROOM:${roomCode}`;
-      
-      // 確保連線初始化
-      if(user) sendPeekToCloud('');
-      switchView('phone');
-    });
-
-    btnJoin.addEventListener('click', () => {
-      roomCode = inpRoomCode.value;
-      updateWatchConnectionStatus();
-      if(user) setupWatchListener();
-      switchView('watch');
-    });
-
-    function updateWatchConnectionStatus() {
-      watchStatus.textContent = isConnected ? `R:${roomCode} • LINK` : 'WAITING...';
-      watchStatus.style.color = isConnected ? '#1a1a1a' : '#444'; // 成功連線後字體變得很暗
-    }
-
-    function showWatchPeek(content) {
-      if(content) {
-        watchClock.classList.add('hidden');
-        watchPeek.classList.remove('hidden');
-        watchPeek.innerHTML = content.split('  ').map(num => `<div class="my-2 drop-shadow-lg">${num}</div>`).join('');
-      } else {
-        watchClock.classList.remove('hidden');
-        watchPeek.classList.add('hidden');
-      }
-    }
-
-    setInterval(() => {
-      if(role !== 'watch') return;
-      const now = new Date();
-      document.getElementById('clock-hours').textContent = now.getHours().toString().padStart(2, '0');
-      document.getElementById('clock-minutes').textContent = now.getMinutes().toString().padStart(2, '0');
-      try {
-        document.getElementById('clock-date').textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
-      } catch(e) {}
-    }, 1000);
-
-    function updatePhoneConnectionStatus() {
-      if(isConnected) {
-        iconLinkOn.classList.remove('hidden');
-        iconLinkOff.classList.add('hidden');
-      } else {
-        iconLinkOn.classList.add('hidden');
-        iconLinkOff.classList.remove('hidden');
-      }
-    }
-
+    
+    // 總安全開關
     btnMasterSafe.addEventListener('click', () => {
       isPeekerEnabled = !isPeekerEnabled;
       if(isPeekerEnabled) {
         iconEyeOn.classList.remove('hidden');
         iconEyeOff.classList.add('hidden');
-        btnLocalHint.classList.remove('hidden');
       } else {
         iconEyeOn.classList.add('hidden');
         iconEyeOff.classList.remove('hidden');
-        btnLocalHint.classList.add('hidden');
       }
+      updateDottedGrid(); // 刷新網格，顯示黑點
     });
 
-    btnLocalHint.addEventListener('click', () => {
-      showLocalHint = !showLocalHint;
-      if(showLocalHint) {
-        iconPhone.classList.remove('text-neutral-800');
-        iconPhone.classList.add('text-neutral-400');
-      } else {
-        iconPhone.classList.remove('text-neutral-400');
-        iconPhone.classList.add('text-neutral-800');
-      }
-    });
+    // 模式切換
+    function updateModeUI() {
+      // 重置按鈕樣式
+      [modeDraw, modeType, modePractice].forEach(btn => {
+        btn.className = "flex items-center px-3 py-2 rounded-md text-sm transition-colors text-neutral-400 hover:text-white";
+      });
+      
+      // 更新對應模式的按鈕樣式
+      if (appMode === 'draw') modeDraw.className = "flex items-center px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white shadow-sm";
+      if (appMode === 'type') modeType.className = "flex items-center px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white shadow-sm";
+      if (appMode === 'practice') modePractice.className = "flex items-center px-3 py-2 rounded-md text-sm transition-colors bg-amber-500/20 text-amber-500 shadow-sm";
 
-    tabBrain.addEventListener('click', () => {
-      activeTab = 'superBrain';
-      tabBrain.className = "px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-amber-500 text-neutral-950";
-      tabSquare.className = "px-3 py-1.5 rounded-md text-sm font-medium transition-colors text-neutral-400 hover:text-white";
-      contBrain.classList.remove('hidden');
-      contSquare.classList.add('hidden');
-    });
+      // 更新畫布格子狀態
+      renderCellsMode();
+    }
 
-    tabSquare.addEventListener('click', () => {
-      activeTab = 'magicSquare';
-      tabSquare.className = "px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-amber-500 text-neutral-950";
-      tabBrain.className = "px-3 py-1.5 rounded-md text-sm font-medium transition-colors text-neutral-400 hover:text-white";
-      contSquare.classList.remove('hidden');
-      contBrain.classList.add('hidden');
-    });
+    modeDraw.addEventListener('click', () => { appMode = 'draw'; updateModeUI(); });
+    modeType.addEventListener('click', () => { appMode = 'type'; updateModeUI(); });
+    modePractice.addEventListener('click', () => { appMode = 'practice'; updateModeUI(); });
 
-    modeDraw.addEventListener('click', () => {
-      appMode = 'draw';
-      modeDraw.className = "flex items-center px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white";
-      modeType.className = "flex items-center px-3 py-2 rounded-md text-sm transition-colors text-neutral-400";
-      document.querySelectorAll('.cell-input').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.cell-text').forEach(el => el.classList.remove('hidden'));
-      document.querySelectorAll('.cell-svg').forEach(el => el.style.pointerEvents = 'auto');
-    });
-
-    modeType.addEventListener('click', () => {
-      appMode = 'type';
-      modeType.className = "flex items-center px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white";
-      modeDraw.className = "flex items-center px-3 py-2 rounded-md text-sm transition-colors text-neutral-400";
-      document.querySelectorAll('.cell-input').forEach(el => el.classList.remove('hidden'));
-      document.querySelectorAll('.cell-text').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.cell-svg').forEach(el => el.style.pointerEvents = 'none');
-    });
-
+    // 輸入改變
     inpMasterNum.addEventListener('input', (e) => {
       masterNumber = e.target.value;
       calculateAnswers();
-      clearGridContents();
+      updatePracticeState(); // 更新展演模式的數字
+      updateDottedGrid();
     });
 
-    btnClear.addEventListener('click', clearGridContents);
-
-    function clearGridContents() {
-      sendPeekToCloud('');
+    // 清空
+    btnClear.addEventListener('click', () => {
       document.querySelectorAll('.cell-input').forEach(el => el.value = '');
       document.querySelectorAll('.cell-text').forEach(el => el.textContent = '');
       document.querySelectorAll('.cell-svg').forEach(el => el.innerHTML = '');
-    }
+      squareStep = 0;
+      updatePracticeState();
+    });
+
+    // --- 展演模式點擊推進 ---
+    gridSquareWrapper.addEventListener('click', () => {
+      if (appMode === 'practice' && squareStep < 16) {
+        squareStep++;
+        updatePracticeState();
+      }
+    });
 
     // --- 畫布與格子生成器 ---
     function buildCell(type, index) {
-      const isBrain = type === 'brain';
       const wrapper = document.createElement('div');
       
-      wrapper.className = `relative flex items-center justify-center bg-white select-none overflow-hidden ${isBrain ? 'w-full h-20 sm:h-24 rounded-sm' : 'aspect-square rounded-sm'}`;
+      wrapper.className = `cell-wrapper relative flex items-center justify-center bg-white select-none overflow-hidden aspect-square rounded-sm`;
+      wrapper.dataset.type = type;
+      wrapper.dataset.index = index;
+      
+      // 防止長按反白或跳出選單
       wrapper.style.touchAction = 'none';
+      wrapper.style.WebkitTouchCallout = 'none';
+      wrapper.style.WebkitUserSelect = 'none';
 
-      const textClass = isBrain ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl';
+      const textClass = 'text-3xl sm:text-4xl';
+      
+      // 判斷是否為灰格
+      const isGrey = greyCellsIndices.includes(index);
+      const bgClass = isGrey ? 'bg-amber-100 text-amber-700' : 'bg-white text-slate-800';
+      const seqNum = fillSeq1D.indexOf(index) + 1;
 
       wrapper.innerHTML = `
-        <input type="text" class="cell-input absolute inset-0 w-full h-full bg-transparent text-center ${textClass} font-bold text-slate-800 outline-none z-10 placeholder-transparent focus:bg-slate-50/50 transition-colors tracking-widest hidden" />
-        <div class="cell-text absolute inset-0 flex items-center justify-center ${textClass} font-bold text-slate-800 pointer-events-none tracking-widest hidden"></div>
-        <svg class="cell-svg absolute inset-0 w-full h-full z-0 cursor-crosshair"></svg>
-        <div class="cell-peek absolute bottom-1 right-1.5 z-30 pointer-events-none animate-in fade-in duration-75 hidden">
-            <span class="text-[12px] sm:text-[14px] font-bold text-slate-300 leading-none tracking-widest bg-white/80 rounded px-1.5 py-0.5 drop-shadow-sm whitespace-nowrap"></span>
+        <!-- 展演模式顯示 -->
+        <div class="cell-practice absolute inset-0 flex items-center justify-center transition-all duration-500 opacity-0 scale-50 ${bgClass}">
+          <span class="${textClass} font-bold tracking-widest calc-val"></span>
         </div>
+        
+        <!-- 展演模式提示字 -->
+        <span class="cell-seq absolute text-lg font-medium text-neutral-200 pointer-events-none">${seqNum}</span>
+
+        <!-- 自由輸入與手寫 -->
+        <input type="text" class="cell-input absolute inset-0 w-full h-full bg-transparent text-center ${textClass} font-bold text-slate-800 outline-none z-10 placeholder-transparent focus:bg-slate-50/50 transition-colors tracking-widest hidden" style="-webkit-user-select: text; user-select: text;" />
+        <div class="cell-text absolute inset-0 flex items-center justify-center ${textClass} font-bold text-slate-800 pointer-events-none tracking-widest hidden"></div>
+        <svg class="cell-svg absolute inset-0 w-full h-full pointer-events-none z-10"></svg>
+        
       `;
 
       const input = wrapper.querySelector('.cell-input');
@@ -452,28 +304,16 @@
       const peekLayer = wrapper.querySelector('.cell-peek');
       const peekText = wrapper.querySelector('.cell-peek span');
 
+      // 同步輸入框內容到下層 div
       input.addEventListener('input', (e) => { textDiv.textContent = e.target.value; });
 
+      // --- 繪圖邏輯 ---
       let isDrawing = false;
       let currentPolyline = null;
-      let pressTimer = null;
 
-      const triggerPeek = () => {
-        const answerText = isBrain ? brainAnswers[index] : squareAnswers.slice(Math.floor(index/4)*4, Math.floor(index/4)*4 + 4).join('  ');
-        if (showLocalHint) {
-          peekText.textContent = answerText;
-          peekLayer.classList.remove('hidden');
-        }
-        sendPeekToCloud(answerText);
-      };
-
-      const cancelPeek = () => {
-        clearTimeout(pressTimer);
-        peekLayer.classList.add('hidden');
-        sendPeekToCloud('');
-      };
-
+      // 統一的指標事件 (滑鼠+觸控)
       wrapper.addEventListener('pointerdown', (e) => {
+        // 1. 處理繪圖
         if (appMode === 'draw') {
           wrapper.setPointerCapture(e.pointerId);
           isDrawing = true;
@@ -491,19 +331,13 @@
           const y = e.clientY - rect.top;
           
           const pt1 = svg.createSVGPoint(); pt1.x = x; pt1.y = y;
-          const pt2 = svg.createSVGPoint(); pt2.x = x + 0.1; pt2.y = y;
+          const pt2 = svg.createSVGPoint(); pt2.x = x + 0.1; pt2.y = y; // 點一下也能有筆跡
           currentPolyline.points.appendItem(pt1);
           currentPolyline.points.appendItem(pt2);
-        }
-
-        if (isPeekerEnabled) {
-          clearTimeout(pressTimer);
-          pressTimer = setTimeout(triggerPeek, 300);
         }
       });
 
       wrapper.addEventListener('pointermove', (e) => {
-        if (isDrawing) cancelPeek();
         if (!isDrawing || appMode !== 'draw') return;
         
         const rect = wrapper.getBoundingClientRect();
@@ -518,23 +352,101 @@
           isDrawing = false;
           wrapper.releasePointerCapture(e.pointerId);
         }
-        cancelPeek();
       };
 
       wrapper.addEventListener('pointerup', endPointer);
-      wrapper.addEventListener('pointerleave', cancelPeek);
-      wrapper.addEventListener('pointercancel', cancelPeek);
-      wrapper.addEventListener('contextmenu', (e) => { e.preventDefault(); });
+      wrapper.addEventListener('contextmenu', (e) => {
+        if (isPeekerEnabled) e.preventDefault(); // 有開機關時阻擋選單
+      });
 
       return wrapper;
     }
 
-    for(let i=0; i<4; i++) gridBrain.appendChild(buildCell('brain', i));
+    // --- 渲染邏輯 ---
+    function renderCellsMode() {
+      const wrappers = document.querySelectorAll('.cell-wrapper');
+      
+      wrappers.forEach(wrapper => {
+        const input = wrapper.querySelector('.cell-input');
+        const textDiv = wrapper.querySelector('.cell-text');
+        const svg = wrapper.querySelector('.cell-svg');
+        const practiceLayer = wrapper.querySelector('.cell-practice');
+        const seqText = wrapper.querySelector('.cell-seq');
+
+        if (appMode === 'draw') {
+          input.classList.add('hidden');
+          textDiv.classList.remove('hidden'); // 保留顯示之前打的字
+          svg.style.pointerEvents = 'none'; // pointer 事件由 wrapper 統一接管
+          practiceLayer.classList.add('hidden');
+          if(seqText) seqText.classList.add('hidden');
+        } 
+        else if (appMode === 'type') {
+          input.classList.remove('hidden');
+          textDiv.classList.add('hidden');
+          svg.style.pointerEvents = 'none';
+          practiceLayer.classList.add('hidden');
+          if(seqText) seqText.classList.add('hidden');
+        } 
+        else if (appMode === 'practice') {
+          input.classList.add('hidden');
+          textDiv.classList.add('hidden');
+          svg.style.pointerEvents = 'none';
+          practiceLayer.classList.remove('hidden');
+          if(seqText) seqText.classList.remove('hidden');
+        }
+      });
+      
+      updatePracticeState();
+    }
+
+    function updatePracticeState() {
+      // 1. 更新數字
+      document.querySelectorAll('.cell-wrapper').forEach(wrapper => {
+        const index = parseInt(wrapper.dataset.index, 10);
+        const valSpan = wrapper.querySelector('.calc-val');
+        
+        valSpan.textContent = squareAnswers[index] || '';
+      });
+
+      // 2. 更新展演動畫 (顯現/隱藏)
+      if (appMode !== 'practice') {
+        squareVerify.classList.add('hidden');
+        return;
+      }
+
+      // 處理魔方陣進度
+      document.querySelectorAll('.cell-wrapper[data-type="square"]').forEach((wrapper, idx) => {
+        const practiceLayer = wrapper.querySelector('.cell-practice');
+        const seqText = wrapper.querySelector('.cell-seq');
+        const isRevealed = fillSeq1D.indexOf(idx) < squareStep;
+        
+        if (isRevealed) {
+          practiceLayer.classList.remove('opacity-0', 'scale-50');
+          practiceLayer.classList.add('opacity-100', 'scale-100');
+          if(seqText) seqText.classList.add('hidden');
+        } else {
+          practiceLayer.classList.add('opacity-0', 'scale-50');
+          practiceLayer.classList.remove('opacity-100', 'scale-100');
+          if(seqText) seqText.classList.remove('hidden');
+        }
+      });
+
+      if (squareStep >= 16 && masterNumber) {
+        const xStr = masterNumber.length >= 2 ? masterNumber.slice(-2) : masterNumber;
+        squareVerifyText.textContent = xStr;
+        squareVerify.classList.remove('hidden');
+      } else {
+        squareVerify.classList.add('hidden');
+      }
+    }
+
+    // --- 初始化執行 ---
     for(let i=0; i<16; i++) gridSquare.appendChild(buildCell('square', i));
+    
     calculateAnswers();
+    updateModeUI();
+    updateDottedGrid();
 
   </script>
 </body>
 </html>
-
-
