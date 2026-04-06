@@ -94,19 +94,7 @@
         <input id="input-master-number" type="number" class="w-full bg-neutral-800 border border-neutral-600 rounded-xl px-4 py-3 text-2xl font-bold text-center text-emerald-400 focus:outline-none focus:border-emerald-500 transition-colors tracking-widest" placeholder="">
       </div>
 
-      <div class="flex justify-between items-center pt-2 border-t border-neutral-700/50">
-        <div class="flex bg-neutral-800 rounded-lg p-1 space-x-1 w-full justify-between">
-          <button id="mode-draw" class="flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors bg-neutral-600 text-white shadow-sm flex-1 justify-center">
-            <svg class="w-4 h-4 sm:mr-1.5 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 3-3 7 7-3 3"></path><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="m2 2 7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg> 手寫
-          </button>
-          <button id="mode-type" class="flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors text-neutral-400 hover:text-white flex-1 justify-center">
-            <svg class="w-4 h-4 sm:mr-1.5 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" x2="15" y1="20" y2="20"></line><line x1="12" x2="12" y1="4" y2="20"></line></svg> 輸入
-          </button>
-          <button id="mode-practice" class="flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors text-neutral-400 hover:text-white flex-1 justify-center">
-            <svg class="w-4 h-4 sm:mr-1.5 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"></path></svg> 展演
-          </button>
-        </div>
-      </div>
+
       
       <div class="flex justify-center pt-4">
         <button id="btn-clear" class="flex items-center space-x-2 px-4 py-3 text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 transition-colors bg-neutral-800/80 rounded-xl w-full justify-center">
@@ -120,8 +108,8 @@
   <!-- ==================== SCRIPT ==================== -->
   <script>
     // --- 全域狀態 ---
-    let appMode = 'draw'; // 'draw' | 'type' | 'practice' | 'erase'
-    let previousMode = 'draw';
+    let appMode = 'practice'; // 'practice' only
+    let previousMode = 'practice';
     let isPeekerEnabled = true; // 記號常駐開啟
     let masterNumber = '';
     
@@ -142,15 +130,11 @@
     // --- DOM 節點 ---
     const btnMasterSafe = document.getElementById('btn-master-safe');
 
-    const modeDraw = document.getElementById('mode-draw');
-    const modeType = document.getElementById('mode-type');
-    const modePractice = document.getElementById('mode-practice');
     const btnClear = document.getElementById('btn-clear');
     const inpMasterNum = document.getElementById('input-master-number');
 
-    const btnFrontErase = document.getElementById('btn-front-erase');
-    const btnFrontClear = document.getElementById('btn-front-clear');
     const frontToolbar = document.getElementById('front-toolbar');
+    const btnFrontClear = document.getElementById('btn-front-clear');
 
     const gridSquare = document.getElementById('grid-square');
     const gridSquareWrapper = document.getElementById('grid-square-wrapper');
@@ -258,12 +242,6 @@
 
     let currentBaseArray = baseTemplates[0];
 
-    function randomizeTemplate() {
-      const baseIdx = Math.floor(Math.random() * baseTemplates.length);
-      const symIdx = Math.floor(Math.random() * 8);
-      currentBaseArray = getSymmetry(baseTemplates[baseIdx], symIdx);
-    }
-
     function calculateAnswers() {
       const val = parseInt(masterNumber, 10);
       if (isNaN(val)) {
@@ -271,24 +249,50 @@
         return;
       }
 
-      // 魔方陣 (取最後兩位)
       const xStr = masterNumber.length >= 2 ? masterNumber.slice(-2) : masterNumber;
       const x = parseInt(xStr, 10) || 0;
+      const S = x < 34 ? 34 : x; 
+      const D = S - 34;          
+      const Q = Math.floor(D / 4); 
+      const R = D % 4;           
+
+      const tens = Math.floor(x / 10);
+      const ones = x % 10;
       
-      randomizeTemplate(); // 每次輸入都隨機換基礎結構
-
-      const S = x < 34 ? 34 : x; // 如果總和小於基底幻和 34，預設使用 34，避免負數
-      const D = S - 34;          // 計算差值
-      const Q = Math.floor(D / 4); // 取得四等分的商數
-      const R = D % 4;           // 取得餘數
-
-      // 平均分配差值：
-      // 在這些具備特殊對稱性的魔方陣中，數字 13, 14, 15, 16 剛好平均分布在每一行、每一列、及對角線上。
-      // 因此將餘數加在這些極端值上，既能均勻吸收餘數不破壞幻和，又不會與其他格子產生重複數字。
-      squareAnswers = currentBaseArray.map(n => {
-        if (n >= 13) return n + Q + R;
-        else return n + Q;
-      });
+      let bestBaseArray = null;
+      let foundMatching = false;
+      
+      // 窮舉所有對稱與旋轉，找出讓 "十位數" 和 "個位數" 皆存在，且視覺上十位數位於個位數左/上的排列
+      const bases = [0, 1];
+      const syms = [0, 1, 2, 3, 4, 5, 6, 7];
+      bases.sort(() => Math.random() - 0.5);
+      syms.sort(() => Math.random() - 0.5);
+      
+      for(let b of bases) {
+        for(let s of syms) {
+          const arr = getSymmetry(baseTemplates[b], s);
+          const trialAnswers = arr.map(n => (n >= 13) ? n + Q + R : n + Q);
+          
+          let tIdx = trialAnswers.indexOf(tens);
+          let oIdx = (tens === ones) ? trialAnswers.lastIndexOf(ones) : trialAnswers.indexOf(ones);
+          
+          if (tIdx !== -1 && oIdx !== -1 && tIdx !== oIdx && tIdx < oIdx) {
+            bestBaseArray = arr;
+            squareAnswers = trialAnswers;
+            foundMatching = true;
+            break;
+          }
+        }
+        if (foundMatching) break;
+      }
+      
+      if (!foundMatching) {
+        // 如果這個數字(超過範圍)無法同時包含十位與個位，就隨機處理
+        currentBaseArray = getSymmetry(baseTemplates[Math.floor(Math.random() * baseTemplates.length)], Math.floor(Math.random() * 8));
+        squareAnswers = currentBaseArray.map(n => (n >= 13) ? n + Q + R : n + Q);
+      } else {
+        currentBaseArray = bestBaseArray;
+      }
     }
 
     // --- UI 互動邏輯 ---
@@ -313,58 +317,18 @@
       document.getElementById('settings-modal').classList.add('hidden');
     });
 
-    // 模式切換
+    // 模式切換 (已簡化，僅保留 Practice 狀態設定)
     function updateModeUI() {
-      // 重置按鈕樣式
-      [modeDraw, modeType, modePractice].forEach(btn => {
-        btn.className = "flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors text-neutral-400 hover:text-white flex-1 justify-center";
-      });
-      
-      // 更新對應模式的按鈕樣式
-      if (appMode === 'draw') modeDraw.className = "flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white shadow-sm flex-1 justify-center";
-      if (appMode === 'type') modeType.className = "flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors bg-neutral-700 text-white shadow-sm flex-1 justify-center";
-      if (appMode === 'practice') modePractice.className = "flex items-center px-1 sm:px-3 py-2 rounded-md text-sm transition-colors bg-amber-500/20 text-amber-500 shadow-sm flex-1 justify-center";
-
-      // 更新前台橡皮擦樣式
-      if (appMode === 'erase') {
-        btnFrontErase.classList.remove('bg-neutral-800', 'text-neutral-400');
-        btnFrontErase.classList.add('bg-neutral-600', 'text-white');
-      } else {
-        btnFrontErase.classList.remove('bg-neutral-600', 'text-white');
-        btnFrontErase.classList.add('bg-neutral-800', 'text-neutral-400');
-      }
-
-      // 展演模式下隱藏前台操作列
-      if (appMode === 'practice') {
+      if (frontToolbar) {
         frontToolbar.classList.add('opacity-0', 'pointer-events-none');
-      } else {
-        frontToolbar.classList.remove('opacity-0', 'pointer-events-none');
       }
 
       const masterDrawingBoard = document.getElementById('master-drawing-board');
-      if (appMode === 'draw' || appMode === 'erase') {
-        masterDrawingBoard.style.pointerEvents = 'auto';
-      } else {
-        masterDrawingBoard.style.pointerEvents = 'none';
-      }
+      masterDrawingBoard.style.pointerEvents = 'none';
 
       // 更新畫布格子狀態
       renderCellsMode();
     }
-
-    modeDraw.addEventListener('click', () => { appMode = 'draw'; previousMode = 'draw'; updateModeUI(); });
-    modeType.addEventListener('click', () => { appMode = 'type'; previousMode = 'type'; updateModeUI(); });
-    modePractice.addEventListener('click', () => { appMode = 'practice'; updateModeUI(); });
-
-    btnFrontErase.addEventListener('click', () => {
-      if (appMode === 'erase') {
-        appMode = previousMode; // 關閉擦除，回到上一個模式
-      } else {
-        if (appMode !== 'practice') previousMode = appMode;
-        appMode = 'erase'; // 開啟擦除模式
-      }
-      updateModeUI();
-    });
 
     // 輸入改變
     inpMasterNum.addEventListener('input', (e) => {
@@ -449,33 +413,71 @@
       }
     });
 
-    // 清空操作邏輯
     const handleClearBoard = () => {
       document.querySelectorAll('.cell-input').forEach(el => el.value = '');
       document.querySelectorAll('.cell-text').forEach(el => el.textContent = '');
       document.getElementById('master-drawing-board').innerHTML = '';
+      
+      document.querySelectorAll('.cell-wrapper').forEach(wrapper => {
+        wrapper.dataset.manualReveal = 'false';
+      });
+
       squareStep = 0;
       if (autoRevealInterval) {
         clearInterval(autoRevealInterval);
         autoRevealInterval = null;
       }
+      calculateAnswers(); // 重置數學矩陣
       updatePracticeState();
     };
 
     btnClear.addEventListener('click', handleClearBoard);
-    btnFrontClear.addEventListener('click', handleClearBoard);
+    if (btnFrontClear) btnFrontClear.addEventListener('click', handleClearBoard);
 
     // --- 展演模式點擊推進 ---
-    gridSquareWrapper.addEventListener('click', () => {
+    gridSquareWrapper.addEventListener('click', (e) => {
+      // 若點擊輸入框，不觸發自動推進
+      if (e.target.closest('.cell-input')) return;
+      
       if (appMode === 'practice' && squareStep === 0 && !autoRevealInterval) {
-        shuffleRevealSeq(); // 每次開始展演前重新打亂順序
+        fillSeq1D = Array.from({length: 16}, (_, i) => i); 
+        for (let i = fillSeq1D.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [fillSeq1D[i], fillSeq1D[j]] = [fillSeq1D[j], fillSeq1D[i]];
+        }
+        
+        const val = parseInt(masterNumber, 10);
+        if (!isNaN(val)) {
+            const xStr = masterNumber.length >= 2 ? masterNumber.slice(-2) : masterNumber;
+            const x = parseInt(xStr, 10) || 0;
+            const tens = Math.floor(x / 10);
+            const units = x % 10;
+            
+            // 找出矩陣中包含目標十位與個位數的正確位置
+            const tensIdx = squareAnswers.indexOf(tens);
+            const unitsIdx = (tens === units) ? squareAnswers.lastIndexOf(units) : squareAnswers.indexOf(units);
+            
+            if (tensIdx !== -1 && unitsIdx !== -1 && tensIdx !== unitsIdx) {
+                // 將真正的十位與個位數隱藏至最後 (14與15階段)
+                fillSeq1D = fillSeq1D.filter(idx => idx !== tensIdx && idx !== unitsIdx);
+                // 系統生成時已確保 tensIdx < unitsIdx，所以直接依序放入即可
+                fillSeq1D.push(tensIdx, unitsIdx);
+            } else {
+                // 若找不到對應數字，至少確保最後兩格在上到下、左到右的順序
+                const last2 = [fillSeq1D[14], fillSeq1D[15]].sort((a,b) => a-b);
+                fillSeq1D[14] = last2[0];
+                fillSeq1D[15] = last2[1];
+            }
+        }
+
         autoRevealInterval = setInterval(() => {
-          if (squareStep < 16) {
+          if (squareStep < 14) {
             squareStep++;
             updatePracticeState();
           } else {
             clearInterval(autoRevealInterval);
             autoRevealInterval = null;
+            updatePracticeState(); 
           }
         }, 600); // 自動彈出間隔時間 0.6s
       }
@@ -493,6 +495,26 @@
       wrapper.style.touchAction = 'none';
       wrapper.style.WebkitTouchCallout = 'none';
       wrapper.style.WebkitUserSelect = 'none';
+
+      // 支援最後兩格：觀眾輸入 或 魔術師雙擊展演
+      let tapTimer = 0;
+      wrapper.addEventListener('pointerdown', (e) => {
+        if (appMode === 'practice' && squareStep >= 14) {
+            const idx = parseInt(wrapper.dataset.index, 10);
+            if (fillSeq1D.indexOf(idx) >= 14) {
+                const now = Date.now();
+                if (now - tapTimer < 300) {
+                    // 雙擊：魔術師一鍵顯露數字
+                    e.preventDefault();
+                    wrapper.dataset.manualReveal = 'true';
+                    updatePracticeState();
+                } else {
+                    // 單擊：無作用，保留給輸入框 focus 讓觀眾點擊輸入
+                    tapTimer = now;
+                }
+            }
+        }
+      });
 
       // 移除原有的灰格與 seqText
       const bgClass = 'bg-white text-slate-800';
@@ -532,21 +554,9 @@
         const textDiv = wrapper.querySelector('.cell-text');
         const practiceLayer = wrapper.querySelector('.cell-practice');
 
-        if (appMode === 'draw' || appMode === 'erase') {
-          input.classList.add('hidden');
-          textDiv.classList.remove('hidden'); // 保留顯示之前打的字
-          practiceLayer.classList.add('hidden');
-        } 
-        else if (appMode === 'type') {
-          input.classList.remove('hidden');
-          textDiv.classList.add('hidden');
-          practiceLayer.classList.add('hidden');
-        } 
-        else if (appMode === 'practice') {
-          input.classList.add('hidden');
-          textDiv.classList.add('hidden');
-          practiceLayer.classList.remove('hidden');
-        }
+        input.classList.add('hidden');
+        textDiv.classList.add('hidden');
+        practiceLayer.classList.remove('hidden');
       });
       
       updatePracticeState();
@@ -570,14 +580,29 @@
       // 處理魔方陣進度
       document.querySelectorAll('.cell-wrapper[data-type="square"]').forEach((wrapper, idx) => {
         const practiceLayer = wrapper.querySelector('.cell-practice');
-        const isRevealed = fillSeq1D.indexOf(idx) < squareStep;
+        const inputLayer = wrapper.querySelector('.cell-input');
+        
+        const seqIndex = fillSeq1D.indexOf(idx);
+        let isRevealed = seqIndex < squareStep;
+        
+        if (squareStep >= 14 && wrapper.dataset.manualReveal === 'true') {
+            isRevealed = true;
+        }
         
         if (isRevealed) {
           practiceLayer.classList.remove('opacity-0', 'scale-50');
           practiceLayer.classList.add('opacity-100', 'scale-100');
+          inputLayer.classList.add('hidden');
         } else {
           practiceLayer.classList.add('opacity-0', 'scale-50');
           practiceLayer.classList.remove('opacity-100', 'scale-100');
+          
+          if (squareStep >= 14) {
+            // 最後兩個空格，解除隱藏，讓觀眾輸入但保持純白無浮水印
+            inputLayer.classList.remove('hidden');
+          } else {
+            inputLayer.classList.add('hidden');
+          }
         }
       });
 
