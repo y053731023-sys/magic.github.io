@@ -98,7 +98,7 @@
         <div class="flex justify-between items-center mb-5 flex-shrink-0">
             <div class="flex items-center">
                 <span class="text-xl font-bold text-gray-900 mr-2">表演配置後台</span>
-                <span class="px-2 py-0.5 bg-gray-100 text-gray-400 text-[9px] rounded uppercase tracking-tighter">Persistence Active</span>
+                <span id="sync-status" class="px-2 py-0.5 bg-gray-100 text-gray-400 text-[9px] rounded uppercase tracking-tighter">Local Mode</span>
             </div>
             <button id="btn-enter-magic" class="text-xs sm:text-sm bg-blue-600 text-white px-8 py-3 rounded-full font-bold shadow-lg active:scale-95 transition-all">
                 確認並開始表演
@@ -107,7 +107,7 @@
 
         <!-- 操作說明 -->
         <div class="mb-5 bg-blue-50 p-4 rounded-2xl border border-blue-100 text-[11px] text-blue-700 leading-relaxed">
-            <p>🔒 <b>長按標題 1.5 秒</b>：喚出後台。設定已<b>自動同步至雲端</b>。</p>
+            <p>🔒 <b>長按標題 1.5 秒</b>：喚出後台。設定會自動儲存在此瀏覽器中。</p>
             <p>🎯 <b>觸發方式</b>：螢幕【中右側】下一步，【左邊緣】上一步。</p>
         </div>
 
@@ -148,22 +148,97 @@
         <button id="btn-exit-magic" class="w-8 h-8 opacity-0">退出</button>
     </div>
 
-    <!-- Firebase SDK -->
+    <!-- 核心邏輯腳本 -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Firebase 配置 (從環境變數取得)
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'magic-eye-app';
-
+        // 1. 環境變數檢查與 Firebase 初始化 (增加 try-catch 防崩潰)
+        let db = null;
         let userId = null;
+        let appId = 'magic-eye-app';
+        const syncStatus = document.getElementById('sync-status');
         const saveIndicator = document.getElementById('save-indicator');
 
+        async function setupFirebase() {
+            try {
+                // 檢查全域變數是否存在
+                if (typeof __firebase_config === 'undefined') {
+                    console.warn("未偵測到 Firebase 配置，切換至 LocalStorage 模式。");
+                    return;
+                }
+
+                const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+                const { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+                const { getFirestore } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                db = getFirestore(app);
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'magic-eye-app';
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        syncStatus.innerText = "Persistence Active";
+                        syncStatus.classList.replace('text-gray-400', 'text-green-500');
+                        loadConfigFromCloud(userId);
+                    }
+                });
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.error("Firebase 初始化失敗:", e);
+            }
+        }
+
+        // --- 資料儲存邏輯 (支援雲端與 LocalStorage) ---
+        async function saveConfig() {
+            // 先存到 LocalStorage
+            localStorage.setItem('magic_eye_seq', JSON.stringify(customSequence));
+
+            // 如果有 Firebase 則同步到雲端
+            if (db && userId) {
+                saveIndicator.style.display = 'block';
+                try {
+                    const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                    await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'config', 'sequence'), {
+                        data: customSequence,
+                        updatedAt: Date.now()
+                    });
+                } catch (err) {
+                    console.error("雲端儲存失敗", err);
+                } finally {
+                    setTimeout(() => { saveIndicator.style.display = 'none'; }, 500);
+                }
+            }
+        }
+
+        async function loadConfigFromCloud(uid) {
+            try {
+                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                const snap = await getDoc(doc(db, 'artifacts', appId, 'users', uid, 'config', 'sequence'));
+                if (snap.exists()) {
+                    customSequence = snap.data().data;
+                    updateVisuals();
+                }
+            } catch (err) {
+                console.error("雲端載入失敗", err);
+            }
+        }
+
+        // 載入本地儲存
+        function loadLocalConfig() {
+            const localData = localStorage.getItem('magic_eye_seq');
+            if (localData) {
+                customSequence = JSON.parse(localData);
+                updateVisuals();
+            }
+        }
+
+        // --- 視力表邏輯 ---
         const rotationMap = { up: '-rotate-90', down: 'rotate-90', left: 'rotate-180', right: 'rotate-0' };
         const chartData = [
             { size: 'text-[22vmin]', gap: 'gap-[5vmin]', items: ['right'] },
@@ -189,53 +264,7 @@
         const sequenceDisplay = document.getElementById('sequence-display');
         const poolInstruction = document.getElementById('pool-instruction');
 
-        // --- 雲端儲存與載入邏輯 ---
-        const saveConfig = async () => {
-            if (!userId) return;
-            saveIndicator.style.display = 'block';
-            try {
-                await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'config', 'sequence'), {
-                    data: customSequence,
-                    updatedAt: Date.now()
-                });
-            } catch (err) {
-                console.error("儲存失敗", err);
-            } finally {
-                setTimeout(() => { saveIndicator.style.display = 'none'; }, 500);
-            }
-        };
-
-        const loadConfig = async (uid) => {
-            try {
-                const snap = await getDoc(doc(db, 'artifacts', appId, 'users', uid, 'config', 'sequence'));
-                if (snap.exists()) {
-                    customSequence = snap.data().data;
-                    updateVisuals();
-                }
-            } catch (err) {
-                console.error("載入失敗", err);
-            }
-        };
-
-        // --- Firebase 認證初始化 ---
-        const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                userId = user.uid;
-                loadConfig(userId);
-            }
-        });
-
-        initAuth();
-
-        // --- 核心長按邏輯 ---
+        // 長按標題邏輯
         let longPressTimer;
         const triggerBackstage = () => {
             controlPanel.classList.remove('hidden');
@@ -253,7 +282,7 @@
         window.addEventListener('touchend', cancelLongPress);
         window.addEventListener('touchmove', cancelLongPress);
 
-        window.renderChart = function() {
+        function renderChart() {
             chartContainer.innerHTML = ''; 
             chartData.forEach((row, rowIndex) => {
                 const rowDiv = document.createElement('div');
@@ -274,7 +303,7 @@
             });
         }
 
-        window.renderSequenceUI = function() {
+        function renderSequenceUI() {
             sequenceDisplay.innerHTML = '';
             if (editingIndex > -1) {
                 poolInstruction.innerText = `🔄 請選擇要替換第 ${editingIndex + 1} 步的效果：`;
@@ -307,14 +336,14 @@
                     if (editingIndex === idx) editingIndex = -1; else if (editingIndex > idx) editingIndex--;
                     if (currentStepIndex >= customSequence.length) currentStepIndex = Math.max(0, customSequence.length - 1);
                     updateVisuals();
-                    saveConfig(); // 儲存異動
+                    saveConfig(); 
                 };
                 span.appendChild(delBtn);
                 sequenceDisplay.appendChild(span);
             });
         }
 
-        window.updateVisuals = function() {
+        function updateVisuals() {
             const currentEffectId = (customSequence.length > 0) ? customSequence[currentStepIndex] : 0;
             const targetE = document.getElementById('target-e');
             const otherEs = document.querySelectorAll('.other-e');
@@ -367,44 +396,27 @@
             }
 
             if(targetE) { targetE.className = targetEClass; targetE.innerText = targetText; }
-            window.renderSequenceUI(); 
+            renderSequenceUI(); 
         }
 
-        function nextStep() { if (customSequence.length === 0) return; currentStepIndex = (currentStepIndex + 1) % customSequence.length; window.updateVisuals(); }
-        function prevStep() { if (customSequence.length === 0) return; currentStepIndex = (currentStepIndex - 1 + customSequence.length) % customSequence.length; window.updateVisuals(); }
-
+        // 按鈕綁定
         document.querySelectorAll('.pool-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const effId = parseInt(e.currentTarget.getAttribute('data-effect'));
                 if (editingIndex > -1) { customSequence[editingIndex] = effId; editingIndex = -1; } 
                 else { customSequence.push(effId); currentStepIndex = customSequence.length - 1; }
-                window.updateVisuals();
-                saveConfig(); // 儲存異動
+                updateVisuals();
+                saveConfig(); 
             });
         });
 
-        document.getElementById('btn-clear-seq').addEventListener('click', () => { 
-            customSequence = []; 
-            currentStepIndex = 0; 
-            window.updateVisuals(); 
-            saveConfig();
-        });
-        
-        document.getElementById('btn-default-seq').addEventListener('click', () => { 
-            customSequence = [0, 1, 2, 3, 5, 6, 8, 9]; 
-            currentStepIndex = 0; 
-            window.updateVisuals(); 
-            saveConfig();
-        });
-        
+        document.getElementById('btn-clear-seq').addEventListener('click', () => { customSequence = []; currentStepIndex = 0; updateVisuals(); saveConfig(); });
+        document.getElementById('btn-default-seq').addEventListener('click', () => { customSequence = [0, 1, 2, 3, 5, 6, 8, 9]; currentStepIndex = 0; updateVisuals(); saveConfig(); });
         document.getElementById('btn-close-panel').addEventListener('click', () => controlPanel.classList.add('hidden'));
 
         document.getElementById('btn-enter-magic').addEventListener('click', () => {
             if (customSequence.length === 0) return;
-            magicMode = true;
-            currentStepIndex = 0;
-            editingIndex = -1;
-            window.updateVisuals();
+            magicMode = true; currentStepIndex = 0; editingIndex = -1; updateVisuals();
             controlPanel.classList.add('hidden');
             document.getElementById('secret-zone-right').classList.remove('hidden'); 
             document.getElementById('secret-zone-left').classList.remove('hidden');
@@ -412,19 +424,19 @@
 
         const zoneRight = document.getElementById('secret-zone-right');
         const zoneLeft = document.getElementById('secret-zone-left');
-        const handleInteraction = (type) => {
-            if(!magicMode) return;
-            if(type === 'next') nextStep();
-            else prevStep();
-        };
+        const nextStep = () => { if (customSequence.length === 0) return; currentStepIndex = (currentStepIndex + 1) % customSequence.length; updateVisuals(); };
+        const prevStep = () => { if (customSequence.length === 0) return; currentStepIndex = (currentStepIndex - 1 + customSequence.length) % customSequence.length; updateVisuals(); };
 
-        zoneRight.addEventListener('touchstart', (e) => { e.preventDefault(); handleInteraction('next'); });
-        zoneRight.addEventListener('mousedown', () => handleInteraction('next'));
-        zoneLeft.addEventListener('touchstart', (e) => { e.preventDefault(); handleInteraction('prev'); });
-        zoneLeft.addEventListener('mousedown', () => handleInteraction('prev'));
+        zoneRight.addEventListener('touchstart', (e) => { e.preventDefault(); if(magicMode) nextStep(); });
+        zoneRight.addEventListener('mousedown', () => { if(magicMode) nextStep(); });
+        zoneLeft.addEventListener('touchstart', (e) => { e.preventDefault(); if(magicMode) prevStep(); });
+        zoneLeft.addEventListener('mousedown', () => { if(magicMode) prevStep(); });
 
-        window.renderChart(); 
-        window.updateVisuals();
+        // 初始化
+        renderChart(); 
+        updateVisuals();
+        loadLocalConfig(); // 先讀本地
+        setupFirebase();  // 再試雲端
     </script>
 </body>
 </html>
