@@ -21,6 +21,7 @@
             opacity: 0.85;
         }
 
+        /* 調色盤按鈕被選中時的特效 */
         .color-btn.active {
             transform: scale(1.15);
             border: 3px solid #111827;
@@ -33,11 +34,11 @@
             filter: grayscale(100%);
         }
 
+        /* 畫布外框樣式 */
         #canvas-container {
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
             background-color: #ffffff; 
             border: 4px solid #111827;
-            border-radius: 20px;
         }
         
         /* 輪廓線層穿透，不阻擋填色點擊 */
@@ -46,189 +47,161 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center py-6 px-4 font-sans text-gray-800">
+<!-- 使用 justify-center 讓整個應用程式在畫面上垂直居中 -->
+<body class="min-h-screen flex flex-col items-center justify-center py-4 px-4 font-sans text-gray-800">
 
-    <div id="app-container" class="max-w-md w-full flex flex-col gap-6 app-active">
+    <!-- 容器加入響應式最大寬度：手機 max-w-sm/md，平板 md:max-w-xl -->
+    <div id="app-container" class="w-full max-w-sm sm:max-w-md md:max-w-xl lg:max-w-2xl flex flex-col gap-4 md:gap-6 app-active mx-auto">
         
-        <!-- 標題區 -->
+        <!-- 標題區響應式放大 -->
         <div class="text-center">
-            <h1 class="text-2xl font-bold mb-2">穿搭著色測驗</h1>
-            <p id="instruction-text" class="text-sm text-gray-500">點擊下方顏色，再點擊服裝部位進行上色</p>
+            <h1 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">穿搭著色測驗</h1>
+            <p id="instruction-text" class="text-xs md:text-base text-gray-500">點擊下方顏色，再點擊服裝部位進行上色</p>
         </div>
 
-        <!-- SVG 畫布區 (完美幾何重繪版) -->
-        <div id="canvas-container" class="overflow-hidden relative">
-            <svg id="drawing-svg" viewBox="0 0 400 780" class="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
+        <!-- SVG 畫布區：高度改用 vh (視窗高度)，確保絕對不超出螢幕 -->
+        <div id="canvas-container" class="rounded-2xl overflow-hidden relative flex justify-center items-center w-full h-[55vh] sm:h-[60vh] md:h-[65vh] p-2 md:p-4">
+            <!-- SVG 高度填滿容器 (h-full)，寬度自動 (w-auto) 以維持完美比例 -->
+            <svg id="drawing-svg" viewBox="0 0 400 780" class="h-full w-auto" xmlns="http://www.w3.org/2000/svg">
                 
-                <!-- ==========================================
-                     第一層：填色區塊 (Fill Layer)
-                     ========================================== -->
+                <!-- 第一層：填色區塊 (Fill Layer) -->
                 <g id="fill-layer" stroke="none">
                     
-                    <!-- 膚色區塊 (固定純白) -->
                     <g fill="#ffffff">
-                        <circle cx="145" cy="140" r="12" /> <!-- 左耳 -->
-                        <circle cx="255" cy="140" r="12" /> <!-- 右耳 -->
-                        <rect x="150" y="90" width="100" height="100" rx="45" /> <!-- 臉部 -->
-                        <rect x="185" y="180" width="30" height="30" /> <!-- 脖子 -->
-                        <!-- 雙手 -->
+                        <circle cx="145" cy="140" r="12" />
+                        <circle cx="255" cy="140" r="12" />
+                        <rect x="150" y="90" width="100" height="100" rx="45" />
+                        <rect x="185" y="180" width="30" height="30" />
                         <path d="M 115 360 L 110 430 C 110 450 135 450 140 430 L 145 350 Z" />
                         <path d="M 285 360 L 290 430 C 290 450 265 450 260 430 L 255 350 Z" />
                     </g>
-
-                    <!-- 頭髮 (固定純白) -->
                     <path fill="#ffffff" d="M 140 120 L 135 95 L 150 80 L 155 55 L 180 65 L 195 40 L 220 55 L 245 45 L 250 70 L 265 90 L 260 120 C 240 100 200 100 140 120 Z" />
 
                     <!-- 可著色服飾區 -->
                     <!-- 襯衫 -->
-                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 160 230 L 240 230 L 250 420 L 150 420 Z" /> <!-- 身體 -->
-                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 160 230 L 120 250 L 115 340 L 155 330 Z" /> <!-- 左袖 -->
-                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 240 230 L 280 250 L 285 340 L 245 330 Z" /> <!-- 右袖 -->
-                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 110 340 L 160 330 L 155 355 L 105 365 Z" /> <!-- 左袖捲起 -->
-                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 290 340 L 240 330 L 245 355 L 295 365 Z" /> <!-- 右袖捲起 -->
-                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 185 205 L 155 235 L 190 245 Z" /> <!-- 左領 -->
-                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 215 205 L 245 235 L 210 245 Z" /> <!-- 右領 -->
+                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 160 230 L 240 230 L 250 420 L 150 420 Z" />
+                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 160 230 L 120 250 L 115 340 L 155 330 Z" />
+                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 240 230 L 280 250 L 285 340 L 245 330 Z" />
+                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 110 340 L 160 330 L 155 355 L 105 365 Z" />
+                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 290 340 L 240 330 L 245 355 L 295 365 Z" />
+                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 185 205 L 155 235 L 190 245 Z" />
+                    <path class="color-area part-shirt" data-part="shirt" fill="#ffffff" d="M 215 205 L 245 235 L 210 245 Z" />
 
                     <!-- 領帶 -->
                     <path class="color-area part-tie" data-part="tie" fill="#ffffff" d="M 190 245 L 210 245 L 205 265 L 195 265 Z" />
                     <path class="color-area part-tie" data-part="tie" fill="#ffffff" d="M 195 265 L 205 265 L 215 365 L 200 385 L 185 365 Z" />
 
                     <!-- 長褲 -->
-                    <path class="color-area part-trousers" data-part="trousers" fill="#ffffff" d="M 148 420 L 252 420 L 252 440 L 148 440 Z" /> <!-- 腰帶 -->
-                    <path class="color-area part-trousers" data-part="trousers" fill="#ffffff" d="M 148 440 L 198 440 L 198 600 L 143 600 Z" /> <!-- 左腿 -->
-                    <path class="color-area part-trousers" data-part="trousers" fill="#ffffff" d="M 202 440 L 252 440 L 257 600 L 202 600 Z" /> <!-- 右腿 -->
-                    <path class="color-area part-trousers" data-part="trousers" fill="#ffffff" d="M 138 600 L 200 600 L 200 620 L 138 620 Z" /> <!-- 左褲腳 -->
-                    <path class="color-area part-trousers" data-part="trousers" fill="#ffffff" d="M 200 600 L 262 600 L 262 620 L 200 620 Z" /> <!-- 右褲腳 -->
+                    <path class="color-area part-trousers" data-part="trousers" fill="#ffffff" d="M 148 420 L 252 420 L 252 440 L 148 440 Z" />
+                    <path class="color-area part-trousers" data-part="trousers" fill="#ffffff" d="M 148 440 L 198 440 L 198 600 L 143 600 Z" />
+                    <path class="color-area part-trousers" data-part="trousers" fill="#ffffff" d="M 202 440 L 252 440 L 257 600 L 202 600 Z" />
+                    <path class="color-area part-trousers" data-part="trousers" fill="#ffffff" d="M 138 600 L 200 600 L 200 620 L 138 620 Z" />
+                    <path class="color-area part-trousers" data-part="trousers" fill="#ffffff" d="M 200 600 L 262 600 L 262 620 L 200 620 Z" />
 
                     <!-- 襪子 -->
                     <path class="color-area part-socks" data-part="socks" fill="#ffffff" d="M 148 620 L 190 620 L 190 650 L 148 650 Z" />
                     <path class="color-area part-socks" data-part="socks" fill="#ffffff" d="M 210 620 L 252 620 L 252 650 L 210 650 Z" />
 
-                    <!-- 皮鞋 (精準弧線繪製) -->
-                    <!-- 左鞋本體 -->
+                    <!-- 皮鞋 -->
                     <path class="color-area part-shoes" data-part="shoes" fill="#ffffff" d="M 148 650 L 190 650 L 190 680 L 115 680 C 100 680 100 660 115 655 L 148 650 Z" />
-                    <!-- 左鞋底與鞋跟 -->
                     <path class="color-area part-shoes" data-part="shoes" fill="#ffffff" d="M 112 680 L 190 680 L 190 690 L 115 690 C 105 690 105 680 112 680 Z" />
                     <path class="color-area part-shoes" data-part="shoes" fill="#ffffff" d="M 170 690 L 190 690 L 190 698 L 170 698 Z" />
-
-                    <!-- 右鞋本體 -->
+                    
                     <path class="color-area part-shoes" data-part="shoes" fill="#ffffff" d="M 252 650 L 210 650 L 210 680 L 285 680 C 300 680 300 660 285 655 L 252 650 Z" />
-                    <!-- 右鞋底與鞋跟 -->
                     <path class="color-area part-shoes" data-part="shoes" fill="#ffffff" d="M 288 680 L 210 680 L 210 690 L 285 690 C 295 690 295 680 288 680 Z" />
                     <path class="color-area part-shoes" data-part="shoes" fill="#ffffff" d="M 230 690 L 210 690 L 210 698 L 230 698 Z" />
                 </g>
 
-                <!-- ==========================================
-                     第二層：輪廓線與細節層 (Outline Layer)
-                     ========================================== -->
+                <!-- 第二層：輪廓線與細節層 (Outline Layer) -->
                 <g class="outline-layer" fill="none" stroke="#111827" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
                     
-                    <!-- 臉部與耳朵 -->
                     <circle cx="145" cy="140" r="12" />
                     <circle cx="255" cy="140" r="12" />
-                    <path d="M 145 140 C 130 140 130 160 140 165" stroke-width="2.5" /> <!-- 耳朵細節 -->
+                    <path d="M 145 140 C 130 140 130 160 140 165" stroke-width="2.5" /> 
                     <path d="M 255 140 C 270 140 270 160 260 165" stroke-width="2.5" />
                     <rect x="150" y="90" width="100" height="100" rx="45" />
 
-                    <!-- 五官 -->
                     <circle cx="175" cy="135" r="4.5" fill="#111827" stroke="none" />
                     <circle cx="225" cy="135" r="4.5" fill="#111827" stroke="none" />
                     <path d="M 165 120 Q 175 115 185 120" stroke-width="4.5" />
                     <path d="M 215 120 Q 225 115 235 120" stroke-width="4.5" />
-                    <path d="M 198 145 L 198 155 C 198 160 205 160 205 155" stroke-width="3" /> <!-- 鼻子 -->
-                    <path d="M 185 170 Q 200 180 215 170" stroke-width="3" /> <!-- 嘴巴 -->
+                    <path d="M 198 145 L 198 155 C 198 160 205 160 205 155" stroke-width="3" /> 
+                    <path d="M 185 170 Q 200 180 215 170" stroke-width="3" /> 
 
-                    <!-- 髮型 -->
                     <path d="M 140 120 L 135 95 L 150 80 L 155 55 L 180 65 L 195 40 L 220 55 L 245 45 L 250 70 L 265 90 L 260 120" />
                     <path d="M 140 120 Q 155 130 170 115 Q 185 130 200 115 Q 215 130 230 115 Q 245 130 260 120" />
 
-                    <!-- 脖子與衣領 -->
                     <path d="M 185 190 L 185 205 M 215 190 L 215 205" />
                     <path d="M 185 205 L 155 235 L 190 245 Z" />
                     <path d="M 215 205 L 245 235 L 210 245 Z" />
 
-                    <!-- 領帶 -->
                     <path d="M 190 245 L 210 245 L 205 265 L 195 265 Z" />
                     <path d="M 195 265 L 205 265 L 215 365 L 200 385 L 185 365 Z" />
 
-                    <!-- 襯衫 -->
                     <path d="M 160 230 L 150 420 M 240 230 L 250 420" />
                     <path d="M 150 420 L 250 420" />
                     <path d="M 160 230 L 120 250 L 115 340 M 240 230 L 280 250 L 285 340" />
-                    <!-- 袖口捲起 -->
                     <polygon points="110,340 160,330 155,355 105,365" />
                     <polygon points="290,340 240,330 245,355 295,365" />
                     
-                    <!-- 雙手 -->
                     <path d="M 115 360 L 110 430 C 110 450 135 450 140 430 L 145 350 Z" />
                     <path d="M 285 360 L 290 430 C 290 450 265 450 260 430 L 255 350 Z" />
-                    <path d="M 118 410 L 118 435 M 128 410 L 128 440" stroke-width="2.5" /> <!-- 手指縫 -->
+                    <path d="M 118 410 L 118 435 M 128 410 L 128 440" stroke-width="2.5" /> 
                     <path d="M 282 410 L 282 435 M 272 410 L 272 440" stroke-width="2.5" />
 
-                    <!-- 長褲腰帶 -->
                     <path d="M 148 420 L 252 420 L 252 440 L 148 440 Z" />
-                    <rect x="190" y="420" width="20" height="20" rx="3" /> <!-- 皮帶扣 -->
+                    <rect x="190" y="420" width="20" height="20" rx="3" /> 
                     
-                    <!-- 褲管本體 -->
-                    <path d="M 148 440 L 143 600 M 252 440 L 257 600" /> <!-- 外側 -->
-                    <path d="M 198 440 L 198 600 M 202 440 L 202 600" /> <!-- 內側 -->
-                    <path d="M 148 440 C 160 440 170 450 165 470" /> <!-- 左口袋 -->
-                    <path d="M 252 440 C 240 440 230 450 235 470" /> <!-- 右口袋 -->
+                    <path d="M 148 440 L 143 600 M 252 440 L 257 600" /> 
+                    <path d="M 198 440 L 198 600 M 202 440 L 202 600" /> 
+                    <path d="M 148 440 C 160 440 170 450 165 470" /> 
+                    <path d="M 252 440 C 240 440 230 450 235 470" /> 
 
-                    <!-- 捲起的褲腳 -->
                     <path d="M 138 600 L 200 600 L 200 620 L 138 620 Z" />
                     <path d="M 200 600 L 262 600 L 262 620 L 200 620 Z" />
 
-                    <!-- 襪子 -->
                     <path d="M 148 620 L 148 650 M 190 620 L 190 650" />
                     <path d="M 210 620 L 210 650 M 252 620 L 252 650" />
-                    <path d="M 148 630 L 190 630 M 148 640 L 190 640" stroke-width="2" /> <!-- 襪子紋路 -->
+                    <path d="M 148 630 L 190 630 M 148 640 L 190 640" stroke-width="2" /> 
                     <path d="M 210 630 L 252 630 M 210 640 L 252 640" stroke-width="2" />
 
-                    <!-- 皮鞋 (完美幾何版) -->
-                    <!-- 左鞋 -->
                     <path d="M 148 650 L 190 650 L 190 680 L 115 680 C 100 680 100 660 115 655 L 148 650 Z" />
                     <path d="M 112 680 L 190 680 L 190 690 L 115 690 C 105 690 105 680 112 680 Z" />
                     <path d="M 170 690 L 190 690 L 190 698 L 170 698 Z" />
                     
-                    <!-- 右鞋 -->
                     <path d="M 252 650 L 210 650 L 210 680 L 285 680 C 300 680 300 660 285 655 L 252 650 Z" />
                     <path d="M 288 680 L 210 680 L 210 690 L 285 690 C 295 690 295 680 288 680 Z" />
                     <path d="M 230 690 L 210 690 L 210 698 L 230 698 Z" />
                     
-                    <!-- 鞋面與鞋帶細節 -->
                     <path d="M 150 655 L 135 665 M 155 660 L 140 670" stroke-width="2" />
                     <path d="M 250 655 L 265 665 M 245 660 L 260 670" stroke-width="2" />
-
                 </g>
             </svg>
         </div>
 
-        <!-- 顏色選擇器 (七彩顏色) -->
-        <div id="palette-container" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between transition-all duration-300">
-            <div id="palette" class="flex w-full justify-between gap-1"></div>
+        <!-- 顏色選擇器：在平板上按鈕會自動變大 (md:w-14) -->
+        <div id="palette-container" class="bg-white p-3 md:p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between transition-all duration-300">
+            <div id="palette" class="flex w-full justify-between gap-1 md:gap-2"></div>
         </div>
 
-        <!-- 按鈕區 -->
+        <!-- 按鈕區：在平板上高度與字體放大 -->
         <div class="flex flex-col gap-3">
-            <button id="lock-btn" onclick="lockAndCopyCode()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg transition-transform active:scale-95 text-lg tracking-wider">
+            <button id="lock-btn" onclick="lockAndCopyCode()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 md:py-5 rounded-2xl shadow-lg transition-transform active:scale-95 text-base md:text-xl tracking-wider">
                 完成上色
             </button>
             
-            <button id="reset-btn" onclick="resetApp()" class="hidden w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-4 rounded-2xl transition-transform active:scale-95 text-lg tracking-wider">
+            <button id="reset-btn" onclick="resetApp()" class="hidden w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 md:py-5 rounded-2xl transition-transform active:scale-95 text-base md:text-xl tracking-wider">
                 重新測驗
             </button>
         </div>
 
-        <!-- 訊息提示框 -->
-        <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full opacity-0 transition-opacity duration-300 pointer-events-none z-50 whitespace-nowrap">
+        <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full opacity-0 transition-opacity duration-300 pointer-events-none z-50 whitespace-nowrap text-sm md:text-base">
             處理中...
         </div>
 
     </div>
 
     <script>
-        // 定義魔術後台編號對應顏色 (1~7, 包含粉紅色=6)
         const colors = [
             { id: '1', name: '紅', hex: '#EF4444' },
             { id: '2', name: '橙', hex: '#F97316' },
@@ -243,7 +216,6 @@
         let currentColor = colors[0]; 
         let isLocked = false; 
 
-        // 紀錄服飾顏色編號 (襯衫、領帶、長褲、襪子、皮鞋)
         const partColors = {
             shirt: '0',
             tie: '0',
@@ -252,11 +224,11 @@
             shoes: '0'
         };
 
-        // 建立調色盤
         const paletteContainer = document.getElementById('palette');
         colors.filter(c => c.id !== '0').forEach((color, index) => {
             const btn = document.createElement('button');
-            btn.className = `color-btn w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-transform duration-200 outline-none focus:outline-none`;
+            // 加入響應式大小：手機 9x9(36px) ~ 平板 14x14(56px)
+            btn.className = `color-btn w-9 h-9 sm:w-11 sm:h-11 md:w-14 md:h-14 rounded-full transition-transform duration-200 outline-none focus:outline-none`;
             btn.style.backgroundColor = color.hex;
             btn.setAttribute('aria-label', color.name);
             
@@ -271,7 +243,6 @@
             paletteContainer.appendChild(btn);
         });
 
-        // 綁定著色事件：同部位的區塊一起變色
         const colorAreas = document.querySelectorAll('.color-area');
         colorAreas.forEach(area => {
             area.addEventListener('click', function() {
@@ -297,12 +268,9 @@
             }, duration);
         }
 
-        // 魔術核心：鎖定並偷偷複製色碼
         function lockAndCopyCode() {
-            // 組合 5 碼數字
             const colorCode = `${partColors.shirt}${partColors.tie}${partColors.trousers}${partColors.socks}${partColors.shoes}`;
             
-            // 靜默複製 (使用 execCommand 確保兼容性)
             const tempInput = document.createElement("input");
             tempInput.value = colorCode;
             document.body.appendChild(tempInput);
@@ -310,7 +278,6 @@
             document.execCommand("copy");
             document.body.removeChild(tempInput);
 
-            // 鎖定介面
             isLocked = true;
             document.getElementById('app-container').classList.remove('app-active');
             document.getElementById('palette-container').classList.add('locked-palette');
