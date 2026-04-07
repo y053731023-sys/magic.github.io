@@ -1,264 +1,430 @@
-```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>魔術互動視力表</title>
-    <!-- 引入 Tailwind CSS 以快速套用樣式 -->
+    <title>標準對數視力表</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 隱藏捲軸並禁止文字選取以防止表演時誤觸 */
         body {
             user-select: none;
             -webkit-user-select: none;
             overflow: hidden;
             touch-action: manipulation;
         }
+        .chart-font {
+            font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Heiti TC", sans-serif;
+        }
+        /* 極致炫彩樣式 */
+        .rainbow-target {
+            background-image: linear-gradient(to right, #ff0000, #ff9900, #33cc33, #3399ff, #9900cc);
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0px 0px 15px rgba(255, 255, 255, 0.5);
+        }
+        .rainbow-chart {
+            background-image: linear-gradient(to bottom right, #ff0080, #ff8c00, #40e0d0, #ba55d3);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .rainbow-header {
+            background-image: linear-gradient(to right, #ff0080, #ba55d3);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .rainbow-line {
+            background: linear-gradient(to right, #ff0080, #ba55d3);
+        }
+
+        /* 編輯模式動畫 */
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
+            70% { box-shadow: 0 0 0 4px rgba(234, 179, 8, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+        }
+        .editing-mode {
+            animation: pulse-border 1.5s infinite;
+            border-color: #eab308 !important;
+            background-color: #fef08a !important;
+            color: #854d0e !important;
+        }
+
+        /* 標題點擊反饋 */
+        #main-title:active {
+            opacity: 0.6;
+        }
+        
+        /* 儲存中提示 */
+        #save-indicator {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 12px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            font-size: 10px;
+            border-radius: 99px;
+            display: none;
+            z-index: 100;
+            pointer-events: none;
+        }
     </style>
 </head>
-<body class="bg-gray-50 font-sans min-h-screen flex flex-col items-center relative" id="main-body">
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col items-center justify-center relative" id="main-body">
 
-    <!-- 隱藏的無聲音檔，用於監聽系統音量鍵變化 -->
-    <audio id="silent-audio" src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA" loop playsinline style="display: none;"></audio>
+    <div id="save-indicator">同步中...</div>
 
-    <!-- 頂部標題 -->
-    <div class="w-full max-w-md mt-6 text-center z-0">
-        <h1 class="text-xl font-bold tracking-[0.3em] text-gray-800 mb-1">標準對數視力表</h1>
-        <div class="h-[2px] bg-gray-800 w-3/4 mx-auto mb-2"></div>
+    <!-- 頂部標題容器 -->
+    <div id="header-container" class="w-full max-w-2xl mt-4 text-center z-50 origin-top">
+        <h1 id="main-title" class="text-2xl sm:text-4xl font-bold tracking-[0.3em] text-gray-800 mb-1 cursor-pointer">標準對數視力表</h1>
+        <div id="title-line" class="h-[3px] bg-gray-800 w-[80%] sm:w-[60%] mx-auto mb-2"></div>
     </div>
 
     <!-- 視力表主體容器 -->
-    <div id="chart-container" class="flex-grow w-full max-w-md transition-all duration-700 ease-in-out flex flex-col items-center pt-8 pb-12 text-black z-0">
-        <!-- 視力表內容將透過 JavaScript 動態生成 -->
-    </div>
-
-    <!-- 魔術模式：全螢幕初始化遮罩 -->
-    <div id="magic-overlay" class="hidden absolute inset-0 bg-black/60 flex flex-col items-center justify-center z-50 backdrop-blur-sm cursor-pointer">
-        <div class="bg-white p-8 rounded-2xl text-center max-w-[80%] shadow-2xl transform transition-transform hover:scale-105 active:scale-95 pointer-events-none">
-            <span class="text-5xl mb-4 block">👆</span>
-            <h2 class="font-bold text-gray-800 text-xl mb-2">點擊這裡開始</h2>
-            <p class="text-sm text-gray-500">點擊後遮罩將消失<br>即可使用「音量鍵」或「點擊螢幕」表演</p>
+    <div id="chart-wrapper" class="w-full flex-grow flex items-center justify-center overflow-hidden relative">
+        <div id="chart-container" class="w-full flex flex-col items-center pointer-events-none origin-top chart-font">
+            <!-- 內容動態生成 -->
         </div>
     </div>
 
-    <!-- 控制面板 (觀眾看不到) -->
-    <div id="control-panel" class="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 rounded-t-2xl z-10 max-w-md mx-auto border-t border-gray-200">
-        <div class="flex justify-between items-center mb-4">
-            <span class="text-sm font-semibold text-gray-600">控制面板 (觀眾看不到)</span>
-            <button id="btn-enter-magic" class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-full font-medium hover:bg-red-200 transition-colors">
-                進入魔術模式
+    <!-- 全區觸控隱形區 -->
+    <div id="secret-zone-left" class="hidden fixed top-0 left-0 w-[30%] h-full z-40 bg-transparent"></div>
+    <div id="secret-zone-right" class="hidden fixed top-0 right-0 w-[70%] h-full z-40 bg-transparent"></div>
+
+    <!-- 控制面板 (後台) -->
+    <div id="control-panel" class="hidden fixed bottom-0 left-0 right-0 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.4)] p-5 sm:p-8 rounded-t-[2.5rem] z-[60] max-w-2xl mx-auto border-t border-gray-200 max-h-[80vh] flex flex-col">
+        
+        <div class="flex justify-between items-center mb-5 flex-shrink-0">
+            <div class="flex items-center">
+                <span class="text-xl font-bold text-gray-900 mr-2">表演配置後台</span>
+                <span class="px-2 py-0.5 bg-gray-100 text-gray-400 text-[9px] rounded uppercase tracking-tighter">Persistence Active</span>
+            </div>
+            <button id="btn-enter-magic" class="text-xs sm:text-sm bg-blue-600 text-white px-8 py-3 rounded-full font-bold shadow-lg active:scale-95 transition-all">
+                確認並開始表演
             </button>
         </div>
-        
-        <div class="grid grid-cols-3 gap-2" id="step-buttons">
-            <button data-step="0" class="step-btn py-2 px-1 text-sm rounded transition-colors bg-blue-600 text-white">1. 正常</button>
-            <button data-step="1" class="step-btn py-2 px-1 text-sm rounded transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">2. 改變方向</button>
-            <button data-step="2" class="step-btn py-2 px-1 text-sm rounded transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">3. 近視模糊</button>
-            <button data-step="3" class="step-btn py-2 px-1 text-sm rounded transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">4. 恢復清晰</button>
-            <button data-step="4" class="step-btn py-2 px-1 text-sm rounded transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">5. 散光誤差</button>
-            <button data-step="5" class="step-btn py-2 px-1 text-sm rounded transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">6. 絢麗色彩</button>
+
+        <!-- 操作說明 -->
+        <div class="mb-5 bg-blue-50 p-4 rounded-2xl border border-blue-100 text-[11px] text-blue-700 leading-relaxed">
+            <p>🔒 <b>長按標題 1.5 秒</b>：喚出後台。設定已<b>自動同步至雲端</b>。</p>
+            <p>🎯 <b>觸發方式</b>：螢幕【中右側】下一步，【左邊緣】上一步。</p>
+        </div>
+
+        <!-- 流程顯示區 -->
+        <div class="mb-5 bg-gray-50 p-4 rounded-2xl border border-gray-200 flex-shrink-0">
+            <div class="flex justify-between items-center mb-3">
+                <span class="text-xs font-bold text-gray-600">觸發順序：</span>
+                <div class="space-x-2">
+                    <button id="btn-clear-seq" class="text-[10px] text-red-500 font-bold hover:underline">清空全部</button>
+                    <button id="btn-default-seq" class="text-[10px] text-blue-500 font-bold hover:underline">恢復預設</button>
+                </div>
+            </div>
+            <div id="sequence-display" class="flex flex-wrap gap-2 min-h-[50px] items-center overflow-y-auto max-h-40 p-1"></div>
         </div>
         
-        <button id="btn-next-step" class="w-full mt-3 bg-gray-800 text-white py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-sm">
-            下一步 ➡️
-        </button>
+        <!-- 特效池 -->
+        <div class="flex-grow overflow-y-auto pr-1">
+            <span id="pool-instruction" class="text-[10px] font-bold text-gray-400 mb-3 block uppercase tracking-widest">點擊按鈕加入效果：</span>
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-2.5" id="effect-pool">
+                <button data-effect="0" class="pool-btn py-3.5 text-[11px] font-bold rounded-2xl bg-white border border-gray-200 text-gray-700 shadow-sm active:bg-gray-100">向右</button>
+                <button data-effect="1" class="pool-btn py-3.5 text-[11px] font-bold rounded-2xl bg-white border border-gray-200 text-gray-700 shadow-sm active:bg-gray-100">轉向下</button>
+                <button data-effect="2" class="pool-btn py-3.5 text-[11px] font-bold rounded-2xl bg-white border border-gray-200 text-gray-700 shadow-sm active:bg-gray-100">變「上」</button>
+                <button data-effect="3" class="pool-btn py-3.5 text-[11px] font-bold rounded-2xl bg-white border border-gray-200 text-gray-700 shadow-sm active:bg-gray-100">輕度模糊</button>
+                <button data-effect="4" class="pool-btn py-3.5 text-[11px] font-bold rounded-2xl bg-white border border-gray-200 text-red-700 shadow-sm active:bg-gray-100">重度模糊</button>
+                <button data-effect="5" class="pool-btn py-3.5 text-[11px] font-bold rounded-2xl bg-white border border-gray-200 text-gray-700 shadow-sm active:bg-gray-100">清晰恢復</button>
+                <button data-effect="6" class="pool-btn py-3.5 text-[11px] font-bold rounded-2xl bg-white border border-gray-200 text-gray-700 shadow-sm active:bg-gray-100">散光重影</button>
+                <button data-effect="7" class="pool-btn py-3.5 text-[11px] font-bold rounded-2xl bg-white border border-gray-200 text-purple-700 shadow-sm active:bg-gray-100">歪七扭八</button>
+                <button data-effect="8" class="pool-btn py-3.5 text-[11px] font-bold rounded-2xl bg-white border border-gray-200 text-gray-700 shadow-sm active:bg-gray-100">超級放大</button>
+                <button data-effect="9" class="pool-btn py-3.5 text-[11px] font-bold rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white border-none shadow-md active:opacity-80">炫彩視界</button>
+            </div>
+        </div>
+
+        <button id="btn-close-panel" class="mt-4 py-3 text-xs text-gray-400 font-bold border-t border-gray-100">暫時關閉後台</button>
     </div>
 
-    <!-- 魔術模式下的退出按鈕 -->
-    <div id="exit-magic-container" class="hidden fixed top-2 right-2 flex-col items-end z-20">
-        <button id="btn-exit-magic" class="text-[10px] bg-black/5 text-black/30 px-2 py-1 rounded mb-1 backdrop-blur-sm hover:bg-black/10">
-            退出魔術
-        </button>
+    <!-- 隱蔽的退出按鈕 -->
+    <div id="exit-magic-container" class="hidden fixed top-2 right-2 z-50">
+        <button id="btn-exit-magic" class="w-8 h-8 opacity-0">退出</button>
     </div>
 
-    <script>
-        // 定義方向對應的旋轉角度 (Tailwind classes)
-        const rotationMap = {
-            up: '-rotate-90',
-            down: 'rotate-90',
-            left: 'rotate-180',
-            right: 'rotate-0',
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase 配置 (從環境變數取得)
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'magic-eye-app';
+
+        let userId = null;
+        const saveIndicator = document.getElementById('save-indicator');
+
+        const rotationMap = { up: '-rotate-90', down: 'rotate-90', left: 'rotate-180', right: 'rotate-0' };
+        const chartData = [
+            { size: 'text-[22vmin]', gap: 'gap-[5vmin]', items: ['right'] },
+            { size: 'text-[17vmin]', gap: 'gap-[5vmin]', items: ['up', 'down'] },
+            { size: 'text-[13vmin]', gap: 'gap-[4vmin]', items: ['left', 'up', 'right'] },
+            { size: 'text-[10vmin]', gap: 'gap-[3vmin]', items: ['down', 'left', 'up', 'right'] },
+            { size: 'text-[7.5vmin]', gap: 'gap-[2.5vmin]', items: ['right', 'down', 'left', 'up', 'down'] },
+            { size: 'text-[5.5vmin]', gap: 'gap-[2vmin]', items: ['up', 'right', 'down', 'left', 'up', 'right'] },
+            { size: 'text-[4vmin]', gap: 'gap-[1.5vmin]', items: ['left', 'up', 'right', 'down', 'left', 'up', 'right'] },
+        ];
+        const effectNames = ["向右", "轉向下", "變「上」", "輕度模糊", "重度模糊", "清晰恢復", "散光重影", "歪七扭八", "超級放大", "炫彩視界"];
+        
+        let customSequence = [0, 1, 2, 3, 5, 6, 8, 9]; 
+        let currentStepIndex = 0;
+        let editingIndex = -1; 
+        let magicMode = false;
+
+        const headerContainer = document.getElementById('header-container');
+        const mainTitle = document.getElementById('main-title');
+        const titleLine = document.getElementById('title-line');
+        const chartContainer = document.getElementById('chart-container');
+        const controlPanel = document.getElementById('control-panel');
+        const sequenceDisplay = document.getElementById('sequence-display');
+        const poolInstruction = document.getElementById('pool-instruction');
+
+        // --- 雲端儲存與載入邏輯 ---
+        const saveConfig = async () => {
+            if (!userId) return;
+            saveIndicator.style.display = 'block';
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'config', 'sequence'), {
+                    data: customSequence,
+                    updatedAt: Date.now()
+                });
+            } catch (err) {
+                console.error("儲存失敗", err);
+            } finally {
+                setTimeout(() => { saveIndicator.style.display = 'none'; }, 500);
+            }
         };
 
-        // 視力表排版資料
-        const chartData = [
-            { size: 'text-6xl sm:text-8xl', gap: 'gap-8', items: ['up'] },
-            { size: 'text-5xl sm:text-7xl', gap: 'gap-8', items: ['right', 'down'] },
-            { size: 'text-4xl sm:text-6xl', gap: 'gap-6', items: ['left', 'up', 'right'] },
-            { size: 'text-3xl sm:text-5xl', gap: 'gap-5', items: ['down', 'left', 'up', 'right'] },
-            { size: 'text-2xl sm:text-4xl', gap: 'gap-4', items: ['right', 'down', 'left', 'up', 'down'] },
-            { size: 'text-xl sm:text-3xl', gap: 'gap-3', items: ['up', 'right', 'down', 'left', 'up', 'right'] },
-            { size: 'text-lg sm:text-2xl', gap: 'gap-2', items: ['left', 'up', 'right', 'down', 'left', 'up', 'right'] },
-        ];
+        const loadConfig = async (uid) => {
+            try {
+                const snap = await getDoc(doc(db, 'artifacts', appId, 'users', uid, 'config', 'sequence'));
+                if (snap.exists()) {
+                    customSequence = snap.data().data;
+                    updateVisuals();
+                }
+            } catch (err) {
+                console.error("載入失敗", err);
+            }
+        };
 
-        // 系統狀態變數
-        let step = 0;
-        let magicMode = false;
-        let audioInitialized = false;
-        const stepsCount = 6;
-        let volumeTimeout;
+        // --- Firebase 認證初始化 ---
+        const initAuth = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        };
 
-        // DOM 元素參考
-        const chartContainer = document.getElementById('chart-container');
-        const mainBody = document.getElementById('main-body');
-        const controlPanel = document.getElementById('control-panel');
-        const magicOverlay = document.getElementById('magic-overlay');
-        const exitMagicContainer = document.getElementById('exit-magic-container');
-        const audioEl = document.getElementById('silent-audio');
-        const stepButtons = document.querySelectorAll('.step-btn');
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                loadConfig(userId);
+            }
+        });
 
-        // 1. 初始化生成視力表 HTML
-        function renderChart() {
-            chartContainer.innerHTML = ''; // 清空內容
-            
+        initAuth();
+
+        // --- 核心長按邏輯 ---
+        let longPressTimer;
+        const triggerBackstage = () => {
+            controlPanel.classList.remove('hidden');
+            magicMode = false;
+            updateVisuals();
+        };
+
+        mainTitle.addEventListener('mousedown', () => { longPressTimer = setTimeout(triggerBackstage, 1500); });
+        mainTitle.addEventListener('touchstart', (e) => { 
+            longPressTimer = setTimeout(triggerBackstage, 1500);
+        }, { passive: true });
+
+        const cancelLongPress = () => clearTimeout(longPressTimer);
+        window.addEventListener('mouseup', cancelLongPress);
+        window.addEventListener('touchend', cancelLongPress);
+        window.addEventListener('touchmove', cancelLongPress);
+
+        window.renderChart = function() {
+            chartContainer.innerHTML = ''; 
             chartData.forEach((row, rowIndex) => {
                 const rowDiv = document.createElement('div');
-                rowDiv.className = `flex justify-center items-center ${row.gap} my-2`;
-                
+                rowDiv.className = `flex justify-center items-center ${row.gap} my-[1vmin]`;
                 row.items.forEach((dir, colIndex) => {
                     const charDiv = document.createElement('div');
-                    charDiv.className = `flex justify-center items-center w-[1em] h-[1em] leading-none font-black ${row.size} transition-transform duration-500 ease-in-out`;
-                    
+                    charDiv.className = `flex justify-center items-center w-[1em] h-[1em] leading-none font-black ${row.size}`;
                     const spanEl = document.createElement('span');
                     spanEl.innerText = 'E';
-                    spanEl.className = `inline-block ${rotationMap[dir]} transition-all duration-500`;
-                    
-                    // 標記魔術的目標 E 字 (第一排第一個)
-                    if (rowIndex === 0 && colIndex === 0) {
-                        spanEl.id = 'target-e';
-                    }
-
+                    spanEl.className = `inline-block ${rotationMap[dir]}`;
+                    spanEl.setAttribute('data-dir', dir);
+                    if (rowIndex === 0 && colIndex === 0) spanEl.id = 'target-e';
+                    else spanEl.classList.add('other-e'); 
                     charDiv.appendChild(spanEl);
                     rowDiv.appendChild(charDiv);
                 });
-                
                 chartContainer.appendChild(rowDiv);
             });
         }
 
-        // 2. 根據目前步驟更新視覺效果
-        function updateVisuals() {
+        window.renderSequenceUI = function() {
+            sequenceDisplay.innerHTML = '';
+            if (editingIndex > -1) {
+                poolInstruction.innerText = `🔄 請選擇要替換第 ${editingIndex + 1} 步的效果：`;
+                poolInstruction.className = "text-[10px] font-bold text-yellow-600 mb-3 block bg-yellow-50 px-2 py-1 rounded";
+            } else {
+                poolInstruction.innerText = "點擊下方加入效果：";
+                poolInstruction.className = "text-[10px] font-bold text-gray-400 mb-3 block";
+            }
+            customSequence.forEach((effId, idx) => {
+                const span = document.createElement('span');
+                const isCurrent = idx === currentStepIndex;
+                const isEditing = idx === editingIndex;
+                let baseClass = "pl-2 pr-1 py-2 rounded-xl text-[10px] sm:text-xs font-bold flex items-center transition-all border ";
+                
+                if (isEditing) span.className = baseClass + "editing-mode bg-yellow-50 border-yellow-400 text-yellow-800";
+                else if (isCurrent) span.className = baseClass + "bg-blue-600 text-white border-blue-700 shadow-md";
+                else span.className = baseClass + "bg-white text-gray-700 border-gray-200";
+                
+                const textNode = document.createElement('span');
+                textNode.innerHTML = `<span class="opacity-30 mr-1">${idx+1}.</span>${effectNames[effId]}`;
+                textNode.className = "cursor-pointer mr-1";
+                textNode.onclick = () => { currentStepIndex = idx; editingIndex = (editingIndex === idx) ? -1 : idx; updateVisuals(); };
+                span.appendChild(textNode);
+
+                const delBtn = document.createElement('button');
+                delBtn.innerHTML = '&times;';
+                delBtn.className = "ml-1 w-5 h-5 rounded-full flex items-center justify-center transition-colors " + (isCurrent ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400");
+                delBtn.onclick = (e) => {
+                    e.stopPropagation(); customSequence.splice(idx, 1); 
+                    if (editingIndex === idx) editingIndex = -1; else if (editingIndex > idx) editingIndex--;
+                    if (currentStepIndex >= customSequence.length) currentStepIndex = Math.max(0, customSequence.length - 1);
+                    updateVisuals();
+                    saveConfig(); // 儲存異動
+                };
+                span.appendChild(delBtn);
+                sequenceDisplay.appendChild(span);
+            });
+        }
+
+        window.updateVisuals = function() {
+            const currentEffectId = (customSequence.length > 0) ? customSequence[currentStepIndex] : 0;
             const targetE = document.getElementById('target-e');
+            const otherEs = document.querySelectorAll('.other-e');
             
-            // 重置容器與目標E的基礎樣式
-            chartContainer.className = "flex-grow w-full max-w-md transition-all duration-700 ease-in-out flex flex-col items-center pt-8 pb-12";
-            let targetEClass = "inline-block transition-all duration-500 ease-in-out ";
+            headerContainer.className = "w-full max-w-2xl mt-4 text-center z-50 origin-top";
+            mainTitle.className = "text-2xl sm:text-4xl font-bold tracking-[0.3em] text-gray-800 mb-1 cursor-pointer";
+            titleLine.className = "h-[3px] bg-gray-800 w-[80%] sm:w-[60%] mx-auto mb-2";
+            chartContainer.className = "w-full flex flex-col items-center pointer-events-none origin-top chart-font text-black";
             
-            // 步驟 1: 改變方向
-            if (step >= 1) {
-                targetEClass += rotationMap['right']; // 轉向右邊
-            } else {
-                targetEClass += rotationMap['up']; // 預設朝上
-            }
+            let targetText = "E";
+            let targetEClass = "inline-block font-black "; 
+            if(targetE) { targetE.style.transform = ''; targetE.style.opacity = '1'; targetE.style.filter = 'none'; }
 
-            // 步驟 2~5: 濾鏡與色彩變化
-            if (step === 2) {
-                chartContainer.classList.add('blur-[6px]', 'opacity-80', 'text-black');
-            } else if (step === 3) {
-                chartContainer.classList.add('blur-none', 'opacity-100', 'text-black');
-            } else if (step === 4) {
-                chartContainer.classList.add('drop-shadow-[3px_2px_1px_rgba(0,0,0,0.5)]', '-skew-x-3', 'scale-105', 'text-black');
-            } else if (step === 5) {
-                chartContainer.classList.add('hue-rotate-90', 'saturate-200', 'text-purple-600', 'drop-shadow-[2px_2px_4px_rgba(255,0,255,0.6)]');
-                targetEClass += ' bg-clip-text text-transparent bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500';
-            } else {
-                chartContainer.classList.add('text-black');
-            }
-
-            // 套用目標 E 字的樣式
-            if(targetE) targetE.className = targetEClass;
-
-            // 更新控制面板按鈕狀態
-            stepButtons.forEach((btn, idx) => {
-                if (idx === step) {
-                    btn.className = "step-btn py-2 px-1 text-sm rounded transition-colors bg-blue-600 text-white";
-                } else {
-                    btn.className = "step-btn py-2 px-1 text-sm rounded transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200";
-                }
+            otherEs.forEach(el => {
+                const originalDir = el.getAttribute('data-dir');
+                el.className = `other-e inline-block ${rotationMap[originalDir]} text-black`;
+                el.style.transform = ''; el.style.opacity = '1'; el.style.filter = 'none'; el.innerText = 'E'; 
             });
+
+            if (currentEffectId === 0) targetEClass += rotationMap['right'];
+            else if (currentEffectId === 1) targetEClass += rotationMap['down']; 
+            else if (currentEffectId === 2) { targetText = "上"; targetEClass += rotationMap['right']; } 
+            else if (currentEffectId === 3) { targetEClass += rotationMap['right']; chartContainer.classList.add('blur-[3px]', 'opacity-90'); } 
+            else if (currentEffectId === 4) { targetEClass += rotationMap['right']; chartContainer.classList.add('blur-[10px]', 'opacity-70'); }
+            else if (currentEffectId === 5) targetEClass += rotationMap['right']; 
+            else if (currentEffectId === 6) { targetEClass += rotationMap['right']; chartContainer.classList.add('drop-shadow-[5px_3px_2px_rgba(0,0,0,0.5)]', '-skew-x-3', 'scale-105'); } 
+            else if (currentEffectId === 7) { 
+                targetEClass += rotationMap['right']; 
+                otherEs.forEach(el => { 
+                    const r = (Math.random() - 0.5) * 240; 
+                    const tx = (Math.random() - 0.5) * 80; 
+                    const ty = (Math.random() - 0.5) * 80;
+                    const skX = (Math.random() - 0.5) * 100;
+                    const skY = (Math.random() - 0.5) * 100;
+                    const s = Math.random() * 0.8 + 0.4; 
+                    el.style.transform = `translate(${tx}px, ${ty}px) rotate(${r}deg) skew(${skX}deg, ${skY}deg) scale(${s})`;
+                    el.style.opacity = Math.random() * 0.7 + 0.3;
+                });
+                targetE.style.transform = `rotate(${(Math.random() - 0.5) * 60}deg) skew(${(Math.random() - 0.5) * 30}deg) scale(0.8)`;
+            } 
+            else if (currentEffectId === 8) { 
+                targetEClass += rotationMap['right']; 
+                chartContainer.classList.add('scale-[1.8]'); headerContainer.classList.add('scale-[1.3]'); 
+            } 
+            else if (currentEffectId === 9) {
+                targetEClass += rotationMap['right']; targetEClass += ' rainbow-target'; 
+                mainTitle.classList.add('rainbow-header'); 
+                titleLine.classList.add('rainbow-line');
+                otherEs.forEach(el => { el.classList.remove('text-black'); el.classList.add('rainbow-chart'); });
+            }
+
+            if(targetE) { targetE.className = targetEClass; targetE.innerText = targetText; }
+            window.renderSequenceUI(); 
         }
 
-        // 3. 推進下一步驟
-        function nextStep() {
-            step = (step + 1) % stepsCount;
-            updateVisuals();
-        }
+        function nextStep() { if (customSequence.length === 0) return; currentStepIndex = (currentStepIndex + 1) % customSequence.length; window.updateVisuals(); }
+        function prevStep() { if (customSequence.length === 0) return; currentStepIndex = (currentStepIndex - 1 + customSequence.length) % customSequence.length; window.updateVisuals(); }
 
-        // 4. 事件監聽綁定
-        
-        // 進入魔術模式
-        document.getElementById('btn-enter-magic').addEventListener('click', (e) => {
-            e.stopPropagation();
-            magicMode = true;
-            audioInitialized = false;
-            controlPanel.classList.add('hidden');
-            magicOverlay.classList.remove('hidden');
-            exitMagicContainer.classList.add('hidden');
-            step = 0; // 重置狀態
-            updateVisuals();
-        });
-
-        // 退出魔術模式
-        document.getElementById('btn-exit-magic').addEventListener('click', (e) => {
-            e.stopPropagation();
-            magicMode = false;
-            controlPanel.classList.remove('hidden');
-            exitMagicContainer.classList.add('hidden');
-        });
-
-        // 控制面板下一步
-        document.getElementById('btn-next-step').addEventListener('click', (e) => {
-            e.stopPropagation();
-            nextStep();
-        });
-
-        // 控制面板特定步驟點擊
-        stepButtons.forEach(btn => {
+        document.querySelectorAll('.pool-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                step = parseInt(btn.getAttribute('data-step'));
-                updateVisuals();
+                const effId = parseInt(e.currentTarget.getAttribute('data-effect'));
+                if (editingIndex > -1) { customSequence[editingIndex] = effId; editingIndex = -1; } 
+                else { customSequence.push(effId); currentStepIndex = customSequence.length - 1; }
+                window.updateVisuals();
+                saveConfig(); // 儲存異動
             });
         });
 
-        // 解除魔術遮罩並初始化音訊 (關鍵步驟)
-        magicOverlay.addEventListener('click', (e) => {
-            e.stopPropagation();
-            magicOverlay.classList.add('hidden');
-            audioInitialized = true;
-            exitMagicContainer.classList.remove('hidden');
+        document.getElementById('btn-clear-seq').addEventListener('click', () => { 
+            customSequence = []; 
+            currentStepIndex = 0; 
+            window.updateVisuals(); 
+            saveConfig();
+        });
+        
+        document.getElementById('btn-default-seq').addEventListener('click', () => { 
+            customSequence = [0, 1, 2, 3, 5, 6, 8, 9]; 
+            currentStepIndex = 0; 
+            window.updateVisuals(); 
+            saveConfig();
+        });
+        
+        document.getElementById('btn-close-panel').addEventListener('click', () => controlPanel.classList.add('hidden'));
 
-            // 嘗試播放無聲音檔以啟用音量監聽
-            audioEl.play().catch(err => {
-                console.log("音訊自動播放被阻擋，但點擊觸發仍可運作", err);
-            });
+        document.getElementById('btn-enter-magic').addEventListener('click', () => {
+            if (customSequence.length === 0) return;
+            magicMode = true;
+            currentStepIndex = 0;
+            editingIndex = -1;
+            window.updateVisuals();
+            controlPanel.classList.add('hidden');
+            document.getElementById('secret-zone-right').classList.remove('hidden'); 
+            document.getElementById('secret-zone-left').classList.remove('hidden');
         });
 
-        // 魔術模式下：點擊螢幕任何空白處觸發下一步
-        mainBody.addEventListener('click', () => {
-            if (magicMode && audioInitialized) {
-                nextStep();
-            }
-        });
+        const zoneRight = document.getElementById('secret-zone-right');
+        const zoneLeft = document.getElementById('secret-zone-left');
+        const handleInteraction = (type) => {
+            if(!magicMode) return;
+            if(type === 'next') nextStep();
+            else prevStep();
+        };
 
-        // 魔術模式下：監聽實體音量鍵變化
-        audioEl.addEventListener('volumechange', () => {
-            if (!magicMode || !audioInitialized) return;
-            
-            // 使用 debounce 防止按一次觸發太多次
-            clearTimeout(volumeTimeout);
-            volumeTimeout = setTimeout(() => {
-                nextStep();
-            }, 250);
-        });
+        zoneRight.addEventListener('touchstart', (e) => { e.preventDefault(); handleInteraction('next'); });
+        zoneRight.addEventListener('mousedown', () => handleInteraction('next'));
+        zoneLeft.addEventListener('touchstart', (e) => { e.preventDefault(); handleInteraction('prev'); });
+        zoneLeft.addEventListener('mousedown', () => handleInteraction('prev'));
 
-        // 初始執行
-        renderChart();
-        updateVisuals();
-
+        window.renderChart(); 
+        window.updateVisuals();
     </script>
 </body>
 </html>
-
-```
