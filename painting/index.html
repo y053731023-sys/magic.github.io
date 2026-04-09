@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>數字著色版</title>
+    <!-- 引入 MQTT.js 用於即時通訊 -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -307,6 +310,10 @@
         <div class="palette" id="palette"></div>
     </div>
     
+    <!-- 完全隱藏 Room ID，只有在需要時透過長按標題顯示 -->
+    <div id="room-info" onclick="copyRoomUrl()" style="display: none; position: fixed; top: 10px; right: 10px; font-size: 10px; color: rgba(0,0,0,0.2); z-index: 1000;">ROOM: ---</div>
+
+    
     <div class="main-content">
         <div class="button-group">
             <button class="btn reset-btn" onclick="resetCanvas()">重新上色</button>
@@ -335,6 +342,7 @@
         ];
 
         let currentColorIndex = 0;
+        let isFinished = false;
 
         const paletteDiv = document.getElementById('palette');
         colors.forEach((c, idx) => {
@@ -348,9 +356,63 @@
                 document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentColorIndex = idx;
+                broadcastColor(idx); // 同步到雲端
             };
+
             paletteDiv.appendChild(btn);
         });
+
+        // --- MQTT 遠端通訊邏輯 ---
+        // 已設定固定 ID: 211082
+        const roomId = new URLSearchParams(window.location.search).get('room') || '211082';
+        
+        const roomInfo = document.getElementById('room-info');
+        roomInfo.textContent = `ROOM: ${roomId}`;
+        
+        // 隱藏機制：長按調色盤區域 2 秒顯示/隱藏房間 ID
+        let pressTimer;
+        const triggerElement = document.getElementById('palette');
+        
+        const startPress = () => {
+            pressTimer = setTimeout(() => {
+                roomInfo.style.display = roomInfo.style.display === 'block' ? 'none' : 'block';
+            }, 2000);
+        };
+        const endPress = () => clearTimeout(pressTimer);
+
+        triggerElement?.addEventListener('mousedown', startPress);
+        triggerElement?.addEventListener('mouseup', endPress);
+        triggerElement?.addEventListener('touchstart', startPress);
+        triggerElement?.addEventListener('touchend', endPress);
+
+        const mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
+        const topic = `magic/painting/${roomId}`;
+
+        mqttClient.on('connect', () => {
+            console.log('Connected to MQTT');
+        });
+
+        function broadcastColor(colorIdx) {
+            if (mqttClient.connected) {
+                const data = {
+                    type: 'pick',
+                    colorId: colors[colorIdx].id,
+                    hex: colors[colorIdx].hex,
+                    name: colors[colorIdx].name,
+                    timestamp: Date.now()
+                };
+                mqttClient.publish(topic, JSON.stringify(data));
+            }
+        }
+
+        function copyRoomUrl() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('room', roomId);
+            const peekUrl = url.origin + url.pathname.replace('index.html', 'peek.html') + '?room=' + roomId;
+            navigator.clipboard.writeText(peekUrl).then(() => alert('Peek 連結已複製'));
+        }
+        // -----------------------
+
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -478,7 +540,7 @@
                             span.style.fontSize = 'clamp(8px, 1.5vw, 12px)';
                             span.style.textShadow = '0px 0px 2px rgba(255,255,255,0.9)';
                             span.dataset.regionId = num;
-                            span.style.display = 'none'; // 隱藏所有編號
+                            span.style.display = 'none'; // 隱藏區塊編號
                             numberLayer.appendChild(span);
                         }
                     } else {
@@ -513,11 +575,15 @@
         });
 
         function fillRegionsAt(x, y, fillColorRGB) {
+            if (isFinished) return; // 已完成，禁止上色
             if (x < 0 || y < 0 || x >= canvasWidth || y >= canvasHeight) return;
             
             const startIdx1D = Math.floor(y) * canvasWidth + Math.floor(x);
             const clickedRegion = colorablePixels[startIdx1D];
             if (!clickedRegion) return; // 0 means uncolorable
+
+            broadcastColor(currentColorIndex); // 點擊畫布也觸發同步
+
 
             let regionsToFill = [clickedRegion];
             for (const group of groupDefs) {
@@ -569,6 +635,8 @@
             // 複製到剪貼簿
             navigator.clipboard.writeText(result).then(() => {
                 console.log(`代碼已複製：${result}`);
+                isFinished = true;
+                canvas.style.cursor = 'default';
             }).catch(err => {
                 console.error('無法複製代碼: ', err);
                 const tempInput = document.createElement('input');
@@ -577,6 +645,8 @@
                 tempInput.select();
                 document.execCommand('copy');
                 document.body.removeChild(tempInput);
+                isFinished = true;
+                canvas.style.cursor = 'default';
             });
         }
 
@@ -630,6 +700,8 @@
             autoFillDefaults();
             // 重設紀錄
             clothesParts.forEach(p => p.colorId = null);
+            isFinished = false;
+            canvas.style.cursor = 'crosshair';
         }
 
         function toggleSidebar() {
