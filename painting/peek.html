@@ -2,9 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Peek</title>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
@@ -23,9 +21,9 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
+            justify-content: flex-end;
             align-items: center;
-            padding-top: 30px;
+            padding-bottom: 30px;
         }
 
         /* LED 指示燈 */
@@ -108,45 +106,18 @@
             }
         }
 
-        // 進入全螢幕模式
-        const requestFullScreen = async () => {
-            try {
-                const doc = document.documentElement;
-                if (doc.requestFullscreen) {
-                    await doc.requestFullscreen();
-                } else if (doc.webkitRequestFullscreen) {
-                    await doc.webkitRequestFullscreen();
-                }
-            } catch (err) {
-                console.log('Fullscreen failed:', err);
-            }
-        };
-
-        // 螢幕常亮 (Wake Lock)
-        let wakeLock = null;
-        const requestWakeLock = async () => {
-            if ('wakeLock' in navigator) {
+        // 防止手機休眠 (若支援)
+        if ('wakeLock' in navigator) {
+            let wakeLock = null;
+            const requestWakeLock = async () => {
                 try {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('Wake Lock active');
                 } catch (err) {
                     console.error(`${err.name}, ${err.message}`);
                 }
-            }
-        };
-
-        // 按下螢幕任何地方觸發「全螢幕」與「常亮」
-        document.addEventListener('click', async () => {
-            await requestFullScreen();
-            await requestWakeLock();
-        });
-
-        // 重新獲得焦點時自動重新請求 Wake Lock
-        document.addEventListener('visibilitychange', async () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') {
-                await requestWakeLock();
-            }
-        });
+            };
+            document.addEventListener('click', requestWakeLock);
+        }
     </script>
 </body>
 </html>
