@@ -336,9 +336,7 @@
             { id: 2, name: '橙', hex: '#FB8C00', rgb: {r: 251, g: 140, b: 0} },
             { id: 3, name: '黃', hex: '#FDD835', rgb: {r: 253, g: 216, b: 53} },
             { id: 4, name: '綠', hex: '#43A047', rgb: {r: 67, g: 160, b: 71} },
-            { id: 5, name: '藍', hex: '#1E88E5', rgb: {r: 30, g: 136, b: 229} },
-            { id: 6, name: '粉紅', hex: '#F48FB1', rgb: {r: 244, g: 143, b: 177} },
-            { id: 7, name: '紫', hex: '#8E24AA', rgb: {r: 142, g: 36, b: 170} }
+            { id: 5, name: '藍', hex: '#1E88E5', rgb: {r: 30, g: 136, b: 229} }
         ];
 
         let currentColorIndex = 0;
@@ -348,7 +346,7 @@
         colors.forEach((c, idx) => {
             const btn = document.createElement('button');
             btn.className = 'color-btn' + (idx === 0 ? ' active' : '');
-            btn.innerHTML = `
+            btn.innerHTML = `   
                 <div class="swatch" style="background-color: ${c.hex}"></div>
                 <div class="color-label">${c.id}. ${c.name}</div>
             `;
