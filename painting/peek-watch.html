@@ -109,6 +109,33 @@
             setTimeout(connect, 3000);
         }
 
+        let lastMessageTime = Date.now();
+        async function startPollingFallback() {
+            log("📡 Polling Mode Active...");
+            statusDot.style.backgroundColor = '#000033'; 
+            const dweetTopic = `magic-painting-${roomId}`;
+            
+            setInterval(async () => {
+                try {
+                    const response = await fetch(`https://dweet.cc/get/latest/dweet/for/${dweetTopic}`);
+                    const json = await response.json();
+                    if (json.this === 'succeeded' && json.with && json.with.length > 0) {
+                        const dweet = json.with[0];
+                        const timestamp = new Date(dweet.created).getTime();
+                        
+                        if (timestamp > lastMessageTime) {
+                            lastMessageTime = timestamp;
+                            const data = dweet.content;
+                            if (data.type === 'pick' && data.hex) {
+                                log(`📩 Poll: ${data.hex}`);
+                                showLed(data.hex);
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }, 1500);
+        }
+
         let fadeTimer;
         function showLed(hex) {
             clearTimeout(fadeTimer);
@@ -128,7 +155,10 @@
             }
         }
 
-        if (typeof mqtt === 'undefined') {
+        if (!window.WebSocket) {
+            log("⚠️ No WebSocket support!");
+            startPollingFallback();
+        } else if (typeof mqtt === 'undefined') {
             log("❌ MQTT not loaded!");
         } else {
             connect();
