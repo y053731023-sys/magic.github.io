@@ -465,7 +465,7 @@
 
             // 2. HTTP Fallback (for environments without WebSockets like Apple Watch)
             const dweetTopic = `magic-painting-${roomId}`;
-            fetch(`https://dweet.cc/dweet/for/${dweetTopic}`, {
+            fetch(`https://dweet.io/dweet/for/${dweetTopic}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
