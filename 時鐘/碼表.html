@@ -69,6 +69,7 @@
             <option value="total">總時間迫牌 (Total Force)</option>
             <option value="laps">分圈毫秒迫牌 (Dynamic Laps)</option>
             <option value="sum">秒數總和迫牌 (Seconds Sum Force)</option>
+            <option value="time">當下時間迫牌 (Current Time Force)</option>
           </select>
 
           <!-- 總時間迫牌區 -->
@@ -99,6 +100,30 @@
             <div class="flex flex-col items-center justify-center mb-2">
               <span class="text-xs text-gray-400 mb-2">目標總和 (秒 + 毫秒 = ?)</span>
               <input type="number" id="force-sum-target" placeholder="20" class="w-20 bg-black border border-gray-700 rounded p-2 text-white text-center tabular-nums focus:border-indigo-500 focus:outline-none" min="0" max="999">
+            </div>
+          </div>
+
+          <!-- 🌟 當下時間迫牌區 -->
+          <div id="panel-time-force" class="hidden w-full flex-col">
+            <div class="flex justify-between items-center gap-2 mb-3">
+              <div class="flex flex-col items-center">
+                <span class="text-xs text-gray-400 mb-1">增加分鐘</span>
+                <input type="number" id="force-time-offset" value="0" class="w-16 bg-black border border-gray-700 rounded p-2 text-white text-center tabular-nums focus:border-indigo-500 focus:outline-none">
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="text-xs text-gray-400 mb-1">格式</span>
+                <select id="force-time-format" class="w-20 bg-black border border-gray-700 rounded p-[9px] text-white text-center focus:border-indigo-500 focus:outline-none">
+                  <option value="12">12制</option>
+                  <option value="24">24制</option>
+                </select>
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="text-xs text-gray-400 mb-1">容錯(秒)</span>
+                <input type="number" id="force-time-tolerance" value="3" class="w-16 bg-black border border-gray-700 rounded p-2 text-white text-center tabular-nums focus:border-indigo-500 focus:outline-none" min="1" max="10">
+              </div>
+            </div>
+            <div class="text-[10px] text-indigo-300 text-center leading-tight">
+              當秒數落在 目標±容錯 秒內時，<br/>強制停止於 當下時間 (秒=時, 毫秒=分)
             </div>
           </div>
         </div>
@@ -409,6 +434,10 @@
     let useComma = savedSettings.useComma !== undefined ? savedSettings.useComma : false;
     let forceSumTarget = savedSettings.forceSumTarget !== undefined ? parseInt(savedSettings.forceSumTarget) : 20;
     
+    let forceTimeOffset = savedSettings.forceTimeOffset !== undefined ? parseInt(savedSettings.forceTimeOffset) : 0;
+    let forceTimeFormat = savedSettings.forceTimeFormat || '12';
+    let forceTimeTolerance = savedSettings.forceTimeTolerance !== undefined ? parseInt(savedSettings.forceTimeTolerance) : 3;
+    
     let forceLaps = savedSettings.forceLaps;
     if (forceLaps && !Array.isArray(forceLaps)) {
       forceLaps = [
@@ -443,6 +472,10 @@
       panelLapsForce: document.getElementById('panel-laps-force'),
       panelSumForce: document.getElementById('panel-sum-force'),
       forceSumTarget: document.getElementById('force-sum-target'),
+      panelTimeForce: document.getElementById('panel-time-force'),
+      forceTimeOffset: document.getElementById('force-time-offset'),
+      forceTimeFormat: document.getElementById('force-time-format'),
+      forceTimeTolerance: document.getElementById('force-time-tolerance'),
       dynamicLapsContainer: document.getElementById('dynamic-laps-container'),
       btnAddLap: document.getElementById('btn-add-lap'),
       btnRemoveLap: document.getElementById('btn-remove-lap'),
@@ -610,6 +643,7 @@
       dom.panelTotalForce.classList.toggle('hidden', forceType !== 'total');
       dom.panelLapsForce.classList.toggle('hidden', forceType !== 'laps');
       dom.panelSumForce.classList.toggle('hidden', forceType !== 'sum');
+      dom.panelTimeForce.classList.toggle('hidden', forceType !== 'time');
       
       dom.commaToggle.checked = useComma;
 
@@ -618,6 +652,10 @@
       document.getElementById('force-total-ms').value = forceTotal.ms.toString().padStart(2, '0');
       
       dom.forceSumTarget.value = forceSumTarget.toString();
+      
+      dom.forceTimeOffset.value = forceTimeOffset.toString();
+      dom.forceTimeFormat.value = forceTimeFormat;
+      dom.forceTimeTolerance.value = forceTimeTolerance.toString();
 
       if (forceType === 'laps') {
         renderForceLapsInputs();
@@ -703,6 +741,9 @@
           if (data.forceType !== undefined) forceType = data.forceType;
           if (data.forceTotal) forceTotal = data.forceTotal;
           if (data.forceSumTarget !== undefined) forceSumTarget = data.forceSumTarget;
+          if (data.forceTimeOffset !== undefined) forceTimeOffset = data.forceTimeOffset;
+          if (data.forceTimeFormat !== undefined) forceTimeFormat = data.forceTimeFormat;
+          if (data.forceTimeTolerance !== undefined) forceTimeTolerance = data.forceTimeTolerance;
           if (data.forceLaps) {
             forceLaps = Array.isArray(data.forceLaps) 
               ? data.forceLaps 
@@ -778,6 +819,23 @@
           
           let newLapDuration = (m * 60000) + (s * 1000) + (targetMs * 10);
           newAccumulated = previousTotalTime + newLapDuration;
+        } else if (forceType === 'time') {
+          // 當下時間迫牌邏輯
+          const nowObj = new Date(getNow() + forceTimeOffset * 60000);
+          let h = nowObj.getHours();
+          if (forceTimeFormat === '12') {
+            h = h % 12;
+            if (h === 0) h = 12; // 將 0 點轉換為 12 點
+          }
+          let m = nowObj.getMinutes();
+          let targetDuration = (h * 1000) + (m * 10);
+          
+          // 檢查是否落在容錯區間內
+          if (Math.abs(realLapDuration - targetDuration) <= forceTimeTolerance * 1000) {
+            newAccumulated = previousTotalTime + targetDuration;
+          } else {
+            newAccumulated = exactCurrentTime;
+          }
         } else {
           newAccumulated = exactCurrentTime;
         }
@@ -819,6 +877,19 @@
           
           let newLapDuration = (m * 60000) + (s * 1000) + (targetMs * 10);
           exactCurrentTime = previousTotalTime + newLapDuration;
+        } else if (forceType === 'time') {
+          const nowObj = new Date(getNow() + forceTimeOffset * 60000);
+          let h = nowObj.getHours();
+          if (forceTimeFormat === '12') {
+            h = h % 12;
+            if (h === 0) h = 12;
+          }
+          let m = nowObj.getMinutes();
+          let targetDuration = (h * 1000) + (m * 10);
+          
+          if (Math.abs(realLapDuration - targetDuration) <= forceTimeTolerance * 1000) {
+            exactCurrentTime = previousTotalTime + targetDuration;
+          }
         }
         newLaps = [{ time: exactCurrentTime, id: getNow() }, ...laps];
         laps = newLaps;
@@ -859,6 +930,10 @@
       };
       useComma = dom.commaToggle.checked;
       forceSumTarget = parseInt(dom.forceSumTarget.value) || 0;
+      
+      forceTimeOffset = parseInt(dom.forceTimeOffset.value) || 0;
+      forceTimeFormat = dom.forceTimeFormat.value;
+      forceTimeTolerance = parseInt(dom.forceTimeTolerance.value) || 3;
 
       document.querySelectorAll('.force-lap-input').forEach(input => {
         const idx = parseInt(input.getAttribute('data-index'));
@@ -872,12 +947,19 @@
         forceTotal: forceTotal,
         forceLaps: forceLaps,
         useComma: useComma,
-        forceSumTarget: forceSumTarget
+        forceSumTarget: forceSumTarget,
+        forceTimeOffset: forceTimeOffset,
+        forceTimeFormat: forceTimeFormat,
+        forceTimeTolerance: forceTimeTolerance
       }));
 
       const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'magic_rooms', roomId);
       try {
-        await setDoc(roomRef, { forceType, forceTotal, forceLaps, useComma, forceSumTarget, updatedAt: getNow() }, { merge: true });
+        await setDoc(roomRef, { 
+          forceType, forceTotal, forceLaps, useComma, forceSumTarget, 
+          forceTimeOffset, forceTimeFormat, forceTimeTolerance, 
+          updatedAt: getNow() 
+        }, { merge: true });
         const oldText = dom.btnSaveSync.textContent;
         dom.btnSaveSync.textContent = "✔️ 設定已同步至全場";
         dom.btnSaveSync.classList.replace('bg-emerald-700', 'bg-green-600');
