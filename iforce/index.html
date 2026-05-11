@@ -8,7 +8,7 @@
         body, html {
             margin: 0; padding: 0;
             width: 100%; 
-            /* 修正 1：使用 100dvh (動態視口高度)，完美解決手機瀏覽器上下選單列遮擋問題 */
+            /* 使用 100dvh (動態視口高度)，完美解決手機瀏覽器上下選單列遮擋問題 */
             height: 100dvh; 
             overflow: hidden; 
             background-color: #ffffff;
@@ -189,7 +189,6 @@
         
         /* 底部主畫布工具列 */
         #mainToolbar {
-            /* 修正 2：改用 fixed 定位，並強制加上底部緩衝高度，確保不會被裁切 */
             position: fixed;
             bottom: calc(env(safe-area-inset-bottom, 10px) + 20px); 
             left: 50%;
@@ -198,7 +197,6 @@
             align-items: center;
             justify-content: center;
             background-color: rgba(255, 255, 255, 0.95);
-            /* 修正 3：稍微縮小 padding 與 gap，並限制最大寬度防止左右溢出 */
             padding: 8px 12px;
             border-radius: 30px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
@@ -229,7 +227,6 @@
 
         /* 工具按鈕 */
         .tool-btn {
-            /* 修正 4：縮小一點點按鈕的基礎尺寸，適應所有手機螢幕 */
             width: clamp(28px, 8vw, 35px); 
             height: clamp(28px, 8vw, 35px);
             border-radius: 50%;
@@ -238,7 +235,7 @@
             display: flex; justify-content: center; align-items: center;
             font-size: clamp(12px, 3.5vw, 16px);
             transition: transform 0.1s;
-            flex-shrink: 0; /* 防止被過度壓縮 */
+            flex-shrink: 0; 
         }
         .tool-btn.active {
             border-color: #333;
@@ -371,8 +368,6 @@
         let currentDirection = 'FORWARD'; 
         let lastBeta = null, lastGamma = null, lastTime = null;
         let speedHistory = []; 
-        // 修正閾值：將判定快慢的標準微調為 0.65。
-        // 現在系統會精準測量您「翻開」瞬間的速度，快翻=兔子，慢翻=烏龜。
         const SPEED_THRESHOLD = 0.65; 
         const labels = ["前 (慢)", "前 (快)", "仰 (慢)", "仰 (快)", "左 (慢)", "左 (快)", "右 (慢)", "右 (快)"];
         
@@ -520,12 +515,13 @@
         }
 
         function calculateGyroDirection(beta, gamma) {
-            let dBeta = beta - 45; // 基準線設為 45 度 (自然拿手機看螢幕的視角)
-            let dGamma = gamma;
-            if (Math.abs(dGamma) > Math.abs(dBeta)) {
-                return dGamma < 0 ? 'LEFT' : 'RIGHT';
+            // 【修正】：精確的 45 度分界判定邏輯
+            // 若左右傾斜絕對值大於 45 度，視為左或右
+            if (Math.abs(gamma) > 45) {
+                return gamma < 0 ? 'LEFT' : 'RIGHT';
             } else {
-                return dBeta < 0 ? 'FORWARD' : 'BACKWARD';
+                // 否則判斷前後。大於 45 度為仰 (BACKWARD)，小於等於 45 度為前 (FORWARD)
+                return beta > 45 ? 'BACKWARD' : 'FORWARD';
             }
         }
 
@@ -560,23 +556,25 @@
                 if (Math.abs(beta) > 140 && flipState === 'UP') {
                     flipState = 'DOWN';
                     
-                    // 【關鍵修正 1】：手機蓋下時，清空畫布與速度歷史，但不提早決定結果
+                    // 手機蓋下時，清空畫布與速度歷史
                     if (mode === 'performance') {
                         ctx.clearRect(0, 0, canvas.width, canvas.height); 
                     }
-                    speedHistory = []; // 清空速度歷史，確保只抓到「翻開」瞬間的動作
+                    speedHistory = []; 
                 } 
                 else if (Math.abs(beta) < 80 && flipState === 'DOWN') {
                     flipState = 'UP';
                     
-                    // 【關鍵修正 2】：在「翻開」的瞬間，抓取向上的最大速度
+                    // 在「翻開」的瞬間，抓取向上的最大速度
                     let maxSpeed = 0;
                     if (speedHistory.length > 0) {
                         maxSpeed = Math.max(...speedHistory.map(item => item.speed));
                     }
                     let isFast = maxSpeed >= SPEED_THRESHOLD;
+                    
+                    // 【修正】：兔子一翻就變 (10ms)，烏龜慢 0.5 秒 (500ms)
+                    let delayTime = isFast ? 10 : 500;
 
-                    // 【關鍵修正 3】：給予 150ms 的緩衝時間，讓手腕角度穩定後再判定方位
                     setTimeout(() => {
                         let selectedIndex = getIndexFromDirectionAndSpeed(currentDirection, isFast);
 
@@ -585,11 +583,11 @@
                                 targetRevealIndex = selectedIndex;
                             }
                             revealPattern(targetRevealIndex);
-                            targetRevealIndex = -1; // 顯示後重置
+                            targetRevealIndex = -1; 
                         } else if (mode === 'setup') {
                             showPracticeFeedback(selectedIndex, maxSpeed);
                         }
-                    }, 150);
+                    }, delayTime);
                 }
             }
         }
@@ -613,11 +611,18 @@
         }
 
         function showPracticeFeedback(index, maxSpeed) {
+            // 【修正】：紅框反饋強化。先清除所有紅框，再標記新的
+            for (let i = 0; i < 8; i++) {
+                document.getElementById('btnSlot' + i).classList.remove('targeted');
+            }
+            
             let btn = document.getElementById('btnSlot' + index);
             btn.classList.add('targeted');
+            
+            // 讓紅框保留 2 秒鐘，讓練習時有充裕時間確認結果
             setTimeout(() => {
                 btn.classList.remove('targeted');
-            }, 1000); 
+            }, 2000); 
         }
 
         function getPos(e) {
