@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>心靈預言畫布 (四向變速版)</title>
+    <style>
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden; 
+            background-color: #ffffff;
+            touch-action: none; 
+            user-select: none; 
+            -webkit-user-select: none;
+        }
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        /* 後台設定面板樣式 (還原經典深灰底與滿版疊層) */
+        #setupPanel {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #888888;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+        
+        /* 十字形佈局容器 */
+        .cross-layout {
+            position: relative;
+            width: 360px;
+            height: 600px;
+            margin: auto;
+            transform: scale(0.9); /* 稍微縮放適應不同螢幕 */
+        }
+
+        /* 退出後台的返回鈕 */
+        #backBtn {
+            position: absolute;
+            top: 20px; left: 20px;
+            width: 45px; height: 45px;
+            background-color: white;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px; color: #555;
+            cursor: pointer;
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+            z-index: 30;
+        }
+
+        /* 右上角的陀螺儀授權鈕 */
+        #authGyroBtn {
+            position: absolute;
+            top: 20px; right: 20px;
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 30;
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+        }
+
+        /* 中央手機與箭頭 */
+        .center-phone {
+            position: absolute;
+            top: 170px; left: 120px;
+            width: 120px; height: 260px;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .phone-graphic {
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #333 0%, #000 100%);
+            border-radius: 20px;
+            border: 2px solid #666;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.2), 5px 5px 15px rgba(0,0,0,0.6);
+            position: relative;
+        }
+        /* 手機上的假 Logo */
+        .phone-logo {
+            position: absolute;
+            top: 80px; left: 50%;
+            transform: translateX(-50%);
+            width: 25px; height: 30px;
+            background-color: #ccc;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+        /* 藍色箭頭裝飾 */
+        .tilt-arrow {
+            position: absolute;
+            color: #2196f3;
+            font-size: 35px;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(33, 150, 243, 0.8);
+        }
+        .arrow-top { top: -25px; left: 50%; transform: translateX(-50%) rotate(-90deg); }
+        .arrow-bottom { bottom: -25px; left: 50%; transform: translateX(-50%) rotate(90deg); }
+        .arrow-left { top: 50%; left: -25px; transform: translateY(-50%) rotate(180deg); }
+        .arrow-right { top: 50%; right: -25px; transform: translateY(-50%) rotate(0deg); }
+
+        /* 白色預言卡槽 */
+        .slot {
+            position: absolute;
+            width: 80px;
+            height: 150px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.4);
+            cursor: pointer;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: all 0.2s;
+        }
+        .slot:active { transform: scale(0.95); }
+
+        /* 快慢圖示 (兔子與烏龜) */
+        .speed-icon {
+            position: absolute;
+            top: -10px; left: -10px;
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #00e5ff, #00838f);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            font-size: 14px;
+            z-index: 10;
+        }
+
+        /* 絕對定位 8 個卡槽，組成完美十字 */
+        .slot.top-left { top: 10px; left: 90px; }
+        .slot.top-right { top: 10px; right: 90px; }
+        .slot.bottom-left { bottom: 10px; left: 90px; }
+        .slot.bottom-right { bottom: 10px; right: 90px; }
+        
+        .slot.left-top { top: 140px; left: 0; }
+        .slot.left-bottom { bottom: 140px; left: 0; }
+        .slot.right-top { top: 140px; right: 0; }
+        .slot.right-bottom { bottom: 140px; right: 0; }
+
+        /* 提示當前傾斜方位的亮黃色背景 */
+        .slot.dir-highlight {
+            box-shadow: 0 0 15px 5px rgba(255, 235, 59, 0.8);
+            border: 3px solid #ffeb3b;
+        }
+        /* 模擬翻轉後實際命中的紅框提示 */
+        .slot.targeted {
+            box-shadow: 0 0 20px 8px rgba(255, 61, 0, 0.9) !important;
+            border: 4px solid #ff3d00 !important;
+            transform: scale(1.1);
+        }
+        
+        /* 底部主畫布工具列 */
+        #mainToolbar {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            gap: 12px;
+            z-index: 15;
+        }
+
+        /* 預言編輯工具列 */
+        #editToolbar {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            align-items: center;
+            background-color: rgba(50, 50, 50, 0.95);
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            gap: 15px;
+            z-index: 25;
+            color: white;
+        }
+
+        .tool-btn {
+            width: 35px; height: 35px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 16px;
+            transition: transform 0.1s;
+        }
+        .tool-btn.active {
+            border-color: #333;
+            transform: scale(1.15);
+        }
+        .color-black { background-color: #000; }
+        .color-red { background-color: #f44336; }
+        .color-blue { background-color: #2196f3; }
+        
+        .size-btn { background-color: #e0e0e0; font-weight: bold; color: #333; }
+        
+        /* 七彩調色盤圖示 */
+        #paletteIcon {
+            background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .edit-action-btn {
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-save { background-color: #4CAF50; color: white; }
+        .btn-clear { background-color: #ff9800; color: white; }
+        .btn-cancel { background-color: #f44336; color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- 底部主畫布工具列 (觀眾可見) -->
+    <div id="mainToolbar">
+        <!-- 調色盤圖示 (按兩下進入後台) -->
+        <div id="paletteIcon" class="tool-btn" title="調色盤 (連按兩下設定)"></div>
+        <div style="width: 1px; height: 30px; background: #ccc; margin: 0 5px;"></div>
+        <!-- 顏色選擇 -->
+        <div class="tool-btn color-black active" onclick="setColor('#000000', this)"></div>
+        <div class="tool-btn color-red" onclick="setColor('#f44336', this)"></div>
+        <div class="tool-btn color-blue" onclick="setColor('#2196f3', this)"></div>
+        <div style="width: 1px; height: 30px; background: #ccc; margin: 0 5px;"></div>
+        <!-- 粗細選擇 -->
+        <div class="tool-btn size-btn active" onclick="setSize(4, this)">小</div>
+        <div class="tool-btn size-btn" onclick="setSize(8, this)">中</div>
+        <div class="tool-btn size-btn" onclick="setSize(16, this)">大</div>
+        <div style="width: 1px; height: 30px; background: #ccc; margin: 0 5px;"></div>
+        <!-- 清空觀眾畫布 -->
+        <div class="tool-btn" style="background:#eee; font-size:18px;" onclick="clearMainCanvas()" title="清空">🗑️</div>
+    </div>
+
+    <!-- 編輯特定預言時的工具列 (僅魔術師可見) -->
+    <div id="editToolbar">
+        <span id="editTitle" style="font-weight: bold; margin-right: 10px;">編輯預言</span>
+        <button class="edit-action-btn btn-clear" onclick="clearEditSlot()">清除</button>
+        <button class="edit-action-btn btn-save" onclick="saveEditSlot()">儲存</button>
+        <button class="edit-action-btn btn-cancel" onclick="cancelEditSlot()">取消</button>
+    </div>
+
+    <div id="setupPanel" style="display: none;">
+        <!-- 返回按鈕 -->
+        <div id="backBtn">↩</div>
+        
+        <!-- 陀螺儀授權 -->
+        <button id="authGyroBtn">啟用陀螺儀</button>
+
+        <div class="cross-layout" id="slotContainer">
+            <!-- 中央立體手機與箭頭 -->
+            <div class="center-phone">
+                <div class="tilt-arrow arrow-top">➔</div>
+                <div class="tilt-arrow arrow-bottom">➔</div>
+                <div class="tilt-arrow arrow-left">➔</div>
+                <div class="tilt-arrow arrow-right">➔</div>
+                <div class="phone-graphic">
+                    <div class="phone-logo"></div>
+                    <div style="position: absolute; bottom: 30px; width: 100%; text-align: center; color: #888; font-size: 12px;">iPhone</div>
+                </div>
+            </div>
+
+            <!-- 8 個預言卡槽 (對應快慢與方位) -->
+            <!-- 前仰 -->
+            <div class="slot top-left" id="btnSlot1" onclick="openSlotEditor(1)"><div class="speed-icon">🐇</div></div>
+            <div class="slot top-right" id="btnSlot0" onclick="openSlotEditor(0)"><div class="speed-icon">🐢</div></div>
+            <!-- 後仰 -->
+            <div class="slot bottom-left" id="btnSlot3" onclick="openSlotEditor(3)"><div class="speed-icon">🐇</div></div>
+            <div class="slot bottom-right" id="btnSlot2" onclick="openSlotEditor(2)"><div class="speed-icon">🐢</div></div>
+            <!-- 左傾 -->
+            <div class="slot left-top" id="btnSlot5" onclick="openSlotEditor(5)"><div class="speed-icon">🐇</div></div>
+            <div class="slot left-bottom" id="btnSlot4" onclick="openSlotEditor(4)"><div class="speed-icon">🐢</div></div>
+            <!-- 右傾 -->
+            <div class="slot right-top" id="btnSlot7" onclick="openSlotEditor(7)"><div class="speed-icon">🐇</div></div>
+            <div class="slot right-bottom" id="btnSlot6" onclick="openSlotEditor(6)"><div class="speed-icon">🐢</div></div>
+        </div>
+    </div>
+
+    <canvas id="magicCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('magicCanvas');
+        const ctx = canvas.getContext('2d');
+        const setupPanel = document.getElementById('setupPanel');
+        const authGyroBtn = document.getElementById('authGyroBtn');
+        const mainToolbar = document.getElementById('mainToolbar');
+        const editToolbar = document.getElementById('editToolbar');
+        const paletteIcon = document.getElementById('paletteIcon');
+
+        // --- 核心狀態與變數 ---
+        let isDrawing = false;
+        let mode = 'performance'; // 狀態：'performance', 'setup', 'edit_slot'
+        let savedPatterns = new Array(8).fill(null); 
+        let flipState = 'UP'; 
+        let targetRevealIndex = -1; // 最終決定的索引
+        let isGyroActive = false;
+        let editingSlotIndex = -1;  // 正在編輯的卡槽索引
+        
+        // 畫筆設定
+        let currentDrawColor = '#000000';
+        let currentDrawSize = 4;
+        
+        // 陀螺儀動態追蹤變數
+        let currentDirection = 'FORWARD'; // 當前方為: FORWARD, BACKWARD, LEFT, RIGHT
+        let lastBeta = null, lastGamma = null, lastTime = null;
+        let speedHistory = []; // 儲存最近 600ms 的翻轉速度
+        const SPEED_THRESHOLD = 0.35; // 快慢判定的閾值 (度/毫秒)。可視個人手感微調
+        const labels = ["前 (慢)", "前 (快)", "仰 (慢)", "仰 (快)", "左 (慢)", "左 (快)", "右 (慢)", "右 (快)"];
+        
+        let longPressTimer;
+        let pressStartX, pressStartY;
+
+        function resizeCanvas() {
+            let tempCanvas = null;
+            // 確保原本的畫布尺寸大於 0 才進行備份，避免 InvalidStateError
+            if (canvas.width > 0 && canvas.height > 0) {
+                tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(canvas, 0, 0);
+            }
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            ctx.strokeStyle = currentDrawColor; 
+            ctx.lineWidth = currentDrawSize;           
+            ctx.lineCap = 'round';       
+            ctx.lineJoin = 'round';
+            
+            // 只有在備份成功時才還原畫布內容
+            if (tempCanvas) {
+                ctx.drawImage(tempCanvas, 0, 0);
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // --- 區塊 1：UI 控制與後台設定 ---
+
+        // 選擇顏色與粗細
+        window.setColor = function(color, element) {
+            currentDrawColor = color;
+            ctx.strokeStyle = color;
+            document.querySelectorAll('.color-black, .color-red, .color-blue').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+        };
+        window.setSize = function(size, element) {
+            currentDrawSize = size;
+            ctx.lineWidth = size;
+            document.querySelectorAll('.size-btn').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+        };
+
+        // 清空觀眾主畫布
+        window.clearMainCanvas = function() {
+            if (mode === 'performance') {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                targetRevealIndex = -1;
+            }
+        };
+
+        // 調色盤連點兩下進入後台
+        let lastTap = 0;
+        paletteIcon.addEventListener('touchstart', (e) => {
+            let currentTime = new Date().getTime();
+            let tapLength = currentTime - lastTap;
+            if (tapLength < 500 && tapLength > 0) {
+                enterSetupMode();
+                e.preventDefault();
+            }
+            lastTap = currentTime;
+        });
+        paletteIcon.addEventListener('dblclick', () => {
+            enterSetupMode();
+        });
+
+        function enterSetupMode() {
+            mode = 'setup';
+            mainToolbar.style.display = 'none';
+            setupPanel.style.display = 'flex';
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // 隱藏主畫布內容
+        }
+
+        // 點擊返回按鈕直接回到表演模式
+        document.getElementById('backBtn').addEventListener('click', () => {
+            startGyro(); // 確保離開後台時啟動陀螺儀
+            mode = 'performance';
+            setupPanel.style.display = 'none';
+            mainToolbar.style.display = 'flex'; // 重新顯示工具列
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // 切換回去時清空，準備畫新的
+            flipState = 'UP';
+            targetRevealIndex = -1;
+        });
+
+        // 打開特定預言卡槽的編輯模式
+        window.openSlotEditor = function(index) {
+            editingSlotIndex = index;
+            mode = 'edit_slot';
+            setupPanel.style.display = 'none';
+            editToolbar.style.display = 'flex';
+            document.getElementById('editTitle').innerText = '編輯預言 ' + labels[index];
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 如果原本有圖案，載入出來供修改
+            if (savedPatterns[index]) {
+                const img = new Image();
+                img.onload = () => { ctx.drawImage(img, 0, 0); };
+                img.src = savedPatterns[index];
+            }
+        };
+
+        // 儲存編輯
+        window.saveEditSlot = function() {
+            const dataUrl = canvas.toDataURL('image/png');
+            savedPatterns[editingSlotIndex] = dataUrl;
+            
+            const btn = document.getElementById('btnSlot' + editingSlotIndex);
+            btn.style.backgroundImage = `url(${dataUrl})`;
+            btn.classList.add('saved');
+            
+            exitSlotEditor();
+        };
+
+        // 清除編輯畫布
+        window.clearEditSlot = function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        };
+
+        // 取消編輯 (不存檔退回)
+        window.cancelEditSlot = function() {
+            exitSlotEditor();
+        };
+
+        function exitSlotEditor() {
+            mode = 'setup';
+            editToolbar.style.display = 'none';
+            setupPanel.style.display = 'flex';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        authGyroBtn.addEventListener('click', () => {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().then(state => {
+                    if (state === 'granted') { startGyro(); setGyroBtnReady(); }
+                }).catch(console.error);
+            } else {
+                startGyro(); setGyroBtnReady();
+            }
+        });
+
+        function setGyroBtnReady() {
+            authGyroBtn.innerText = '✅ 陀螺儀已啟用 (可傾斜測試)';
+            authGyroBtn.style.backgroundColor = '#4CAF50';
+        }
+
+        function startGyro() {
+            if (!isGyroActive) {
+                window.addEventListener('deviceorientation', handleOrientation);
+                isGyroActive = true;
+            }
+        }
+
+        // --- 區塊 2：方位與速度演算法 ---
+        
+        // 判斷當前方為 (假設正常握手機 beta 介於 20~60度)
+        function calculateGyroDirection(beta, gamma) {
+            let dBeta = beta - 40; // 以 40 度為基準平線
+            let dGamma = gamma;
+
+            if (Math.abs(dGamma) > Math.abs(dBeta)) {
+                return dGamma < 0 ? 'LEFT' : 'RIGHT';
+            } else {
+                return dBeta < 0 ? 'FORWARD' : 'BACKWARD';
+            }
+        }
+
+        function handleOrientation(event) {
+            let beta = event.beta; 
+            let gamma = event.gamma;
+            let now = Date.now();
+            if (beta === null) return;
+
+            // 1. 計算瞬時翻轉速度
+            if (lastTime) {
+                let dt = now - lastTime;
+                if (dt > 0 && dt < 100) { // 忽略過大的時間間隔(卡頓)
+                    let dBeta = beta - lastBeta;
+                    let dGamma = gamma - lastGamma;
+                    // 修正角度越過 180/-180 的突變問題
+                    if (dBeta > 180) dBeta -= 360; else if (dBeta < -180) dBeta += 360;
+                    if (dGamma > 180) dGamma -= 360; else if (dGamma < -180) dGamma += 360;
+
+                    let speed = Math.sqrt(dBeta*dBeta + dGamma*dGamma) / dt;
+                    speedHistory.push({ time: now, speed: speed });
+                }
+            }
+            lastBeta = beta; lastGamma = gamma; lastTime = now;
+            // 清理舊的歷史紀錄，只保留最近 600ms (確保抓到蓋下瞬間的最大爆發速度)
+            speedHistory = speedHistory.filter(item => now - item.time < 600);
+
+            // 2. 更新靜態方位 (只有當手機處於非極端角度時才更新，避免翻轉中途被誤判)
+            if (Math.abs(beta) < 80) {
+                currentDirection = calculateGyroDirection(beta, gamma);
+                if (mode === 'setup') updatePracticeDirectionUI();
+            }
+
+            // 3. 翻面判定 (beta 超過 140 度代表蓋在桌上)
+            if (mode === 'performance' || mode === 'setup') {
+                if (Math.abs(beta) > 140 && flipState === 'UP') {
+                    flipState = 'DOWN';
+                    
+                    // 取得最近 600ms 內的最大翻轉速度
+                    let maxSpeed = 0;
+                    if (speedHistory.length > 0) {
+                        maxSpeed = Math.max(...speedHistory.map(item => item.speed));
+                    }
+                    
+                    // 判定快慢與對應索引
+                    let isFast = maxSpeed >= SPEED_THRESHOLD;
+                    let selectedIndex = getIndexFromDirectionAndSpeed(currentDirection, isFast);
+
+                    if (mode === 'performance') {
+                        if (targetRevealIndex === -1) targetRevealIndex = selectedIndex;
+                        ctx.clearRect(0, 0, canvas.width, canvas.height); 
+                    } else if (mode === 'setup') {
+                        showPracticeFeedback(selectedIndex, maxSpeed);
+                    }
+                } 
+                else if (Math.abs(beta) < 80 && flipState === 'DOWN') {
+                    flipState = 'UP';
+                    if (mode === 'performance' && targetRevealIndex !== -1) {
+                        revealPattern(targetRevealIndex);
+                        targetRevealIndex = -1; 
+                    }
+                }
+            }
+        }
+
+        // 轉換「方向+速度」為按鈕 0~7 的陣列索引
+        function getIndexFromDirectionAndSpeed(dir, isFast) {
+            let base = 0;
+            if (dir === 'FORWARD') base = 0;
+            else if (dir === 'BACKWARD') base = 2;
+            else if (dir === 'LEFT') base = 4;
+            else if (dir === 'RIGHT') base = 6;
+            return base + (isFast ? 1 : 0);
+        }
+
+        // --- 區塊 3：練習模式 UI 反饋 ---
+        function updatePracticeDirectionUI() {
+            if (flipState === 'DOWN') return;
+            // 移除所有黃色高光
+            for (let i = 0; i < 8; i++) document.getElementById('btnSlot' + i).classList.remove('dir-highlight');
+            
+            let base = getIndexFromDirectionAndSpeed(currentDirection, false);
+            // 點亮對應方位的「慢」與「快」兩格
+            document.getElementById('btnSlot' + base).classList.add('dir-highlight');
+            document.getElementById('btnSlot' + (base + 1)).classList.add('dir-highlight');
+        }
+
+        function showPracticeFeedback(index, maxSpeed) {
+            let btn = document.getElementById('btnSlot' + index);
+            btn.classList.add('targeted');
+            // 因為現在卡槽是圖片，我們不改變文字，只保留紅框特效
+            setTimeout(() => {
+                btn.classList.remove('targeted');
+            }, 1000); // 縮短提示時間
+        }
+
+        // --- 區塊 4：觸控備用盲按 (劃分 4列 x 2行) ---
+        function getPos(e) {
+            if (e.touches) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        // 隱形網格演算法
+        function getGridIndex(x, y) {
+            const col = x < canvas.width / 2 ? 0 : 1; // 左半邊=0(慢), 右半邊=1(快)
+            const row = Math.floor(y / (canvas.height / 4)); // 0=前, 1=仰, 2=左, 3=右
+            return Math.max(0, Math.min(3, row)) * 2 + col;
+        }
+
+        function startDrawing(e) {
+            if (mode === 'performance' && e.touches && e.touches.length >= 2) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                targetRevealIndex = -1; 
+                e.preventDefault(); return;
+            }
+
+            const pos = getPos(e);
+            
+            // 隱形操作 A：翻面朝下時盲點
+            if (mode === 'performance' && flipState === 'DOWN') {
+                targetRevealIndex = getGridIndex(pos.x, pos.y);
+                e.preventDefault(); return;
+            }
+
+            // 隱形操作 B：長按備用方案
+            if (mode === 'performance') {
+                pressStartX = pos.x; pressStartY = pos.y;
+                longPressTimer = setTimeout(() => {
+                    targetRevealIndex = getGridIndex(pressStartX, pressStartY);
+                    revealPattern(targetRevealIndex);
+                    isDrawing = false; 
+                }, 600);
+            }
+
+            isDrawing = true;
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            if (e.target === canvas || mode === 'performance') e.preventDefault(); 
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const pos = getPos(e);
+            
+            if (Math.abs(pos.x - pressStartX) > 10 || Math.abs(pos.y - pressStartY) > 10) {
+                clearTimeout(longPressTimer);
+            }
+
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            if (e.target === canvas || mode === 'performance') e.preventDefault();
+        }
+
+        function stopDrawing() {
+            clearTimeout(longPressTimer);
+            if (isDrawing) { ctx.closePath(); isDrawing = false; }
+        }
+
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDrawing);
+        canvas.addEventListener('touchcancel', stopDrawing);
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        function revealPattern(index) {
+            if (index < 0 || index > 7 || !savedPatterns[index]) return; 
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            const img = new Image();
+            img.onload = () => { ctx.drawImage(img, 0, 0); };
+            img.src = savedPatterns[index];
+        }
+
+    </script>
+</body>
+</html>
