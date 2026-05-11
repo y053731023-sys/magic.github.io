@@ -371,7 +371,9 @@
         let currentDirection = 'FORWARD'; 
         let lastBeta = null, lastGamma = null, lastTime = null;
         let speedHistory = []; 
-        const SPEED_THRESHOLD = 0.35; 
+        // 修正閾值：將判定快慢的標準微調為 0.65。
+        // 現在系統會精準測量您「翻開」瞬間的速度，快翻=兔子，慢翻=烏龜。
+        const SPEED_THRESHOLD = 0.65; 
         const labels = ["前 (慢)", "前 (快)", "仰 (慢)", "仰 (快)", "左 (慢)", "左 (快)", "右 (慢)", "右 (快)"];
         
         let longPressTimer;
@@ -518,7 +520,7 @@
         }
 
         function calculateGyroDirection(beta, gamma) {
-            let dBeta = beta - 40; 
+            let dBeta = beta - 45; // 基準線設為 45 度 (自然拿手機看螢幕的視角)
             let dGamma = gamma;
             if (Math.abs(dGamma) > Math.abs(dBeta)) {
                 return dGamma < 0 ? 'LEFT' : 'RIGHT';
@@ -546,7 +548,8 @@
                 }
             }
             lastBeta = beta; lastGamma = gamma; lastTime = now;
-            speedHistory = speedHistory.filter(item => now - item.time < 600);
+            // 保持 800ms 歷史，確保能正確分析慢速翻轉
+            speedHistory = speedHistory.filter(item => now - item.time < 800);
 
             if (Math.abs(beta) < 80) {
                 currentDirection = calculateGyroDirection(beta, gamma);
@@ -557,27 +560,36 @@
                 if (Math.abs(beta) > 140 && flipState === 'UP') {
                     flipState = 'DOWN';
                     
+                    // 【關鍵修正 1】：手機蓋下時，清空畫布與速度歷史，但不提早決定結果
+                    if (mode === 'performance') {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height); 
+                    }
+                    speedHistory = []; // 清空速度歷史，確保只抓到「翻開」瞬間的動作
+                } 
+                else if (Math.abs(beta) < 80 && flipState === 'DOWN') {
+                    flipState = 'UP';
+                    
+                    // 【關鍵修正 2】：在「翻開」的瞬間，抓取向上的最大速度
                     let maxSpeed = 0;
                     if (speedHistory.length > 0) {
                         maxSpeed = Math.max(...speedHistory.map(item => item.speed));
                     }
-                    
                     let isFast = maxSpeed >= SPEED_THRESHOLD;
-                    let selectedIndex = getIndexFromDirectionAndSpeed(currentDirection, isFast);
 
-                    if (mode === 'performance') {
-                        if (targetRevealIndex === -1) targetRevealIndex = selectedIndex;
-                        ctx.clearRect(0, 0, canvas.width, canvas.height); 
-                    } else if (mode === 'setup') {
-                        showPracticeFeedback(selectedIndex, maxSpeed);
-                    }
-                } 
-                else if (Math.abs(beta) < 80 && flipState === 'DOWN') {
-                    flipState = 'UP';
-                    if (mode === 'performance' && targetRevealIndex !== -1) {
-                        revealPattern(targetRevealIndex);
-                        targetRevealIndex = -1; 
-                    }
+                    // 【關鍵修正 3】：給予 150ms 的緩衝時間，讓手腕角度穩定後再判定方位
+                    setTimeout(() => {
+                        let selectedIndex = getIndexFromDirectionAndSpeed(currentDirection, isFast);
+
+                        if (mode === 'performance') {
+                            if (targetRevealIndex === -1) {
+                                targetRevealIndex = selectedIndex;
+                            }
+                            revealPattern(targetRevealIndex);
+                            targetRevealIndex = -1; // 顯示後重置
+                        } else if (mode === 'setup') {
+                            showPracticeFeedback(selectedIndex, maxSpeed);
+                        }
+                    }, 150);
                 }
             }
         }
