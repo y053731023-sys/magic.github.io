@@ -8,7 +8,7 @@
         body, html {
             margin: 0; padding: 0;
             width: 100%; 
-            /* 使用 100dvh (動態視口高度)，完美解決手機瀏覽器上下選單列遮擋問題 */
+            /* 修正 1：使用 100dvh (動態視口高度)，完美解決手機瀏覽器上下選單列遮擋問題 */
             height: 100dvh; 
             overflow: hidden; 
             background-color: #ffffff;
@@ -189,6 +189,7 @@
         
         /* 底部主畫布工具列 */
         #mainToolbar {
+            /* 修正 2：改用 fixed 定位，並強制加上底部緩衝高度，確保不會被裁切 */
             position: fixed;
             bottom: calc(env(safe-area-inset-bottom, 10px) + 20px); 
             left: 50%;
@@ -197,6 +198,7 @@
             align-items: center;
             justify-content: center;
             background-color: rgba(255, 255, 255, 0.95);
+            /* 修正 3：稍微縮小 padding 與 gap，並限制最大寬度防止左右溢出 */
             padding: 8px 12px;
             border-radius: 30px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
@@ -227,6 +229,7 @@
 
         /* 工具按鈕 */
         .tool-btn {
+            /* 修正 4：縮小一點點按鈕的基礎尺寸，適應所有手機螢幕 */
             width: clamp(28px, 8vw, 35px); 
             height: clamp(28px, 8vw, 35px);
             border-radius: 50%;
@@ -235,7 +238,7 @@
             display: flex; justify-content: center; align-items: center;
             font-size: clamp(12px, 3.5vw, 16px);
             transition: transform 0.1s;
-            flex-shrink: 0; 
+            flex-shrink: 0; /* 防止被過度壓縮 */
         }
         .tool-btn.active {
             border-color: #333;
@@ -325,6 +328,7 @@
                 <div class="phone-graphic">
                     <div class="phone-logo"></div>
                     <div style="position: absolute; bottom: 15%; width: 100%; text-align: center; color: #888; font-size: 10px;">iPhone</div>
+                    <div id="phonePreview" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 18px; background-size: contain; background-repeat: no-repeat; background-position: center; background-color: white; opacity: 0; transition: opacity 0.2s; pointer-events: none;"></div>
                 </div>
             </div>
 
@@ -366,16 +370,15 @@
         let currentDrawSize = 4;
         
         let currentDirection = 'FORWARD'; 
-        // 移除原有的瞬時測速變數，改為基於時間的測量
-        const LIFT_TIME_THRESHOLD = 500; // 抬起 10 度的時間判定標準 (毫秒)
+        let lastBeta = null, lastGamma = null, lastTime = null;
+        let speedHistory = []; 
+        // 修正閾值：將判定快慢的標準微調為 0.65。
+        // 現在系統會精準測量您「翻開」瞬間的速度，快翻=兔子，慢翻=烏龜。
+        const SPEED_THRESHOLD = 0.65; 
         const labels = ["前 (慢)", "前 (快)", "仰 (慢)", "仰 (快)", "左 (慢)", "左 (快)", "右 (慢)", "右 (快)"];
         
         let longPressTimer;
         let pressStartX, pressStartY;
-        
-        // 紀錄手機反蓋時的最平角度與抬起起始時間
-        let maxFacedownBeta = 0;
-        let liftStartTime = 0;
 
         function resizeCanvas() {
             let tempCanvas = null;
@@ -518,13 +521,12 @@
         }
 
         function calculateGyroDirection(beta, gamma) {
-            // 【修正】：精確的 45 度分界判定邏輯
-            // 若左右傾斜絕對值大於 45 度，視為左或右
-            if (Math.abs(gamma) > 45) {
-                return gamma < 0 ? 'LEFT' : 'RIGHT';
+            let dBeta = beta - 45; // 基準線設為 45 度 (自然拿手機看螢幕的視角)
+            let dGamma = gamma;
+            if (Math.abs(dGamma) > Math.abs(dBeta)) {
+                return dGamma < 0 ? 'LEFT' : 'RIGHT';
             } else {
-                // 否則判斷前後。大於 45 度為仰 (BACKWARD)，小於等於 45 度為前 (FORWARD)
-                return beta > 45 ? 'BACKWARD' : 'FORWARD';
+                return dBeta < 0 ? 'FORWARD' : 'BACKWARD';
             }
         }
 
@@ -534,63 +536,61 @@
             let now = Date.now();
             if (beta === null) return;
 
-            // 靜態方位更新：手機未反蓋時持續更新黃光預判
+            if (lastTime) {
+                let dt = now - lastTime;
+                if (dt > 0 && dt < 100) { 
+                    let dBeta = beta - lastBeta;
+                    let dGamma = gamma - lastGamma;
+                    if (dBeta > 180) dBeta -= 360; else if (dBeta < -180) dBeta += 360;
+                    if (dGamma > 180) dGamma -= 360; else if (dGamma < -180) dGamma += 360;
+
+                    let speed = Math.sqrt(dBeta*dBeta + dGamma*dGamma) / dt;
+                    speedHistory.push({ time: now, speed: speed });
+                }
+            }
+            lastBeta = beta; lastGamma = gamma; lastTime = now;
+            // 保持 800ms 歷史，確保能正確分析慢速翻轉
+            speedHistory = speedHistory.filter(item => now - item.time < 800);
+
             if (Math.abs(beta) < 80) {
                 currentDirection = calculateGyroDirection(beta, gamma);
                 if (mode === 'setup') updatePracticeDirectionUI();
             }
 
             if (mode === 'performance' || mode === 'setup') {
-                let absBeta = Math.abs(beta);
-
-                if (absBeta > 140 && flipState === 'UP') {
+                if (Math.abs(beta) > 140 && flipState === 'UP') {
                     flipState = 'DOWN';
-                    maxFacedownBeta = absBeta; 
-                    liftStartTime = now;
                     
-                    // 手機蓋下時，清空畫布
+                    // 【關鍵修正 1】：手機蓋下時，清空畫布與速度歷史，但不提早決定結果
                     if (mode === 'performance') {
                         ctx.clearRect(0, 0, canvas.width, canvas.height); 
                     }
+                    speedHistory = []; // 清空速度歷史，確保只抓到「翻開」瞬間的動作
                 } 
-                else if (flipState === 'DOWN') {
-                    // 在反蓋期間，持續更新「最平放」的角度 (可能高達 170~180度)
-                    if (absBeta > maxFacedownBeta) {
-                        maxFacedownBeta = absBeta;
+                else if (Math.abs(beta) < 80 && flipState === 'DOWN') {
+                    flipState = 'UP';
+                    
+                    // 【關鍵修正 2】：在「翻開」的瞬間，抓取向上的最大速度
+                    let maxSpeed = 0;
+                    if (speedHistory.length > 0) {
+                        maxSpeed = Math.max(...speedHistory.map(item => item.speed));
                     }
+                    let isFast = maxSpeed >= SPEED_THRESHOLD;
 
-                    // 只要還在最平放角度的 2 度內 (容許手微微顫抖)，就不斷重置抬起的起始時間
-                    if (maxFacedownBeta - absBeta <= 2) {
-                        liftStartTime = now;
-                    }
+                    // 【關鍵修正 3】：給予 150ms 的緩衝時間，讓手腕角度穩定後再判定方位
+                    setTimeout(() => {
+                        let selectedIndex = getIndexFromDirectionAndSpeed(currentDirection, isFast);
 
-                    // 【核心邏輯】：只要目前的角度比「最平角度」抬起超過 10 度，或者保底翻轉低於 80 度，就瞬間觸發變換
-                    if ((maxFacedownBeta - absBeta > 10) || absBeta < 80) {
-                        flipState = 'UP';
-                        
-                        // 計算這 10 度花費了多少時間
-                        let liftDuration = now - liftStartTime;
-                        
-                        // 判定：少於 0.5 秒 (500ms) 就是快(兔子)，否則就是慢(烏龜)
-                        let isFast = liftDuration < LIFT_TIME_THRESHOLD;
-                        
-                        // 兔子一翻就變 (10ms)，烏龜慢 0.5 秒 (500ms)
-                        let delayTime = isFast ? 10 : 500;
-
-                        setTimeout(() => {
-                            let selectedIndex = getIndexFromDirectionAndSpeed(currentDirection, isFast);
-
-                            if (mode === 'performance') {
-                                if (targetRevealIndex === -1) {
-                                    targetRevealIndex = selectedIndex;
-                                }
-                                revealPattern(targetRevealIndex);
-                                targetRevealIndex = -1; 
-                            } else if (mode === 'setup') {
-                                showPracticeFeedback(selectedIndex, liftDuration);
+                        if (mode === 'performance') {
+                            if (targetRevealIndex === -1) {
+                                targetRevealIndex = selectedIndex;
                             }
-                        }, delayTime);
-                    }
+                            revealPattern(targetRevealIndex);
+                            targetRevealIndex = -1; // 顯示後重置
+                        } else if (mode === 'setup') {
+                            showPracticeFeedback(selectedIndex, maxSpeed);
+                        }
+                    }, 150);
                 }
             }
         }
@@ -613,22 +613,25 @@
             document.getElementById('btnSlot' + (base + 1)).classList.add('dir-highlight');
         }
 
-        function showPracticeFeedback(index, liftDuration) {
-            // 先清除所有紅框，再標記新的
-            for (let i = 0; i < 8; i++) {
-                document.getElementById('btnSlot' + i).classList.remove('targeted');
-            }
-            
+        function showPracticeFeedback(index, maxSpeed) {
             let btn = document.getElementById('btnSlot' + index);
             btn.classList.add('targeted');
             
-            // 讓紅框保留 2 秒鐘，讓練習時有充裕時間確認結果
+            const phonePreview = document.getElementById('phonePreview');
+            if (savedPatterns[index]) {
+                phonePreview.style.backgroundImage = `url(${savedPatterns[index]})`;
+                phonePreview.style.opacity = '1';
+            } else {
+                phonePreview.style.backgroundImage = 'none';
+                phonePreview.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; font-size:24px; color:#aaa; font-weight:bold;">無圖案</div>';
+                phonePreview.style.opacity = '1';
+            }
+
             setTimeout(() => {
                 btn.classList.remove('targeted');
-            }, 2000); 
-            
-            // 魔術師可透過瀏覽器開發者工具(Console)查看準確的毫秒數，方便練習手感
-            console.log(`觸發格位: ${labels[index]}, 抬起 10 度耗時: ${liftDuration} 毫秒`);
+                phonePreview.style.opacity = '0';
+                setTimeout(() => { phonePreview.innerHTML = ''; }, 200);
+            }, 1000); 
         }
 
         function getPos(e) {
