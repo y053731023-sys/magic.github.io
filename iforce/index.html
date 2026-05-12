@@ -577,20 +577,18 @@
                     }
                     let isFast = maxSpeed >= SPEED_THRESHOLD;
 
-                    // 【關鍵修正 3】：給予 150ms 的緩衝時間，讓手腕角度穩定後再判定方位
-                    setTimeout(() => {
-                        let selectedIndex = getIndexFromDirectionAndSpeed(currentDirection, isFast);
+                    // 直接判定方位與顯示圖案，移除延遲以加快變換速度
+                    let selectedIndex = getIndexFromDirectionAndSpeed(currentDirection, isFast);
 
-                        if (mode === 'performance') {
-                            if (targetRevealIndex === -1) {
-                                targetRevealIndex = selectedIndex;
-                            }
-                            revealPattern(targetRevealIndex);
-                            targetRevealIndex = -1; // 顯示後重置
-                        } else if (mode === 'setup') {
-                            showPracticeFeedback(selectedIndex, maxSpeed);
+                    if (mode === 'performance') {
+                        if (targetRevealIndex === -1) {
+                            targetRevealIndex = selectedIndex;
                         }
-                    }, 150);
+                        revealPattern(targetRevealIndex);
+                        targetRevealIndex = -1; // 顯示後重置
+                    } else if (mode === 'setup') {
+                        showPracticeFeedback(selectedIndex, maxSpeed);
+                    }
                 }
             }
         }
