@@ -371,10 +371,8 @@
         
         let currentDirection = 'FORWARD'; 
         let lastBeta = null, lastGamma = null, lastTime = null;
-        let speedHistory = []; 
-        // 修正閾值：將判定快慢的標準微調為 0.65。
-        // 現在系統會精準測量您「翻開」瞬間的速度，快翻=兔子，慢翻=烏龜。
-        const SPEED_THRESHOLD = 0.65; 
+        let maxAcceleration = 0; // 用來記錄翻轉期間的最大加速度
+        const ACCEL_THRESHOLD = 6.0; // 加速度閾值，大於此值視為「快」 (兔子)
         const labels = ["前 (慢)", "前 (快)", "仰 (慢)", "仰 (快)", "左 (慢)", "左 (快)", "右 (慢)", "右 (快)"];
         
         let longPressTimer;
@@ -501,7 +499,15 @@
         authGyroBtn.addEventListener('click', () => {
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 DeviceOrientationEvent.requestPermission().then(state => {
-                    if (state === 'granted') { startGyro(); setGyroBtnReady(); }
+                    if (state === 'granted') {
+                        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                            DeviceMotionEvent.requestPermission().then(state2 => {
+                                if (state2 === 'granted') { startGyro(); setGyroBtnReady(); }
+                            }).catch(console.error);
+                        } else {
+                            startGyro(); setGyroBtnReady();
+                        }
+                    }
                 }).catch(console.error);
             } else {
                 startGyro(); setGyroBtnReady();
@@ -513,9 +519,27 @@
             authGyroBtn.style.backgroundColor = '#4CAF50';
         }
 
+        function handleMotion(event) {
+            // 只在「手機蓋下且準備翻開」的過程中記錄最大加速度
+            if (flipState === 'DOWN') {
+                let acc = event.acceleration;
+                let totalAcc = 0;
+                if (acc && acc.x !== null) {
+                    totalAcc = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
+                } else if (event.accelerationIncludingGravity) {
+                    acc = event.accelerationIncludingGravity;
+                    totalAcc = Math.abs(Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z) - 9.8);
+                }
+                if (totalAcc > maxAcceleration) {
+                    maxAcceleration = totalAcc;
+                }
+            }
+        }
+
         function startGyro() {
             if (!isGyroActive) {
                 window.addEventListener('deviceorientation', handleOrientation);
+                window.addEventListener('devicemotion', handleMotion);
                 isGyroActive = true;
             }
         }
@@ -536,21 +560,7 @@
             let now = Date.now();
             if (beta === null) return;
 
-            if (lastTime) {
-                let dt = now - lastTime;
-                if (dt > 0 && dt < 100) { 
-                    let dBeta = beta - lastBeta;
-                    let dGamma = gamma - lastGamma;
-                    if (dBeta > 180) dBeta -= 360; else if (dBeta < -180) dBeta += 360;
-                    if (dGamma > 180) dGamma -= 360; else if (dGamma < -180) dGamma += 360;
-
-                    let speed = Math.sqrt(dBeta*dBeta + dGamma*dGamma) / dt;
-                    speedHistory.push({ time: now, speed: speed });
-                }
-            }
             lastBeta = beta; lastGamma = gamma; lastTime = now;
-            // 保持 800ms 歷史，確保能正確分析慢速翻轉
-            speedHistory = speedHistory.filter(item => now - item.time < 800);
 
             if (Math.abs(beta) < 80) {
                 currentDirection = calculateGyroDirection(beta, gamma);
@@ -561,21 +571,17 @@
                 if (Math.abs(beta) > 140 && flipState === 'UP') {
                     flipState = 'DOWN';
                     
-                    // 【關鍵修正 1】：手機蓋下時，清空畫布與速度歷史，但不提早決定結果
+                    // 手機蓋下時，清空畫布與最大加速度，準備抓取翻開動作
                     if (mode === 'performance') {
                         ctx.clearRect(0, 0, canvas.width, canvas.height); 
                     }
-                    speedHistory = []; // 清空速度歷史，確保只抓到「翻開」瞬間的動作
+                    maxAcceleration = 0; // 重置加速度記錄
                 } 
                 else if (Math.abs(beta) < 80 && flipState === 'DOWN') {
                     flipState = 'UP';
                     
-                    // 【關鍵修正 2】：在「翻開」的瞬間，抓取向上的最大速度
-                    let maxSpeed = 0;
-                    if (speedHistory.length > 0) {
-                        maxSpeed = Math.max(...speedHistory.map(item => item.speed));
-                    }
-                    let isFast = maxSpeed >= SPEED_THRESHOLD;
+                    // 使用翻轉期間所記錄到的最大「物理加速度」來判定快慢
+                    let isFast = maxAcceleration >= ACCEL_THRESHOLD;
 
                     // 直接判定方位與顯示圖案，移除延遲以加快變換速度
                     let selectedIndex = getIndexFromDirectionAndSpeed(currentDirection, isFast);
@@ -587,7 +593,7 @@
                         revealPattern(targetRevealIndex);
                         targetRevealIndex = -1; // 顯示後重置
                     } else if (mode === 'setup') {
-                        showPracticeFeedback(selectedIndex, maxSpeed);
+                        showPracticeFeedback(selectedIndex, maxAcceleration);
                     }
                 }
             }
