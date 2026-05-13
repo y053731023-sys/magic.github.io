@@ -290,9 +290,13 @@
         <div id="paletteIcon" class="tool-btn" title="調色盤 (連按兩下設定)"></div>
         <div class="divider"></div>
         <!-- 顏色選擇 -->
-        <div class="tool-btn color-black active" onclick="setColor('#000000', this)"></div>
-        <div class="tool-btn color-red" onclick="setColor('#f44336', this)"></div>
-        <div class="tool-btn color-blue" onclick="setColor('#2196f3', this)"></div>
+        <div class="tool-btn color-btn color-black active" onclick="setColor('#000000', this)"></div>
+        <div class="tool-btn color-btn color-red" onclick="setColor('#f44336', this)"></div>
+        <div class="tool-btn color-btn color-blue" onclick="setColor('#2196f3', this)"></div>
+        <div class="tool-btn color-btn" style="background-color:#4caf50;" onclick="setColor('#4caf50', this)"></div>
+        <div class="tool-btn color-btn" style="background-color:#ffeb3b;" onclick="setColor('#ffeb3b', this)"></div>
+        <div class="tool-btn color-btn" style="background-color:#ffffff; border: 1px solid #ccc;" onclick="setColor('#ffffff', this)"></div>
+        <input type="color" id="customColorPicker" class="color-btn" style="width: clamp(28px, 8vw, 35px); height: clamp(28px, 8vw, 35px); border: none; padding: 0; background: none; cursor: pointer; flex-shrink: 0;" onchange="setColor(this.value, this)" title="自訂顏色">
         <div class="divider"></div>
         <!-- 粗細選擇 -->
         <div class="tool-btn size-btn active" onclick="setSize(4, this)">小</div>
@@ -306,6 +310,8 @@
     <!-- 編輯特定預言時的工具列 (僅魔術師可見) -->
     <div id="editToolbar">
         <span id="editTitle" style="font-weight: bold; margin-right: 5px;">編輯</span>
+        <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+        <button class="edit-action-btn" style="background-color: #2196f3; color: white;" onclick="document.getElementById('imageUpload').click()">上傳圖片</button>
         <button class="edit-action-btn btn-clear" onclick="clearEditSlot()">清除</button>
         <button class="edit-action-btn btn-save" onclick="saveEditSlot()">儲存</button>
         <button class="edit-action-btn btn-cancel" onclick="cancelEditSlot()">取消</button>
@@ -315,6 +321,9 @@
         <!-- 返回按鈕 -->
         <div id="backBtn">↩</div>
         
+        <!-- 一鍵清空所有預言 -->
+        <button id="clearAllBtn" onclick="clearAllSavedSlots()" style="position: absolute; top: env(safe-area-inset-top, 20px); left: 80px; background-color: #f44336; color: white; border: none; padding: 10px 15px; font-size: 14px; border-radius: 8px; cursor: pointer; z-index: 30; box-shadow: 2px 2px 6px rgba(0,0,0,0.3);">一鍵清空</button>
+
         <!-- 陀螺儀授權 -->
         <button id="authGyroBtn">啟用陀螺儀</button>
 
@@ -406,8 +415,10 @@
         window.setColor = function(color, element) {
             currentDrawColor = color;
             ctx.strokeStyle = color;
-            document.querySelectorAll('.color-black, .color-red, .color-blue').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
+            document.querySelectorAll('.color-btn').forEach(el => el.classList.remove('active'));
+            if (element && element.classList) {
+                element.classList.add('active');
+            }
         };
         window.setSize = function(size, element) {
             currentDrawSize = size;
@@ -470,6 +481,29 @@
             }
         };
 
+        function saveToLocalStorage() {
+            localStorage.setItem('iforce_saved_patterns', JSON.stringify(savedPatterns));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('iforce_saved_patterns');
+            if (saved) {
+                try {
+                    savedPatterns = JSON.parse(saved);
+                    for (let i = 0; i < 8; i++) {
+                        if (savedPatterns[i]) {
+                            const btn = document.getElementById('btnSlot' + i);
+                            btn.style.backgroundImage = `url(${savedPatterns[i]})`;
+                            btn.classList.add('saved');
+                        }
+                    }
+                } catch (e) {
+                    console.error("載入預言失敗", e);
+                }
+            }
+        }
+        loadFromLocalStorage(); // 頁面載入時讀取
+
         window.saveEditSlot = function() {
             const dataUrl = canvas.toDataURL('image/png');
             savedPatterns[editingSlotIndex] = dataUrl;
@@ -478,7 +512,41 @@
             btn.style.backgroundImage = `url(${dataUrl})`;
             btn.classList.add('saved');
             
+            saveToLocalStorage();
             exitSlotEditor();
+        };
+
+        window.clearAllSavedSlots = function() {
+            if (confirm('確定要清空所有已儲存的預言畫布嗎？')) {
+                savedPatterns = new Array(8).fill(null);
+                for (let i = 0; i < 8; i++) {
+                    const btn = document.getElementById('btnSlot' + i);
+                    btn.style.backgroundImage = 'none';
+                    btn.classList.remove('saved');
+                }
+                saveToLocalStorage();
+            }
+        };
+
+        window.handleImageUpload = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+                    const w = img.width * scale;
+                    const h = img.height * scale;
+                    const x = (canvas.width - w) / 2;
+                    const y = (canvas.height - h) / 2;
+                    ctx.drawImage(img, x, y, w, h);
+                    e.target.value = ''; 
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
         };
 
         window.clearEditSlot = function() {
