@@ -11,6 +11,21 @@
     <meta name="format-detection" content="telephone=no">
     <title>Calculator</title>
 
+    <script>
+        // 捕捉所有的 console.error 和系統錯誤，直接印在畫面上
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            document.body.innerHTML += '<div style="background:white;color:red;padding:20px;position:relative;z-index:9999;font-size:16px;word-wrap:break-word;">Console Error: ' + args.join(' ') + '</div>';
+            originalConsoleError.apply(console, args);
+        };
+        window.onerror = function(msg, url, line, col, error) {
+            document.body.innerHTML += '<div style="background:white;color:red;padding:20px;position:relative;z-index:9999;font-size:16px;word-wrap:break-word;">Window Error: ' + msg + '<br>Line: ' + line + '</div>';
+            return false;
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+            document.body.innerHTML += '<div style="background:white;color:red;padding:20px;position:relative;z-index:9999;font-size:16px;word-wrap:break-word;">Promise Error: ' + event.reason + '</div>';
+        });
+    </script>
     <!-- 加入自訂圖示 (Favicon) -->
     <!-- 請將 'your-icon.png' 替換成您自己的圖片路徑或網址 (建議格式為 PNG, 建議尺寸 512x512 正方形) -->
     <link rel="icon" type="image/png" href="calculator.png">
@@ -18,9 +33,9 @@
     <link rel="apple-touch-icon" href="calculator.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.21.4/babel.min.js"></script>
 
     <style>
         body {
@@ -538,7 +553,7 @@
             const clearBtnText = (inputExpression === '0' && lastExpression === '') ? 'AC' : 'C';
 
             return (
-                <div className="flex justify-center items-center h-[100dvh] w-full font-sans overflow-hidden relative bg-black">
+                <div className="flex justify-center items-center h-screen w-full font-sans overflow-hidden relative bg-black">
 
                     <div className="relative w-full h-full sm:w-[390px] sm:h-[844px] sm:bg-black sm:rounded-[48px] sm:border-[10px] sm:border-[#1c1c1e] sm:shadow-2xl flex flex-col overflow-hidden z-10 transition-all duration-300">
 
