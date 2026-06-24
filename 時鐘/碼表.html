@@ -342,8 +342,8 @@
       </div>
     </div>
 
-    <!-- 🌟 底部導覽列 (恢復懸浮藥丸樣式，但縮小底部間距) -->
-    <div class="absolute bottom-0 left-0 right-0 w-full z-40 flex justify-center" style="padding-bottom: 12px; padding-left: 16px; padding-right: 16px;">
+    <!-- 🌟 底部導覽列 (恢復安全距離，避免 PWA 裁切) -->
+    <div class="absolute bottom-0 left-0 right-0 w-full z-40 flex justify-center" style="padding-bottom: calc(env(safe-area-inset-bottom) + 8px); padding-left: 16px; padding-right: 16px;">
       <div class="w-full max-w-[400px] bg-[#1C1C1E]/90 backdrop-blur-3xl border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px]">
         
         <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
