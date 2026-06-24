@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>碼錶</title>
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="時鐘">
+  
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="./apple-touch-icon.png">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    body {
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background-color: #000000;
+      color: #FFFFFF;
+    }
+  </style>
+</head>
+<body class="fixed inset-0 bg-black overflow-hidden flex justify-center" style="height: 100dvh; max-height: 100%;">
+
+  <div class="relative w-full h-full max-w-[430px] flex flex-col bg-black">
+    
+    <!-- 隱藏的魔術師觸發區 -->
+    <div id="secret-zone" class="absolute top-0 right-0 w-24 h-24 z-50 opacity-0 cursor-pointer"></div>
+
+    <!-- 秘密設定菜單 -->
+    <div id="secret-menu" class="hidden absolute inset-0 bg-black/80 backdrop-blur-2xl z-[100] flex flex-col items-center justify-start pt-12 px-6 pb-20 overflow-y-auto no-scrollbar font-sans">
+      <h2 class="text-2xl mb-4 text-emerald-500 font-bold tracking-widest uppercase flex-none">Syncro Pro Setup</h2>
+      
+      <div class="w-full max-w-sm mb-4 p-3 rounded-lg bg-gray-900 border border-gray-800 text-sm text-center flex-none">
+        狀態: <span id="conn-status" class="text-yellow-500 font-bold">連線中...</span>
+        <span class="text-gray-500 text-xs ml-2">(ID: <span id="user-id">...</span>)</span>
+      </div>
+
+      <div class="w-full max-w-sm space-y-4 flex-none pb-12">
+        <div class="bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+          <div class="mb-4">
+            <label class="block text-gray-400 mb-2 text-sm font-bold">PIN 碼 (Room ID)</label>
+            <input type="text" id="room-id-input" value="777" class="w-full bg-black border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500"/>
+          </div>
+          <div class="space-y-2">
+            <label class="block text-gray-400 text-sm font-bold">專屬連結生成 (NFC URL)</label>
+            <button id="btn-copy-sender" class="w-full py-2 bg-emerald-900/30 text-emerald-400 border border-emerald-800 rounded-lg text-sm active:bg-emerald-800 transition-colors">複製觀眾連結 (Spectator)</button>
+            <button id="btn-copy-receiver" class="w-full py-2 bg-gray-800 text-gray-300 border border-gray-700 rounded-lg text-sm active:bg-gray-700 transition-colors">複製魔術師連結 (Magician)</button>
+          </div>
+          <div class="mt-4 pt-4 border-t border-gray-800">
+            <label class="block text-gray-400 mb-2 text-sm font-bold">當前裝置角色</label>
+            <div class="flex gap-4">
+              <button id="role-sender" class="flex-1 py-2 rounded-lg font-medium transition-colors bg-emerald-900/50 text-emerald-400 border border-emerald-800">觀眾 (發送)</button>
+              <button id="role-receiver" class="flex-1 py-2 rounded-lg font-medium transition-colors bg-gray-800 text-gray-400">魔術 (接收)</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-indigo-900/20 p-4 rounded-xl border border-indigo-900/50">
+          <label class="block text-indigo-400 mb-3 text-sm font-bold tracking-wider">🔮 迫牌模式 (FORCE SETTINGS)</label>
+          <select id="force-type-select" class="w-full bg-black border border-indigo-800 rounded-lg p-3 text-white focus:outline-none focus:border-indigo-500 mb-4">
+            <option value="none">關閉迫牌 (Normal Mode)</option>
+            <option value="total">總時間迫牌 (Total Force)</option>
+            <option value="laps">分圈毫秒迫牌 (Dynamic Laps)</option>
+            <option value="sum">秒數總和迫牌 (Seconds Sum Force)</option>
+            <option value="time">當下時間迫牌 (Current Time Force)</option>
+          </select>
+
+          <!-- 總時間迫牌區 -->
+          <div id="panel-total-force" class="hidden space-y-2">
+            <div class="flex gap-2 items-center justify-center">
+              <input type="number" id="force-total-mins" placeholder="00" class="w-16 bg-black border border-gray-700 rounded p-2 text-white text-center tabular-nums" min="0" max="99">
+              <span class="text-gray-500">:</span>
+              <input type="number" id="force-total-secs" placeholder="00" class="w-16 bg-black border border-gray-700 rounded p-2 text-white text-center tabular-nums" min="0" max="59">
+              <span class="text-gray-500">.</span>
+              <input type="number" id="force-total-ms" placeholder="00" class="w-16 bg-black border border-gray-700 rounded p-2 text-white text-center tabular-nums" min="0" max="99">
+            </div>
+          </div>
+
+          <!-- 動態分圈迫牌區 -->
+          <div id="panel-laps-force" class="hidden w-full flex-col">
+            <div id="dynamic-laps-container" class="flex flex-wrap justify-center items-end gap-x-2 gap-y-4 mb-4">
+              <!-- 這裡會由 JS 動態生成圈數欄位 -->
+            </div>
+            
+            <div class="flex justify-center items-center gap-4 border-t border-indigo-900/50 pt-4">
+              <button id="btn-remove-lap" class="w-10 h-10 flex items-center justify-center bg-red-900/30 text-red-500 border border-red-800/50 rounded-full font-bold text-xl focus:outline-none active:bg-red-900/60 transition-colors">-</button>
+              <button id="btn-add-lap" class="w-10 h-10 flex items-center justify-center bg-emerald-900/30 text-emerald-500 border border-emerald-800/50 rounded-full font-bold text-xl focus:outline-none active:bg-emerald-900/60 transition-colors">+</button>
+            </div>
+          </div>
+
+          <!-- 🌟 秒數總和迫牌區 -->
+          <div id="panel-sum-force" class="hidden w-full flex-col">
+            <div class="flex flex-col items-center justify-center mb-2">
+              <span class="text-xs text-gray-400 mb-2">目標總和 (秒 + 毫秒 = ?)</span>
+              <input type="number" id="force-sum-target" placeholder="20" class="w-20 bg-black border border-gray-700 rounded p-2 text-white text-center tabular-nums focus:border-indigo-500 focus:outline-none" min="0" max="999">
+            </div>
+          </div>
+
+          <!-- 🌟 當下時間迫牌區 -->
+          <div id="panel-time-force" class="hidden w-full flex-col">
+            <div class="flex justify-between items-center gap-2 mb-3">
+              <div class="flex flex-col items-center">
+                <span class="text-xs text-gray-400 mb-1">增加分鐘</span>
+                <input type="number" id="force-time-offset" value="0" class="w-16 bg-black border border-gray-700 rounded p-2 text-white text-center tabular-nums focus:border-indigo-500 focus:outline-none">
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="text-xs text-gray-400 mb-1">格式</span>
+                <select id="force-time-format" class="w-20 bg-black border border-gray-700 rounded p-[9px] text-white text-center focus:border-indigo-500 focus:outline-none">
+                  <option value="12">12制</option>
+                  <option value="24">24制</option>
+                </select>
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="text-xs text-gray-400 mb-1">容錯(秒)</span>
+                <input type="number" id="force-time-tolerance" value="3" class="w-16 bg-black border border-gray-700 rounded p-2 text-white text-center tabular-nums focus:border-indigo-500 focus:outline-none" min="1" max="10">
+              </div>
+            </div>
+            <div class="text-[10px] text-indigo-300 text-center leading-tight">
+              當秒數落在 目標±容錯 秒內時，<br/>強制停止於 當下時間 (秒=時, 毫秒=分)
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gray-900/50 p-4 rounded-xl border border-gray-800 flex items-center justify-between">
+          <div>
+            <label class="block text-gray-300 text-sm font-bold">逗號毫秒 (Comma)</label>
+          </div>
+          <input type="checkbox" id="comma-toggle" class="w-5 h-5 accent-emerald-500">
+        </div>
+
+        <button id="btn-save-sync" class="w-full py-4 bg-emerald-700 text-white rounded-lg font-bold shadow-lg active:bg-emerald-800 transition-colors">同步設定至雲端 (Sync Setup)</button>
+        <button id="close-secret-menu" class="w-full mt-2 py-4 bg-gray-200 text-black rounded-lg font-bold hover:bg-gray-300 active:bg-gray-400">隱藏後台</button>
+      </div>
+    </div>
+
+    <!-- 🌍 假介面：世界時鐘 -->
+    <div id="view-world-clock" class="hidden absolute inset-0 flex-col pt-[6vh] px-4 pb-[100px] overflow-y-auto no-scrollbar">
+      <div class="flex justify-between items-center w-full mb-4">
+        <button class="text-white text-[15px] font-medium bg-transparent border border-gray-600/50 rounded-[14px] px-3 py-[4px]">編輯</button>
+        <button class="text-white text-3xl font-light bg-transparent border border-gray-600/50 rounded-full w-8 h-8 flex items-center justify-center pb-1">+</button>
+      </div>
+      <h1 class="text-[34px] font-bold text-white mb-3 flex-none tracking-wide">世界時鐘</h1>
+      <div class="w-full h-[1px] bg-[#2C2C2E]"></div>
+      
+      <div class="flex justify-between items-center py-4 border-b border-[#2C2C2E]">
+        <div class="flex flex-col">
+          <span class="text-[#8E8E93] text-[15px] font-medium mb-1">今天 +0 小時</span>
+          <span class="text-[32px] text-white font-normal leading-none">台北</span>
+        </div>
+        <div class="flex items-baseline gap-1">
+          <span class="text-[22px] text-white font-normal relative top-[2px]">下午</span>
+          <span class="text-[64px] font-light text-white leading-none tracking-tight">10:01</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⏰ 假介面：鬧鐘 -->
+    <div id="view-alarm" class="hidden absolute inset-0 flex-col pt-[6vh] px-4 pb-[100px] overflow-y-auto no-scrollbar">
+      <div class="flex justify-between items-center w-full mb-4">
+        <button class="text-white text-[15px] font-medium bg-transparent border border-gray-600/50 rounded-[14px] px-3 py-[4px]">編輯</button>
+        <button class="text-white text-3xl font-light bg-transparent border border-gray-600/50 rounded-full w-8 h-8 flex items-center justify-center pb-1">+</button>
+      </div>
+      <h1 class="text-[34px] font-bold text-white mb-5 flex-none tracking-wide">鬧鐘</h1>
+      
+      <div class="flex items-center gap-2 mb-2 mt-1">
+        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M19 7h-6V6a3 3 0 00-3-3H6a3 3 0 00-3 3v12h2v-2h14v2h2v-9a4 4 0 00-4-4zm-8 4H5V6a1 1 0 011-1h4a1 1 0 011 1v5zm10 4H3v-2a2 2 0 012-2h14a2 2 0 012 2v2z"/></svg>
+        <span class="text-white text-[17px] font-bold">睡眠 | 起床鬧鐘</span>
+      </div>
+      <div class="w-full h-[1px] bg-[#2C2C2E]"></div>
+      
+      <div class="flex justify-between items-center py-4 border-b border-[#2C2C2E]">
+        <div class="flex flex-col">
+          <span class="text-[#8E8E93] text-[46px] font-medium leading-none tracking-tight mb-2">沒有鬧鐘</span>
+          <span class="text-[#8E8E93] text-[14px] font-medium">明天早上</span>
+        </div>
+        <button class="bg-[#2C2C2E] text-[#FF9500] text-[14px] font-bold px-[14px] py-[6px] rounded-full">更改</button>
+      </div>
+
+      <div class="mt-8 mb-2">
+        <span class="text-white text-[18px] font-bold">其他</span>
+      </div>
+      <div class="w-full h-[1px] bg-[#2C2C2E]"></div>
+
+      <div class="flex justify-between items-center py-3 border-b border-[#2C2C2E]">
+        <div class="flex flex-col">
+          <div class="flex items-baseline gap-1">
+            <span class="text-[24px] text-[#8E8E93] font-normal relative top-[2px]">上午</span>
+            <span class="text-[56px] font-light text-[#8E8E93] leading-none tracking-tight">6:20</span>
+          </div>
+          <span class="text-[#8E8E93] text-[14px] mt-1">鬧鐘</span>
+        </div>
+        <div class="w-[51px] h-[31px] rounded-full bg-[#333333] relative">
+          <div class="w-[27px] h-[27px] bg-[#8E8E93] rounded-full absolute left-[2px] top-[2px]"></div>
+        </div>
+      </div>
+      
+      <div class="flex justify-between items-center py-3 border-b border-[#2C2C2E]">
+        <div class="flex flex-col">
+          <div class="flex items-baseline gap-1">
+            <span class="text-[24px] text-[#8E8E93] font-normal relative top-[2px]">上午</span>
+            <span class="text-[56px] font-light text-[#8E8E93] leading-none tracking-tight">6:30</span>
+          </div>
+          <span class="text-[#8E8E93] text-[14px] mt-1">鬧鐘</span>
+        </div>
+        <div class="w-[51px] h-[31px] rounded-full bg-[#333333] relative">
+          <div class="w-[27px] h-[27px] bg-[#8E8E93] rounded-full absolute left-[2px] top-[2px]"></div>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center py-3 border-b border-[#2C2C2E]">
+        <div class="flex flex-col">
+          <div class="flex items-baseline gap-1">
+            <span class="text-[24px] text-[#8E8E93] font-normal relative top-[2px]">上午</span>
+            <span class="text-[56px] font-light text-[#8E8E93] leading-none tracking-tight">7:35</span>
+          </div>
+          <span class="text-[#8E8E93] text-[14px] mt-1">鬧鐘，每天</span>
+        </div>
+        <div class="w-[51px] h-[31px] rounded-full bg-[#333333] relative">
+          <div class="w-[27px] h-[27px] bg-[#8E8E93] rounded-full absolute left-[2px] top-[2px]"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⏳ 假介面：計時器 -->
+    <div id="view-timer" class="hidden absolute inset-0 flex-col pt-[6vh] px-4 pb-[100px] overflow-y-auto no-scrollbar">
+      <div class="flex justify-between items-center w-full mb-4">
+        <button class="text-white text-[15px] font-medium bg-transparent border border-gray-600/50 rounded-[14px] px-3 py-[4px]">編輯</button>
+      </div>
+      <h1 class="text-[34px] font-bold text-white mb-8 flex-none tracking-wide">計時器</h1>
+      
+      <!-- iOS 滾輪選擇器 Fake UI -->
+      <div class="relative w-full h-[200px] flex justify-center items-center overflow-hidden mb-8">
+        <div class="absolute w-[95%] h-[36px] bg-[#2C2C2E]/60 rounded-[8px] z-0"></div>
+        <div class="flex w-[95%] max-w-[360px] justify-between z-10 text-[22px] font-normal">
+          
+          <!-- 小時 (上方為空白，數字靠右對齊單位) -->
+          <div class="flex flex-col items-start w-1/3 pl-1 sm:pl-2">
+            <div class="h-[36px] w-[40px]"></div>
+            <div class="h-[36px] w-[40px]"></div>
+            <div class="text-white h-[36px] leading-[36px] flex items-center whitespace-nowrap">
+              <span class="w-[40px] text-right inline-block">0</span>
+              <span class="text-[17px] font-bold ml-1 mt-[2px]">小時</span>
+            </div>
+            <div class="text-[#8E8E93] opacity-50 h-[36px] leading-[36px] text-xl w-[40px] text-right tracking-wider">1</div>
+            <div class="text-[#8E8E93] opacity-20 h-[36px] leading-[36px] text-xl w-[40px] text-right tracking-wider">2</div>
+          </div>
+
+          <!-- 分鐘 -->
+          <div class="flex flex-col items-start w-1/3 pl-2 sm:pl-3">
+            <div class="text-[#8E8E93] opacity-20 h-[36px] leading-[36px] text-xl w-[40px] text-right tracking-wider">28</div>
+            <div class="text-[#8E8E93] opacity-50 h-[36px] leading-[36px] text-xl w-[40px] text-right tracking-wider">29</div>
+            <div class="text-white h-[36px] leading-[36px] flex items-center whitespace-nowrap">
+              <span class="w-[40px] text-right inline-block tracking-wider">30</span>
+              <span class="text-[17px] font-bold ml-[6px] mt-[2px]">分鐘</span>
+            </div>
+            <div class="text-[#8E8E93] opacity-50 h-[36px] leading-[36px] text-xl w-[40px] text-right tracking-wider">31</div>
+            <div class="text-[#8E8E93] opacity-20 h-[36px] leading-[36px] text-xl w-[40px] text-right tracking-wider">32</div>
+          </div>
+
+          <!-- 秒 -->
+          <div class="flex flex-col items-start w-1/3 pl-2 sm:pl-3">
+            <div class="text-[#8E8E93] opacity-20 h-[36px] leading-[36px] text-xl w-[40px] text-right tracking-wider">28</div>
+            <div class="text-[#8E8E93] opacity-50 h-[36px] leading-[36px] text-xl w-[40px] text-right tracking-wider">29</div>
+            <div class="text-white h-[36px] leading-[36px] flex items-center whitespace-nowrap">
+              <span class="w-[40px] text-right inline-block tracking-wider">30</span>
+              <span class="text-[17px] font-bold ml-[6px] mt-[2px]">秒</span>
+            </div>
+            <div class="text-[#8E8E93] opacity-50 h-[36px] leading-[36px] text-xl w-[40px] text-right tracking-wider">31</div>
+            <div class="text-[#8E8E93] opacity-20 h-[36px] leading-[36px] text-xl w-[40px] text-right tracking-wider">32</div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center w-full px-4 max-w-[400px] mb-10 mx-auto flex-none">
+        <button class="w-[84px] h-[84px] rounded-full bg-[#1C1C1E] flex items-center justify-center text-[#8E8E93] text-[17px] focus:outline-none transition-colors opacity-50">
+          取消
+        </button>
+        <button class="w-[84px] h-[84px] rounded-full bg-[#1A4A22] flex items-center justify-center text-[#32D74B] text-[17px] focus:outline-none transition-colors">
+          開始
+        </button>
+      </div>
+
+      <div class="w-full bg-[#1C1C1E] rounded-xl px-4 mb-10 mx-auto max-w-[400px]">
+        <div class="flex justify-between items-center py-[14px] border-b border-[#333333]">
+          <span class="text-white text-[17px] font-medium">標籤</span>
+          <span class="text-[#8E8E93] text-[17px]">計時器</span>
+        </div>
+        <div class="flex justify-between items-center py-[14px]">
+          <span class="text-white text-[17px] font-medium">當計時結束</span>
+          <div class="flex items-center gap-2">
+            <span class="text-[#8E8E93] text-[17px]">放射</span>
+            <span class="text-[#555555] font-bold text-lg mb-1">></span>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="text-white text-[22px] font-bold mb-2 ml-1">最近項目</h2>
+      <div class="w-full h-[1px] bg-[#2C2C2E]"></div>
+    </div>
+
+    <!-- ⌚️ iOS 原生擬真主介面 (碼錶) ⌚️ -->
+    <div id="view-stopwatch" class="absolute inset-0 flex flex-col items-center pb-[100px]">
+      
+      <!-- 時間顯示區 -->
+      <div class="flex-none w-full flex justify-center items-center mt-[16vh] mb-[8vh] px-2">
+        <span id="time-display" class="font-[200] tracking-tight leading-none text-white tabular-nums" style="font-size: clamp(72px, 22vw, 92px);">00:00.00</span>
+      </div>
+
+      <!-- 單環實心按鈕區 -->
+      <div class="flex-none flex justify-between items-center w-full px-4 max-w-[400px]">
+        
+        <button id="btn-lap-reset" class="w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#1C1C1E] text-[#8E8E93] text-[17px] focus:outline-none transition-colors">
+          分圈
+        </button>
+
+        <div class="flex gap-2 mb-2">
+          <div class="w-[8px] h-[8px] bg-white rounded-full"></div>
+          <div class="w-[8px] h-[8px] bg-[#48484A] rounded-full"></div>
+        </div>
+
+        <button id="btn-start-stop" class="w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#0A2A12] text-[#32D74B] text-[17px] focus:outline-none active:opacity-60 transition-colors">
+          開始
+        </button>
+      </div>
+
+      <!-- 極細分隔線 -->
+      <div class="w-[calc(100%-2.5rem)] max-w-[380px] h-[1px] bg-[#2C2C2E] mt-7 flex-none"></div>
+
+      <!-- 計圈列表區 -->
+      <div class="w-full max-w-[400px] flex-1 overflow-y-auto px-4 no-scrollbar">
+        <div id="laps-container" class="mt-1">
+          <!-- Laps here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 🌟 底部導覽列 (貼齊底部且為純黑) -->
+    <div class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[400px] h-[49px] bg-black z-40 flex justify-center items-end pb-[env(safe-area-inset-bottom)]" style="height: calc(49px + env(safe-area-inset-bottom));">
+      <div class="w-full flex justify-center items-end gap-[40px] pb-2">
+        
+        <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-[#8E8E93] gap-[2px] py-[8px] min-w-[60px] cursor-pointer transition-all">
+          <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
+          <span class="text-[10px] font-medium">世界時鐘</span>
+        </div>
+        
+        <div id="tab-alarm" class="tab-btn flex flex-col items-center justify-center text-[#8E8E93] gap-[2px] py-[8px] min-w-[60px] cursor-pointer transition-all">
+          <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 100-18 9 9 0 000 18z" /><path d="M12 7v5l2.5 2.5" /><path d="M19.5 5.5L21 7M4.5 5.5L3 7" stroke-linecap="round"/></svg>
+          <span class="text-[10px] font-medium">鬧鐘</span>
+        </div>
+        
+        <div id="tab-stopwatch" class="tab-btn flex flex-col items-center justify-center text-[#FF9500] gap-[2px] py-[8px] min-w-[60px] cursor-pointer transition-all">
+          <svg class="w-[24px] h-[24px]" fill="currentColor" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+          <span class="text-[10px] font-medium">碼錶</span>
+        </div>
+
+        <div id="tab-timer" class="tab-btn flex flex-col items-center justify-center text-[#8E8E93] gap-[2px] py-[8px] min-w-[60px] cursor-pointer transition-all">
+          <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 3v2M12 12l3-3M21 12h-2" stroke-linecap="round"/></svg>
+          <span class="text-[10px] font-medium">計時器</span>
+        </div>
+        
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+    // NTP 全球標準時間同步 (解決 30 秒誤差)
+    let timeOffset = 0;
+    const syncClock = async () => {
+      try {
+        const res = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+        const data = await res.json();
+        timeOffset = new Date(data.datetime).getTime() - Date.now();
+      } catch(e) {
+        console.log('時間同步失敗，使用本地時間');
+      }
+    };
+    syncClock();
+
+    const getNow = () => Date.now() + timeOffset;
+
+    const getFirebaseConfig = () => {
+      if (typeof window.__firebase_config !== 'undefined') return JSON.parse(window.__firebase_config);
+      return {
+        // 暫時停用 Firebase，若需要再解除註解
+        // apiKey: "AIzaSyAmZzNKWZxlgvmaXzyL24uqoBOiMx4xXoI",
+        // authDomain: "stopwatch-965d8.firebaseapp.com",
+        // projectId: "stopwatch-965d8",
+        // storageBucket: "stopwatch-965d8.firebasestorage.app",
+        // messagingSenderId: "1072884655085",
+        // appId: "1:1072884655085:web:c786406f8ed079bfc83de4"
+      };
+    };
+
+    const firebaseConfig = getFirebaseConfig();
+    const hasFirebase = !!firebaseConfig.apiKey;
+    let app, auth, db;
+    if (hasFirebase) {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+    }
+    const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'magic-stopwatch-html';
+
+    const savedSettings = JSON.parse(localStorage.getItem('magicStopwatchSettings')) || {};
+
+    const urlParams = new URLSearchParams(window.location.search);
+    let initialRoomId = urlParams.get('room') || savedSettings.roomId || '777';
+    let initialRole = urlParams.get('role') || savedSettings.role || 'sender';
+
+    let isRunning = false;
+    let time = 0;
+    let laps = [];
+    
+    let user = null;
+    let role = initialRole;
+    let roomId = initialRoomId;
+    let showSecretMenu = false;
+    let tapCount = 0;
+    
+    let forceType = savedSettings.forceType || 'none';
+    let forceTotal = savedSettings.forceTotal || { mins: 4, secs: 15, ms: 22 };
+    let useComma = savedSettings.useComma !== undefined ? savedSettings.useComma : false;
+    let forceSumTarget = savedSettings.forceSumTarget !== undefined ? parseInt(savedSettings.forceSumTarget) : 20;
+    
+    let forceTimeOffset = savedSettings.forceTimeOffset !== undefined ? parseInt(savedSettings.forceTimeOffset) : 0;
+    let forceTimeFormat = savedSettings.forceTimeFormat || '12';
+    let forceTimeTolerance = savedSettings.forceTimeTolerance !== undefined ? parseInt(savedSettings.forceTimeTolerance) : 3;
+    
+    let forceLaps = savedSettings.forceLaps;
+    if (forceLaps && !Array.isArray(forceLaps)) {
+      forceLaps = [
+        parseInt(forceLaps.lap1) || 0,
+        parseInt(forceLaps.lap2) || 0,
+        parseInt(forceLaps.lap3) || 0
+      ];
+    } else if (!forceLaps) {
+      forceLaps = [12, 34, 56]; // 預設 3 圈
+    }
+    
+    let requestRef;
+    let startTime = 0;
+    let accumulatedTime = 0;
+    let tapTimeout = null;
+    let syncUnsubscribe = null;
+
+    const dom = {
+      timeDisplay: document.getElementById('time-display'),
+      btnLapReset: document.getElementById('btn-lap-reset'),
+      btnStartStop: document.getElementById('btn-start-stop'),
+      lapsContainer: document.getElementById('laps-container'),
+      secretZone: document.getElementById('secret-zone'),
+      secretMenu: document.getElementById('secret-menu'),
+      roomIdInput: document.getElementById('room-id-input'),
+      roleSender: document.getElementById('role-sender'),
+      roleReceiver: document.getElementById('role-receiver'),
+      btnCopySender: document.getElementById('btn-copy-sender'),
+      btnCopyReceiver: document.getElementById('btn-copy-receiver'),
+      forceTypeSelect: document.getElementById('force-type-select'),
+      panelTotalForce: document.getElementById('panel-total-force'),
+      panelLapsForce: document.getElementById('panel-laps-force'),
+      panelSumForce: document.getElementById('panel-sum-force'),
+      forceSumTarget: document.getElementById('force-sum-target'),
+      panelTimeForce: document.getElementById('panel-time-force'),
+      forceTimeOffset: document.getElementById('force-time-offset'),
+      forceTimeFormat: document.getElementById('force-time-format'),
+      forceTimeTolerance: document.getElementById('force-time-tolerance'),
+      dynamicLapsContainer: document.getElementById('dynamic-laps-container'),
+      btnAddLap: document.getElementById('btn-add-lap'),
+      btnRemoveLap: document.getElementById('btn-remove-lap'),
+      commaToggle: document.getElementById('comma-toggle'),
+      btnSaveSync: document.getElementById('btn-save-sync'),
+      closeMenu: document.getElementById('close-secret-menu'),
+      connStatus: document.getElementById('conn-status'),
+      userId: document.getElementById('user-id'),
+    };
+
+    dom.roomIdInput.value = roomId;
+
+    const formatTime = (timeInMs) => {
+      const minutes = Math.floor(timeInMs / 60000);
+      const seconds = Math.floor((timeInMs % 60000) / 1000);
+      const milliseconds = Math.floor((timeInMs % 1000) / 10);
+      return {
+        mins: minutes.toString().padStart(2, '0'),
+        secs: seconds.toString().padStart(2, '0'),
+        ms: milliseconds.toString().padStart(2, '0'),
+      };
+    };
+
+    const getForcedMs = (recordCount) => {
+      if (forceType !== 'laps') return null;
+      if (recordCount < forceLaps.length) {
+        return forceLaps[recordCount];
+      }
+      return null;
+    };
+
+    // --- 頁籤切換邏輯 ---
+    const tabViews = ['world-clock', 'alarm', 'stopwatch', 'timer'];
+    tabViews.forEach(tab => {
+      document.getElementById(`tab-${tab}`).addEventListener('click', () => {
+        tabViews.forEach(t => {
+          const view = document.getElementById(`view-${t}`);
+          const btn = document.getElementById(`tab-${t}`);
+          if (t === tab) {
+            view.classList.remove('hidden'); view.classList.add('flex');
+            btn.classList.add('text-[#FF9500]');
+            btn.classList.remove('text-[#8E8E93]');
+          } else {
+            view.classList.add('hidden'); view.classList.remove('flex');
+            btn.classList.add('text-[#8E8E93]');
+            btn.classList.remove('text-[#FF9500]');
+          }
+        });
+      });
+    });
+
+    const renderTime = () => {
+      const { mins, secs, ms } = formatTime(time);
+      const sep = useComma ? ',' : '.';
+      dom.timeDisplay.textContent = `${mins}:${secs}${sep}${ms}`;
+    };
+
+    const renderButtons = () => {
+      dom.btnLapReset.textContent = '分圈';
+
+      if (isRunning) {
+        dom.btnLapReset.className = "w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#333333] text-white text-[17px] focus:outline-none active:opacity-60 transition-colors";
+        dom.btnStartStop.className = "w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#320E0B] text-[#FF453A] text-[17px] focus:outline-none active:opacity-60 transition-colors";
+        dom.btnStartStop.textContent = '停止';
+      } else {
+        if (time === 0) {
+          dom.btnLapReset.className = "w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#1C1C1E] text-[#8E8E93] text-[17px] focus:outline-none transition-colors";
+        } else {
+          dom.btnLapReset.className = "w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#333333] text-white text-[17px] focus:outline-none active:opacity-60 transition-colors";
+          dom.btnLapReset.textContent = '重置';
+        }
+
+        dom.btnStartStop.className = "w-[84px] h-[84px] rounded-full flex items-center justify-center bg-[#0A2A12] text-[#32D74B] text-[17px] focus:outline-none active:opacity-60 transition-colors";
+        dom.btnStartStop.textContent = '開始';
+      }
+    };
+
+    const renderLaps = () => {
+      const sep = useComma ? ',' : '.';
+      let lapDurations = [];
+      for (let i = 0; i < laps.length; i++) {
+        let previousTotal = i === laps.length - 1 ? 0 : laps[i+1].time;
+        let duration = laps[i].time - previousTotal;
+        lapDurations.push({ index: laps.length - i, duration: duration });
+      }
+
+      let minDuration = Infinity;
+      let maxDuration = -Infinity;
+      if (lapDurations.length >= 2) {
+        lapDurations.forEach(lap => {
+          if (lap.duration < minDuration) minDuration = lap.duration;
+          if (lap.duration > maxDuration) maxDuration = lap.duration;
+        });
+      }
+
+      dom.lapsContainer.innerHTML = lapDurations.map((lap) => {
+        const lapTime = formatTime(lap.duration);
+        let textColorClass = "text-white";
+        if (lapDurations.length >= 2) {
+          if (lap.duration === minDuration) textColorClass = "text-[#32D74B]"; 
+          else if (lap.duration === maxDuration) textColorClass = "text-[#FF453A]"; 
+        }
+
+        return `
+          <div class="flex justify-between py-[11px] border-b border-[#2C2C2E] text-[17px] tabular-nums ${textColorClass}">
+            <span class="tracking-widest">第${lap.index}圈</span>
+            <span class="font-[400]">${lapTime.mins}:${lapTime.secs}${sep}${lapTime.ms}</span>
+          </div>
+        `;
+      }).join('');
+    };
+
+    // 動態渲染分圈輸入框
+    const renderForceLapsInputs = () => {
+      if (!dom.dynamicLapsContainer) return;
+      
+      let html = '';
+      forceLaps.forEach((ms, index) => {
+        html += `
+          <div class="flex flex-col items-center">
+            <span class="text-xs text-gray-500 mb-1">Lap ${index + 1}</span>
+            <input type="number" data-index="${index}" value="${ms.toString().padStart(2, '0')}" class="force-lap-input w-14 bg-black border border-gray-700 rounded p-2 text-white text-center tabular-nums focus:border-indigo-500 focus:outline-none" min="0" max="99">
+          </div>
+        `;
+        if (index < forceLaps.length - 1) {
+          html += `<span class="text-gray-600 self-end mb-3">-</span>`;
+        }
+      });
+      dom.dynamicLapsContainer.innerHTML = html;
+
+      document.querySelectorAll('.force-lap-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const idx = parseInt(e.target.getAttribute('data-index'));
+          forceLaps[idx] = parseInt(e.target.value) || 0;
+        });
+      });
+    };
+
+    const renderSecretMenu = () => {
+      if (showSecretMenu) dom.secretMenu.classList.remove('hidden');
+      else dom.secretMenu.classList.add('hidden');
+
+      if (!hasFirebase) {
+        dom.connStatus.textContent = "未設定資料庫";
+        dom.connStatus.className = "text-gray-500 font-bold";
+      } else if (user) {
+        dom.connStatus.textContent = "已連線";
+        dom.connStatus.className = "text-emerald-500 font-bold";
+        dom.userId.textContent = user.uid.slice(0, 8);
+      } else {
+        dom.connStatus.textContent = "連線中...";
+        dom.connStatus.className = "text-yellow-500 font-bold";
+      }
+
+      if (role === 'sender') {
+        dom.roleSender.className = "flex-1 py-2 rounded-lg font-medium transition-colors bg-emerald-900/50 text-emerald-400 border border-emerald-800";
+        dom.roleReceiver.className = "flex-1 py-2 rounded-lg font-medium transition-colors bg-gray-800 text-gray-400";
+      } else {
+        dom.roleSender.className = "flex-1 py-2 rounded-lg font-medium transition-colors bg-gray-800 text-gray-400";
+        dom.roleReceiver.className = "flex-1 py-2 rounded-lg font-medium transition-colors bg-emerald-900/50 text-emerald-400 border border-emerald-800";
+      }
+
+      dom.forceTypeSelect.value = forceType;
+      dom.panelTotalForce.classList.toggle('hidden', forceType !== 'total');
+      dom.panelLapsForce.classList.toggle('hidden', forceType !== 'laps');
+      dom.panelSumForce.classList.toggle('hidden', forceType !== 'sum');
+      dom.panelTimeForce.classList.toggle('hidden', forceType !== 'time');
+      
+      dom.commaToggle.checked = useComma;
+
+      document.getElementById('force-total-mins').value = forceTotal.mins.toString().padStart(2, '0');
+      document.getElementById('force-total-secs').value = forceTotal.secs.toString().padStart(2, '0');
+      document.getElementById('force-total-ms').value = forceTotal.ms.toString().padStart(2, '0');
+      
+      dom.forceSumTarget.value = forceSumTarget.toString();
+      
+      dom.forceTimeOffset.value = forceTimeOffset.toString();
+      dom.forceTimeFormat.value = forceTimeFormat;
+      dom.forceTimeTolerance.value = forceTimeTolerance.toString();
+
+      if (forceType === 'laps') {
+        renderForceLapsInputs();
+      }
+    };
+
+    dom.btnAddLap.addEventListener('click', () => {
+      forceLaps.push(0);
+      renderForceLapsInputs();
+    });
+
+    dom.btnRemoveLap.addEventListener('click', () => {
+      if (forceLaps.length > 1) {
+        forceLaps.pop();
+        renderForceLapsInputs();
+      }
+    });
+
+    const copyUrl = (targetRole, btnElement) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', roomId);
+      url.searchParams.set('role', targetRole);
+      
+      const textArea = document.createElement("textarea");
+      textArea.value = url.toString();
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        const oldText = btnElement.textContent;
+        btnElement.textContent = "✔️ 網址已複製";
+        btnElement.classList.add('bg-emerald-900', 'text-emerald-300');
+        setTimeout(() => {
+          btnElement.textContent = oldText;
+          btnElement.classList.remove('bg-emerald-900', 'text-emerald-300');
+        }, 2000);
+      } catch (err) {}
+      document.body.removeChild(textArea);
+    };
+
+    dom.btnCopySender.addEventListener('click', () => copyUrl('sender', dom.btnCopySender));
+    dom.btnCopyReceiver.addEventListener('click', () => copyUrl('receiver', dom.btnCopyReceiver));
+
+    const animate = () => {
+      if (startTime) {
+        time = accumulatedTime + (getNow() - startTime);
+        renderTime();
+      }
+      requestRef = requestAnimationFrame(animate);
+    };
+
+    const toggleAnimation = () => {
+      if (isRunning) {
+        if (role === 'sender') startTime = getNow();
+        cancelAnimationFrame(requestRef); 
+        requestRef = requestAnimationFrame(animate);
+      } else cancelAnimationFrame(requestRef);
+    };
+
+    const pushStateToCloud = async (running, startTimestamp, accumulated, currentLaps) => {
+      if (!hasFirebase || !user || role !== 'sender' || !roomId) return;
+      const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'magic_rooms', roomId);
+      try {
+        await setDoc(roomRef, {
+          isRunning: running,
+          startTimestamp: startTimestamp,
+          accumulatedTime: accumulated,
+          laps: currentLaps,
+          updatedAt: getNow()
+        }, { merge: true });
+      } catch(e) {}
+    };
+
+    const setupListener = () => {
+      if (syncUnsubscribe) { syncUnsubscribe(); syncUnsubscribe = null; }
+      if (!hasFirebase || !user || !roomId) return;
+      
+      const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'magic_rooms', roomId);
+      syncUnsubscribe = onSnapshot(roomRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          
+          if (data.forceType !== undefined) forceType = data.forceType;
+          if (data.forceTotal) forceTotal = data.forceTotal;
+          if (data.forceSumTarget !== undefined) forceSumTarget = data.forceSumTarget;
+          if (data.forceTimeOffset !== undefined) forceTimeOffset = data.forceTimeOffset;
+          if (data.forceTimeFormat !== undefined) forceTimeFormat = data.forceTimeFormat;
+          if (data.forceTimeTolerance !== undefined) forceTimeTolerance = data.forceTimeTolerance;
+          if (data.forceLaps) {
+            forceLaps = Array.isArray(data.forceLaps) 
+              ? data.forceLaps 
+              : [data.forceLaps.lap1||0, data.forceLaps.lap2||0, data.forceLaps.lap3||0];
+          }
+          if (data.useComma !== undefined) {
+            useComma = data.useComma;
+            renderTime(); 
+            renderLaps();
+          }
+
+          if (role === 'receiver') {
+            isRunning = data.isRunning || false;
+            laps = data.laps || [];
+            accumulatedTime = data.accumulatedTime || 0;
+
+            if (data.isRunning) {
+              let serverStart = data.startTimestamp || 0;
+              let clockDelta = getNow() - serverStart;
+              
+              if (Math.abs(clockDelta) > 2000) {
+                serverStart = getNow() - 150;
+              }
+              startTime = serverStart;
+            } else {
+              startTime = data.startTimestamp || 0;
+              time = accumulatedTime; 
+            }
+
+            if (!isRunning) {
+              renderTime();
+            }
+            toggleAnimation();
+            renderButtons();
+            renderLaps();
+          }
+        }
+      });
+    };
+
+    dom.btnStartStop.addEventListener('click', () => {
+      isRunning = !isRunning;
+      let newStart = startTime;
+      let newAccumulated = accumulatedTime;
+      
+      if (isRunning) {
+        newStart = getNow();
+        startTime = newStart;
+      } else {
+        let exactCurrentTime = accumulatedTime + (getNow() - startTime);
+        let previousTotalTime = laps.length > 0 ? laps[0].time : 0;
+        let realLapDuration = exactCurrentTime - previousTotalTime;
+        
+        if (forceType === 'total') {
+          newAccumulated = (forceTotal.mins * 60000) + (forceTotal.secs * 1000) + (forceTotal.ms * 10);
+        } else if (forceType === 'laps') {
+          const forcedMs = getForcedMs(laps.length);
+          if (forcedMs !== null) {
+            const m = Math.floor(realLapDuration / 60000);
+            const s = Math.floor((realLapDuration % 60000) / 1000);
+            let newLapDuration = (m * 60000) + (s * 1000) + (forcedMs * 10);
+            newAccumulated = previousTotalTime + newLapDuration;
+          } else {
+            newAccumulated = exactCurrentTime;
+          }
+        } else if (forceType === 'sum') {
+          const m = Math.floor(realLapDuration / 60000);
+          const s = Math.floor((realLapDuration % 60000) / 1000);
+          let targetMs = forceSumTarget - s;
+          // 防止觀眾停在比目標還要大的秒數，做循環處理保證毫秒介於 00~99 之間
+          if (targetMs < 0) targetMs = (targetMs % 100 + 100) % 100;
+          if (targetMs > 99) targetMs = targetMs % 100;
+          
+          let newLapDuration = (m * 60000) + (s * 1000) + (targetMs * 10);
+          newAccumulated = previousTotalTime + newLapDuration;
+        } else if (forceType === 'time') {
+          // 當下時間迫牌邏輯
+          const nowObj = new Date(getNow() + forceTimeOffset * 60000);
+          let h = nowObj.getHours();
+          if (forceTimeFormat === '12') {
+            h = h % 12;
+            if (h === 0) h = 12; // 將 0 點轉換為 12 點
+          }
+          let m = nowObj.getMinutes();
+          let targetDuration = (h * 1000) + (m * 10);
+          
+          // 檢查是否落在容錯區間內
+          if (Math.abs(realLapDuration - targetDuration) <= forceTimeTolerance * 1000) {
+            newAccumulated = previousTotalTime + targetDuration;
+          } else {
+            newAccumulated = exactCurrentTime;
+          }
+        } else {
+          newAccumulated = exactCurrentTime;
+        }
+
+        accumulatedTime = newAccumulated;
+        time = newAccumulated;
+        renderTime();
+      }
+      
+      toggleAnimation();
+      renderButtons();
+      pushStateToCloud(isRunning, newStart, newAccumulated, laps);
+    });
+
+    dom.btnLapReset.addEventListener('click', () => {
+      let newLaps = [...laps];
+      let newAccumulated = accumulatedTime;
+      let newStart = startTime;
+
+      if (isRunning) {
+        let exactCurrentTime = accumulatedTime + (getNow() - startTime);
+        let previousTotalTime = laps.length > 0 ? laps[0].time : 0;
+        let realLapDuration = exactCurrentTime - previousTotalTime;
+
+        if (forceType === 'laps') {
+          const forcedMs = getForcedMs(laps.length);
+          if (forcedMs !== null) {
+            const m = Math.floor(realLapDuration / 60000);
+            const s = Math.floor((realLapDuration % 60000) / 1000);
+            let newLapDuration = (m * 60000) + (s * 1000) + (forcedMs * 10);
+            exactCurrentTime = previousTotalTime + newLapDuration;
+          }
+        } else if (forceType === 'sum') {
+          const m = Math.floor(realLapDuration / 60000);
+          const s = Math.floor((realLapDuration % 60000) / 1000);
+          let targetMs = forceSumTarget - s;
+          if (targetMs < 0) targetMs = (targetMs % 100 + 100) % 100;
+          if (targetMs > 99) targetMs = targetMs % 100;
+          
+          let newLapDuration = (m * 60000) + (s * 1000) + (targetMs * 10);
+          exactCurrentTime = previousTotalTime + newLapDuration;
+        } else if (forceType === 'time') {
+          const nowObj = new Date(getNow() + forceTimeOffset * 60000);
+          let h = nowObj.getHours();
+          if (forceTimeFormat === '12') {
+            h = h % 12;
+            if (h === 0) h = 12;
+          }
+          let m = nowObj.getMinutes();
+          let targetDuration = (h * 1000) + (m * 10);
+          
+          if (Math.abs(realLapDuration - targetDuration) <= forceTimeTolerance * 1000) {
+            exactCurrentTime = previousTotalTime + targetDuration;
+          }
+        }
+        newLaps = [{ time: exactCurrentTime, id: getNow() }, ...laps];
+        laps = newLaps;
+      } else {
+        if (time > 0) {
+          time = 0; laps = []; accumulatedTime = 0; newAccumulated = 0; newLaps = [];
+          renderTime();
+        }
+      }
+      renderLaps();
+      pushStateToCloud(isRunning, newStart, newAccumulated, newLaps);
+    });
+
+    dom.secretZone.addEventListener('click', () => {
+      tapCount++;
+      if (tapTimeout) clearTimeout(tapTimeout);
+      tapTimeout = setTimeout(() => { tapCount = 0; }, 1000);
+      if (tapCount >= 2) { showSecretMenu = true; tapCount = 0; renderSecretMenu(); }
+    });
+
+    dom.roomIdInput.addEventListener('input', (e) => {
+      roomId = e.target.value; setupListener();
+      if (role === 'sender') pushStateToCloud(isRunning, startTime, accumulatedTime, laps);
+    });
+
+    dom.roleSender.addEventListener('click', () => { role = 'sender'; renderSecretMenu(); pushStateToCloud(isRunning, startTime, accumulatedTime, laps); });
+    dom.roleReceiver.addEventListener('click', () => { role = 'receiver'; renderSecretMenu(); });
+    dom.forceTypeSelect.addEventListener('change', (e) => { forceType = e.target.value; renderSecretMenu(); });
+
+    dom.btnSaveSync.addEventListener('click', async () => {
+      if (!hasFirebase || !user || !roomId) return;
+      
+      forceType = dom.forceTypeSelect.value;
+      forceTotal = {
+        mins: parseInt(document.getElementById('force-total-mins').value) || 0,
+        secs: parseInt(document.getElementById('force-total-secs').value) || 0,
+        ms: parseInt(document.getElementById('force-total-ms').value) || 0
+      };
+      useComma = dom.commaToggle.checked;
+      forceSumTarget = parseInt(dom.forceSumTarget.value) || 0;
+      
+      forceTimeOffset = parseInt(dom.forceTimeOffset.value) || 0;
+      forceTimeFormat = dom.forceTimeFormat.value;
+      forceTimeTolerance = parseInt(dom.forceTimeTolerance.value) || 3;
+
+      document.querySelectorAll('.force-lap-input').forEach(input => {
+        const idx = parseInt(input.getAttribute('data-index'));
+        forceLaps[idx] = parseInt(input.value) || 0;
+      });
+
+      localStorage.setItem('magicStopwatchSettings', JSON.stringify({
+        roomId: roomId,
+        role: role,
+        forceType: forceType,
+        forceTotal: forceTotal,
+        forceLaps: forceLaps,
+        useComma: useComma,
+        forceSumTarget: forceSumTarget,
+        forceTimeOffset: forceTimeOffset,
+        forceTimeFormat: forceTimeFormat,
+        forceTimeTolerance: forceTimeTolerance
+      }));
+
+      const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'magic_rooms', roomId);
+      try {
+        await setDoc(roomRef, { 
+          forceType, forceTotal, forceLaps, useComma, forceSumTarget, 
+          forceTimeOffset, forceTimeFormat, forceTimeTolerance, 
+          updatedAt: getNow() 
+        }, { merge: true });
+        const oldText = dom.btnSaveSync.textContent;
+        dom.btnSaveSync.textContent = "✔️ 設定已同步至全場";
+        dom.btnSaveSync.classList.replace('bg-emerald-700', 'bg-green-600');
+        setTimeout(() => {
+          dom.btnSaveSync.textContent = oldText;
+          dom.btnSaveSync.classList.replace('bg-green-600', 'bg-emerald-700');
+        }, 2000);
+        renderTime(); renderLaps();
+      } catch(e) {}
+    });
+
+    dom.closeMenu.addEventListener('click', () => { showSecretMenu = false; renderSecretMenu(); });
+
+    const initAuth = async () => {
+      if (!hasFirebase) return;
+      try {
+        if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
+          await signInWithCustomToken(auth, window.__initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {}
+    };
+
+    if (hasFirebase) {
+      onAuthStateChanged(auth, (u) => {
+        user = u;
+        renderSecretMenu();
+        if (user && role === 'sender' && roomId) pushStateToCloud(isRunning, startTime, accumulatedTime, laps);
+        if (user) setupListener();
+      });
+    }
+
+    initAuth();
+    renderTime();
+    renderButtons();
+  </script>
+</body>
+</html>
