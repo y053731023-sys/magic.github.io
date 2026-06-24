@@ -26,7 +26,7 @@
     }
   </style>
 </head>
-<body class="fixed inset-0 bg-black overflow-hidden flex justify-center" style="height: 100dvh; max-height: 100%;">
+<body class="fixed inset-0 bg-black overflow-hidden flex justify-center" style="width: 100vw; height: 100vh;">
 
   <div class="relative w-full h-full max-w-[430px] flex flex-col bg-black">
     
@@ -342,9 +342,9 @@
       </div>
     </div>
 
-    <!-- 🌟 底部導覽列 (拔除毛玻璃，壓低並貼近底部) -->
-    <div class="absolute bottom-0 left-0 right-0 w-full z-40 flex justify-center pointer-events-none" style="padding-bottom: calc(20px + env(safe-area-inset-bottom)); padding-left: 16px; padding-right: 16px;">
-      <div class="w-full max-w-[400px] bg-[#1C1C1E] border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px] pointer-events-auto">
+    <!-- 🌟 底部導覽列 (雙層鎖死結構，徹底解決 PWA 高度陷阱) -->
+    <div class="absolute bottom-0 left-0 right-0 w-full z-40 flex justify-center" style="padding-bottom: calc(env(safe-area-inset-bottom) + 12px); padding-left: 16px; padding-right: 16px;">
+      <div class="w-full max-w-[400px] bg-[#1C1C1E]/90 backdrop-blur-3xl border border-[#333333] rounded-[40px] flex justify-between items-center px-3 py-[8px]">
         
         <div id="tab-world-clock" class="tab-btn flex flex-col items-center justify-center text-white gap-[2px] px-3 py-[6px] cursor-pointer transition-all">
           <svg class="w-[24px] h-[24px]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8M12 3v18M12 3c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M12 3c2.485 0 4.5 4.03 4.5 9s-2.015 9-4.5 9"></path></svg>
@@ -394,13 +394,12 @@
     const getFirebaseConfig = () => {
       if (typeof window.__firebase_config !== 'undefined') return JSON.parse(window.__firebase_config);
       return {
-        // 暫時停用 Firebase，若需要再解除註解
-        // apiKey: "AIzaSyAmZzNKWZxlgvmaXzyL24uqoBOiMx4xXoI",
-        // authDomain: "stopwatch-965d8.firebaseapp.com",
-        // projectId: "stopwatch-965d8",
-        // storageBucket: "stopwatch-965d8.firebasestorage.app",
-        // messagingSenderId: "1072884655085",
-        // appId: "1:1072884655085:web:c786406f8ed079bfc83de4"
+        apiKey: "AIzaSyAmZzNKWZxlgvmaXzyL24uqoBOiMx4xXoI",
+        authDomain: "stopwatch-965d8.firebaseapp.com",
+        projectId: "stopwatch-965d8",
+        storageBucket: "stopwatch-965d8.firebasestorage.app",
+        messagingSenderId: "1072884655085",
+        appId: "1:1072884655085:web:c786406f8ed079bfc83de4"
       };
     };
 
