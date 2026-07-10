@@ -415,6 +415,7 @@
                     setTimeOffset(Number(currentScreenVal));
                     setInputExpression('0');
                     setLastExpression('');
+                    resetMagic();
                     if (navigator.vibrate) navigator.vibrate([30, 50]);
                 }
             };
@@ -444,6 +445,7 @@
                     setCustomTarget(currentScreenVal);
                     setInputExpression('0');
                     setLastExpression('');
+                    resetMagic();
                     if (navigator.vibrate) navigator.vibrate([30, 50]);
                 }
             };
@@ -477,7 +479,7 @@
                 if (forceTimerRef.current) clearTimeout(forceTimerRef.current);
 
                 if (isForceTriggeredRef.current) {
-                    e.preventDefault();
+                    if (e && e.preventDefault) e.preventDefault();
                 } else {
                     handleForceShortPress();
                 }
