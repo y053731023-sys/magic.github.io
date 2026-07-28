@@ -327,9 +327,40 @@
     </div>
 
     <!-- Settings Screen -->
+    <!-- Settings Screen -->
     <div id="settings-overlay" class="overlay-screen">
-        <div class="bg-gray-900 w-full max-w-sm p-6 rounded-2xl border border-gray-700 mx-4" onclick="event.stopPropagation()">
-            <h2 class="text-xl font-bold mb-4 text-center">魔術設定後台</h2>
+        <div class="bg-gray-900 w-full max-w-sm p-6 rounded-2xl border border-gray-700 mx-4 max-h-[90vh] overflow-y-auto custom-scrollbar" onclick="event.stopPropagation()">
+            <h2 class="text-xl font-bold mb-3 text-center">魔術設定後台</h2>
+
+            <!-- 魔術操作教學與效果解釋 -->
+            <div class="mb-4 p-3.5 bg-indigo-950/50 border border-indigo-500/40 rounded-xl space-y-2 text-xs">
+                <div class="flex items-center justify-between font-bold text-indigo-300 border-b border-indigo-800/60 pb-1.5">
+                    <span class="flex items-center gap-1.5 text-indigo-200">📖 魔術表演教學與秘密操作說明</span>
+                    <button type="button" onclick="document.getElementById('tutorial-detail').classList.toggle('hidden')" class="text-[10px] text-indigo-400 hover:text-indigo-200 underline">展開/收合</button>
+                </div>
+                
+                <div id="tutorial-detail" class="space-y-3 pt-1 text-slate-300">
+                    <!-- 表演效果解釋 -->
+                    <div>
+                        <p class="font-bold text-amber-400 mb-1">✨ 表演效果解釋：</p>
+                        <p class="text-[11px] leading-relaxed text-slate-300">
+                            1. <b>【強選結果】</b>：觀眾在計算機隨意按任何數字與算式，按「=」必定輸出您設定的秘密數字。<br>
+                            2. <b>【心靈感應】</b>：請觀眾輸入「月 + 日 + 年 + PIN碼 =」，長按螢幕即可感應出其星座、出生天數與同生日名人卡片！
+                        </p>
+                    </div>
+
+                    <!-- 秘密手法教學 -->
+                    <div>
+                        <p class="font-bold text-amber-400 mb-1">🤫 秘密手法操作教學：</p>
+                        <ul class="text-[11px] leading-relaxed space-y-1 text-slate-300 list-disc list-inside">
+                            <li><b>啟動強選結果</b>：點擊螢幕<b>左上角空白處</b>，AC 鍵會微閃紅光 0.2 秒代表已成功鎖定強選數字。</li>
+                            <li><b>彈出感應卡片</b>：在螢幕頂部<b>數字顯示區長按 1 秒</b>。</li>
+                            <li><b>手勢退格刪除</b>：在數字顯示區<b>往左或往右滑動</b>可退格刪除最後一位數。</li>
+                            <li><b>喚醒設定後台</b>：長按<b>「%」百分比鍵 1 秒</b>即可打開此控制台。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
             
             <div class="mb-4 p-3 bg-gray-800 rounded-lg">
                 <label class="settings-label text-yellow-500">功能 A: 強制運算結果 (Force Number)</label>
@@ -338,18 +369,33 @@
             </div>
 
             <div class="mb-4 p-3 bg-gray-800 rounded-lg">
-                <label class="settings-label text-purple-400">功能 B: 自定義名人 (Custom Reveal)</label>
+                <label class="settings-label text-purple-400 font-bold">功能 B: 新增自定義名人 (Custom Reveal)</label>
                 <div class="flex gap-2 mb-2">
-                    <input id="set-month" type="number" placeholder="月" class="settings-input" style="flex:1">
-                    <input id="set-day" type="number" placeholder="日" class="settings-input" style="flex:1">
+                    <input id="set-month" type="number" placeholder="月 (1-12)" class="settings-input" style="flex:1">
+                    <input id="set-day" type="number" placeholder="日 (1-31)" class="settings-input" style="flex:1">
                 </div>
-                <input id="set-name" type="text" placeholder="顯示名字" class="settings-input">
-                <textarea id="set-desc" rows="2" placeholder="顯示描述" class="settings-input mb-0"></textarea>
+                <input id="set-name" type="text" placeholder="顯示名字 (例如: 周杰倫)" class="settings-input">
+                <textarea id="set-desc" rows="2" placeholder="顯示描述 (例如: 歌手 - 歌曲《青花瓷》)" class="settings-input mb-0"></textarea>
             </div>
 
-            <button onclick="settings.save()" class="settings-btn bg-green-600 text-white">保存設定 (Save)</button>
-            <button onclick="settings.clear()" class="settings-btn bg-red-900 text-red-200 mt-2">清除所有設定</button>
-            <button onclick="settings.close()" class="settings-btn bg-gray-700 text-white mt-4">關閉 (Close)</button>
+            <!-- 檢視目前系統所有人物資訊列表 -->
+            <div class="mb-4 p-3 bg-gray-800 rounded-lg">
+                <div class="flex items-center justify-between mb-2 border-b border-gray-700 pb-2">
+                    <label class="settings-label text-green-400 mb-0 font-bold">📋 系統人物資料庫清單</label>
+                    <div class="flex items-center gap-2">
+                        <button onclick="settings.resetPresets()" class="text-[10px] text-gray-400 hover:text-white underline" title="重置為原始內建明星">重置預設</button>
+                        <span id="custom-count-badge" class="text-[10px] bg-green-900/60 text-green-300 border border-green-700/50 px-2 py-0.5 rounded-full font-mono">0 人</span>
+                    </div>
+                </div>
+                <input id="search-people" type="text" oninput="settings.renderList()" placeholder="🔍 搜尋例如: 1月, 1/18, 周杰倫..." class="settings-input text-xs py-1.5 px-3 mb-2 border-gray-700 bg-gray-900/90">
+                <div id="custom-people-list" class="max-h-[220px] overflow-y-auto space-y-2 custom-scrollbar p-1">
+                    <!-- 動態渲染所有人物項目 -->
+                </div>
+            </div>
+
+            <button onclick="settings.save()" class="settings-btn bg-green-600 hover:bg-green-500 text-white transition-colors">保存設定 (Save)</button>
+            <button onclick="settings.clear()" class="settings-btn bg-red-900/80 hover:bg-red-800 text-red-200 mt-2 transition-colors">清除所有設定</button>
+            <button onclick="settings.close()" class="settings-btn bg-gray-700 hover:bg-gray-600 text-white mt-3 transition-colors">關閉 (Close)</button>
         </div>
     </div>
 
@@ -398,12 +444,17 @@
         // --- 設定管理 ---
         const settings = {
             customDB: {},
+            deletedPresets: {},
             forceNumber: null,
 
             init() {
                 const savedDB = localStorage.getItem('magicCalcCustomDB');
                 if (savedDB) {
                     try { this.customDB = JSON.parse(savedDB); } catch(e) {}
+                }
+                const savedDeleted = localStorage.getItem('magicCalcDeletedPresets');
+                if (savedDeleted) {
+                    try { this.deletedPresets = JSON.parse(savedDeleted); } catch(e) {}
                 }
                 const savedForce = localStorage.getItem('magicCalcForceNum');
                 if (savedForce) {
@@ -414,7 +465,6 @@
                 const btn = document.getElementById('btn-percent');
                 let timer;
                 const start = (e) => {
-                    // Changed from 3000 to 1000
                     timer = setTimeout(() => { this.open(); }, 1000);
                 };
                 const end = () => { if (timer) clearTimeout(timer); };
@@ -426,17 +476,148 @@
             },
 
             getEntry(key) {
+                if (this.deletedPresets[key]) return null;
                 return this.customDB[key] || defaultDB[key] || defaultDB['default'];
             },
 
             open() {
                 // Populate inputs
                 if(this.forceNumber) document.getElementById('set-force-num').value = this.forceNumber;
+                this.renderList();
                 document.getElementById('settings-overlay').classList.add('visible');
             },
 
             close() {
                 document.getElementById('settings-overlay').classList.remove('visible');
+            },
+
+            renderList() {
+                const listEl = document.getElementById('custom-people-list');
+                const badgeEl = document.getElementById('custom-count-badge');
+                const searchEl = document.getElementById('search-people');
+                if (!listEl) return;
+
+                const query = searchEl ? searchEl.value.trim().toLowerCase() : '';
+
+                // 融合所有未被刪除的 key (包含預設與自訂)
+                const allKeysSet = new Set([...Object.keys(defaultDB), ...Object.keys(this.customDB)]);
+                allKeysSet.delete('default'); // 排除預設備用項
+
+                // 過濾已刪除的項目
+                const activeKeys = Array.from(allKeysSet).filter(k => !this.deletedPresets[k] && this.getEntry(k));
+
+                // 依月份與日期排序 (1月1日 -> 12月30日)
+                const sortedKeys = activeKeys.sort((a, b) => {
+                    const [mA, dA] = a.split('-').map(Number);
+                    const [mB, dB] = b.split('-').map(Number);
+                    return mA !== mB ? mA - mB : dA - dB;
+                });
+
+                // 超嚴謹搜尋邏輯
+                const filteredKeys = sortedKeys.filter(key => {
+                    if (!query) return true;
+                    const item = this.getEntry(key);
+                    if (!item) return false;
+                    const [m, d] = key.split('-');
+
+                    // 嚴謹情境 1：輸入「1月」、「11月」等 (精確比對月份，避免「1月」搜尋到「11月」)
+                    const monthStrictMatch = query.match(/^(\d{1,2})月$/);
+                    if (monthStrictMatch) {
+                        const targetMonth = parseInt(monthStrictMatch[1], 10);
+                        return parseInt(m, 10) === targetMonth;
+                    }
+
+                    // 嚴謹情境 2：輸入「1/18」、「1-18」或「1月18日」等精確日期
+                    const dateStrictMatch = query.match(/^(\d{1,2})[-/月](\d{1,2})[日]?$/);
+                    if (dateStrictMatch) {
+                        const targetM = parseInt(dateStrictMatch[1], 10);
+                        const targetD = parseInt(dateStrictMatch[2], 10);
+                        return parseInt(m, 10) === targetM && parseInt(d, 10) === targetD;
+                    }
+
+                    // 一般文字搜尋 (比對名字與描述)
+                    return item.name.toLowerCase().includes(query) ||
+                           (item.desc && item.desc.toLowerCase().includes(query)) ||
+                           `${m}-${d}` === query ||
+                           `${m}/${d}` === query;
+                });
+
+                if (badgeEl) {
+                    const customCount = Object.keys(this.customDB).filter(k => !this.deletedPresets[k]).length;
+                    badgeEl.innerText = `全站共 ${sortedKeys.length} 位 (${customCount} 自訂)`;
+                }
+
+                if (filteredKeys.length === 0) {
+                    listEl.innerHTML = `<div class="text-center text-gray-500 text-xs py-3">查無符合的人物資訊</div>`;
+                    return;
+                }
+
+                let html = '';
+                filteredKeys.forEach(key => {
+                    const [m, d] = key.split('-');
+                    const isCustom = Boolean(this.customDB[key]);
+                    const item = this.getEntry(key);
+
+                    html += `
+                        <div class="flex items-center justify-between bg-gray-900/90 p-2.5 rounded-lg border ${isCustom ? 'border-purple-500/50 bg-purple-950/20' : 'border-gray-700/80'} text-xs gap-2">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-yellow-400 font-mono font-bold shrink-0">${m}月${d}日</span>
+                                    <span class="text-white font-bold truncate">${item.name}</span>
+                                    ${isCustom ? 
+                                        `<span class="text-[9px] bg-purple-900/80 text-purple-300 border border-purple-500/50 px-1.5 py-0.2 rounded shrink-0">自訂</span>` : 
+                                        `<span class="text-[9px] bg-gray-800 text-gray-400 border border-gray-700 px-1.5 py-0.2 rounded shrink-0">內建</span>`
+                                    }
+                                </div>
+                                <p class="text-gray-400 text-[11px] truncate mt-0.5">${item.desc || '無描述'}</p>
+                            </div>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button onclick="settings.editEntry('${key}')" class="text-indigo-300 hover:text-white bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-700/50 px-2 py-1 rounded transition-colors text-[11px]">編輯</button>
+                                <button onclick="settings.removeEntry('${key}')" class="text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-900/60 border border-red-800/40 px-2 py-1 rounded transition-colors text-[11px]">刪除</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            },
+
+            editEntry(key) {
+                const item = this.getEntry(key);
+                if (!item) return;
+                const [m, d] = key.split('-');
+                document.getElementById('set-month').value = m;
+                document.getElementById('set-day').value = d;
+                document.getElementById('set-name').value = item.name;
+                document.getElementById('set-desc').value = item.desc || '';
+                
+                const nameInput = document.getElementById('set-name');
+                nameInput.focus();
+                nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            },
+
+            removeEntry(key) {
+                const item = this.getEntry(key);
+                if (!item) return;
+                if (confirm(`確定要刪除「${item.name} (${key.replace('-', '月')}日)」這筆資料嗎？`)) {
+                    if (this.customDB[key]) {
+                        delete this.customDB[key];
+                        localStorage.setItem('magicCalcCustomDB', JSON.stringify(this.customDB));
+                    }
+                    if (defaultDB[key]) {
+                        this.deletedPresets[key] = true;
+                        localStorage.setItem('magicCalcDeletedPresets', JSON.stringify(this.deletedPresets));
+                    }
+                    this.renderList();
+                }
+            },
+
+            resetPresets() {
+                if (confirm("確定要重置所有內建預設明星資料嗎？\n(這將恢復被刪除的內建明星)")) {
+                    this.deletedPresets = {};
+                    localStorage.removeItem('magicCalcDeletedPresets');
+                    this.renderList();
+                    alert("已成功恢復所有預設明星！");
+                }
             },
 
             save() {
@@ -462,9 +643,13 @@
                     localStorage.setItem('magicCalcCustomDB', JSON.stringify(this.customDB));
                 }
 
+                this.renderList();
+
                 alert("設定已保存！\n\n1. 左上角隱藏按鈕可啟動強制結果。\n2. 自定義名人生效。");
                 
                 // Clear reveal inputs
+                document.getElementById('set-month').value = '';
+                document.getElementById('set-day').value = '';
                 document.getElementById('set-name').value = '';
                 document.getElementById('set-desc').value = '';
             },
@@ -484,6 +669,8 @@
                     document.getElementById('set-name').value = '';
                     document.getElementById('set-desc').value = '';
                     
+                    this.renderList();
+
                     alert("已重置：所有設定已清除。");
                 }
             }
