@@ -28,9 +28,9 @@
         /* --- 橫向模式適配 (Landscape) --- */
         @media (orientation: landscape) {
             :root {
-                /* 大牌揭曉尺寸適配橫向：高度 56vh，寬度 37.3vh，避免擠壓遮擋 */
-                --active-h: 56vh; 
-                --active-w: 37.3vh; 
+                /* 大牌揭曉尺寸加大：高度 76vh，寬度 50.6vh */
+                --active-h: 76vh; 
+                --active-w: 50.6vh; 
                 
                 --max-w: none;
                 --max-h: none;
@@ -127,9 +127,9 @@
         .card-wrapper {
             position: absolute;
             left: 50%; top: 50%;
-            /* 直向預設：18vw */
-            width: 18vw; height: 27vw; 
-            margin-left: -9vw; margin-top: -13.5vw;
+            /* 直向預設：加大至 20vw */
+            width: 20vw; height: 30vw; 
+            margin-left: -10vw; margin-top: -15vw;
             
             transform-style: preserve-3d;
             cursor: pointer;
@@ -142,35 +142,39 @@
                         opacity 0.5s ease;
         }
 
-        /* 橫向模式適配 (針對手機橫向優化：垂直位移與大牌/按鈕避讓) */
+        /* 橫向模式適配 (針對手機橫向優化：大卡片與貼附式按鈕) */
         @media (orientation: landscape) {
             .card-wrapper {
-                height: 44vh; 
-                width: 29.3vh; 
+                /* 橫向小牌加大：高度 52vh，寬度 34.6vh */
+                height: 52vh; 
+                width: 34.6vh; 
                 top: 40%;
-                margin-top: -22vh; 
-                margin-left: -14.65vh;
+                margin-top: -26vh; 
+                margin-left: -17.3vh;
             }
 
             .card-wrapper.active {
-                top: 40% !important;
+                top: 44% !important;
             }
 
             #zone-overlay {
-                top: 40%;
+                top: 44%;
             }
 
             #reveal-container {
-                top: 40% !important;
+                top: 44% !important;
             }
 
             .controls { 
-                bottom: 3vh; 
+                bottom: 10vh; 
+                z-index: 3000;
             }
 
             #action-btn {
-                padding: 10px 36px;
-                font-size: 15px;
+                padding: 12px 42px;
+                font-size: 16px;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
             }
 
             #help-modal {
@@ -457,11 +461,11 @@
         }
         
         function updateCardPosition(el, index) {
-            let offset = (index - 2) * 19; // 直向間距
+            let offset = (index - 2) * 21; // 直向間距
             let unit = 'vw';
             if (window.innerWidth > window.innerHeight) {
-                // 橫向模式：卡片間距 (約 25vh)
-                offset = (index - 2) * 25; 
+                // 橫向模式：卡片間距 (約 27vh)
+                offset = (index - 2) * 27; 
                 unit = 'vh';
             }
             const transform = `translateX(${offset}${unit})`;
@@ -787,3 +791,5 @@
     </script>
 </body>
 </html>
+
+
