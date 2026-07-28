@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Magic Card</title>
     <link rel="icon" type="image/png" href="Gemini_Generated_Image_uixo8fuixo8fuixo.png">
     <link rel="apple-touch-icon" href="Gemini_Generated_Image_uixo8fuixo8fuixo.png">
@@ -127,9 +127,9 @@
         .card-wrapper {
             position: absolute;
             left: 50%; top: 50%;
-            /* 直向預設：加大至 20vw */
-            width: 20vw; height: 30vw; 
-            margin-left: -10vw; margin-top: -15vw;
+            /* 直向模式：16vw 寬，確保 5 張牌完全留在螢幕內不溢出 */
+            width: 16vw; height: 24vw; 
+            margin-left: -8vw; margin-top: -12vw;
             
             transform-style: preserve-3d;
             cursor: pointer;
@@ -145,36 +145,36 @@
         /* 橫向模式適配 (針對手機橫向優化：大卡片與貼附式按鈕) */
         @media (orientation: landscape) {
             .card-wrapper {
-                /* 橫向小牌加大：高度 52vh，寬度 34.6vh */
-                height: 52vh; 
-                width: 34.6vh; 
+                /* 橫向小牌：高度 48vh，寬度 32vh */
+                height: 48vh; 
+                width: 32vh; 
                 top: 40%;
-                margin-top: -26vh; 
-                margin-left: -17.3vh;
+                margin-top: -24vh; 
+                margin-left: -16vh;
             }
 
             .card-wrapper.active {
-                top: 44% !important;
+                top: 42% !important;
             }
 
             #zone-overlay {
-                top: 44%;
+                top: 42%;
             }
 
             #reveal-container {
-                top: 44% !important;
+                top: 42% !important;
             }
 
             .controls { 
-                bottom: 10vh; 
+                bottom: max(16px, env(safe-area-inset-bottom)); 
                 z-index: 3000;
             }
 
             #action-btn {
-                padding: 12px 42px;
-                font-size: 16px;
+                padding: 10px 36px;
+                font-size: 15px;
                 border: 2px solid rgba(255, 255, 255, 0.3);
-                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
             }
 
             #help-modal {
@@ -316,7 +316,9 @@
 
         /* --- 底部按鈕 --- */
         .controls { 
-            position: absolute; bottom: 8vh; width: 100%; z-index: 3000; 
+            position: absolute; 
+            bottom: max(20px, env(safe-area-inset-bottom)); 
+            width: 100%; z-index: 3000; 
             display: flex; justify-content: center; pointer-events: none; 
         }
 
@@ -461,11 +463,11 @@
         }
         
         function updateCardPosition(el, index) {
-            let offset = (index - 2) * 21; // 直向間距
+            let offset = (index - 2) * 17.5; // 直向間距 (17.5vw，確保 5 張卡片全在螢幕內)
             let unit = 'vw';
             if (window.innerWidth > window.innerHeight) {
-                // 橫向模式：卡片間距 (約 27vh)
-                offset = (index - 2) * 27; 
+                // 橫向模式：卡片間距 (約 26vh)
+                offset = (index - 2) * 26; 
                 unit = 'vh';
             }
             const transform = `translateX(${offset}${unit})`;
