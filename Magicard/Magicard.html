@@ -28,9 +28,9 @@
         /* --- 橫向模式適配 (Landscape) --- */
         @media (orientation: landscape) {
             :root {
-                /* 大牌維持原樣：高度 85% */
-                --active-h: 85vh; 
-                --active-w: 56.6vh; 
+                /* 大牌揭曉尺寸適配橫向：高度 56vh，寬度 37.3vh，避免擠壓遮擋 */
+                --active-h: 56vh; 
+                --active-w: 37.3vh; 
                 
                 --max-w: none;
                 --max-h: none;
@@ -142,12 +142,39 @@
                         opacity 0.5s ease;
         }
 
-        /* 橫向模式小牌 (針對手機優化：加大) */
+        /* 橫向模式適配 (針對手機橫向優化：垂直位移與大牌/按鈕避讓) */
         @media (orientation: landscape) {
             .card-wrapper {
-                /* 高度設為 55vh (螢幕一半多)，寬度按比例 2:3 */
-                height: 55vh; width: 36.6vh; 
-                margin-top: -27.5vh; margin-left: -18.3vh;
+                height: 44vh; 
+                width: 29.3vh; 
+                top: 40%;
+                margin-top: -22vh; 
+                margin-left: -14.65vh;
+            }
+
+            .card-wrapper.active {
+                top: 40% !important;
+            }
+
+            #zone-overlay {
+                top: 40%;
+            }
+
+            #reveal-container {
+                top: 40% !important;
+            }
+
+            .controls { 
+                bottom: 3vh; 
+            }
+
+            #action-btn {
+                padding: 10px 36px;
+                font-size: 15px;
+            }
+
+            #help-modal {
+                padding: 20px 15px;
             }
         }
 
@@ -224,23 +251,23 @@
             transform: rotateY(180deg);
         }
 
-        /* --- 揭曉大牌層 --- */
+        /* --- 揭曉大牌層 (定位與 .card-wrapper.active 完全重合，消除跳動) --- */
         #reveal-container {
             display: none;
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            justify-content: center;
-            align-items: center;
-            z-index: 200;
-            pointer-events: none; 
-        }
-
-        .big-card-wrapper {
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
             width: var(--active-w);
             height: var(--active-h);
             max-width: var(--max-w);
             max-height: var(--max-h);
+            z-index: 1500;
+            pointer-events: none; 
+        }
+
+        .big-card-wrapper {
+            width: 100%;
+            height: 100%;
             perspective: 1500px;
             pointer-events: auto; 
         }
@@ -433,8 +460,8 @@
             let offset = (index - 2) * 19; // 直向間距
             let unit = 'vw';
             if (window.innerWidth > window.innerHeight) {
-                // 橫向模式：卡片間距 (約 32vh)
-                offset = (index - 2) * 32; 
+                // 橫向模式：卡片間距 (約 25vh)
+                offset = (index - 2) * 25; 
                 unit = 'vh';
             }
             const transform = `translateX(${offset}${unit})`;
@@ -586,7 +613,9 @@
             inner.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
             if (currentRotation > 60) {
                 inner.style.transform = `rotateY(180deg)`;
-                revealSuccess();
+                setTimeout(() => {
+                    revealSuccess();
+                }, 480);
             } else {
                 inner.style.transform = `rotateY(0deg)`;
             }
@@ -758,5 +787,3 @@
     </script>
 </body>
 </html>
-
-
