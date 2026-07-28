@@ -25,9 +25,9 @@
         /* --- 橫向模式適配 (Landscape) --- */
         @media (orientation: landscape) {
             :root {
-                /* 大牌維持原樣：高度 85% */
-                --active-h: 85vh; 
-                --active-w: 56.6vh; 
+                /* 大牌維持原樣/揭曉牌：高度 70vh */
+                --active-h: 70vh; 
+                --active-w: 46.6vh; 
                 
                 --max-w: none;
                 --max-h: none;
@@ -139,12 +139,40 @@
                         opacity 0.5s ease;
         }
 
-        /* 橫向模式小牌 (針對手機優化：加大) */
+        /* 橫向模式適配 (針對手機橫向優化：垂直位移與按鈕避讓) */
         @media (orientation: landscape) {
             .card-wrapper {
-                /* 高度設為 55vh (螢幕一半多)，寬度按比例 2:3 */
-                height: 55vh; width: 36.6vh; 
-                margin-top: -27.5vh; margin-left: -18.3vh;
+                height: 44vh; 
+                width: 29.3vh; 
+                top: 42%;
+                margin-top: -22vh; 
+                margin-left: -14.65vh;
+            }
+
+            .card-wrapper.active {
+                top: 42% !important;
+            }
+
+            #zone-overlay {
+                top: 42%;
+            }
+
+            #reveal-container {
+                align-items: flex-start;
+                padding-top: 7vh;
+            }
+
+            .controls { 
+                bottom: 3vh; 
+            }
+
+            #action-btn {
+                padding: 10px 36px;
+                font-size: 15px;
+            }
+
+            #help-modal {
+                padding: 20px 15px;
             }
         }
 
@@ -430,8 +458,8 @@
             let offset = (index - 2) * 19; // 直向間距
             let unit = 'vw';
             if (window.innerWidth > window.innerHeight) {
-                // 橫向模式：卡片間距 (約 32vh)
-                offset = (index - 2) * 32; 
+                // 橫向模式：卡片間距 (約 25vh)
+                offset = (index - 2) * 25; 
                 unit = 'vh';
             }
             const transform = `translateX(${offset}${unit})`;
