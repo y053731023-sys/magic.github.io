@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Magic Card</title>
+    <link rel="icon" type="image/png" href="Gemini_Generated_Image_uixo8fuixo8fuixo.png">
+    <link rel="apple-touch-icon" href="Gemini_Generated_Image_uixo8fuixo8fuixo.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         :root {
             --card-sprite: none; 
@@ -25,9 +28,9 @@
         /* --- 橫向模式適配 (Landscape) --- */
         @media (orientation: landscape) {
             :root {
-                /* 大牌維持原樣/揭曉牌：高度 70vh */
-                --active-h: 70vh; 
-                --active-w: 46.6vh; 
+                /* 大牌揭曉尺寸適配橫向：高度 56vh，寬度 37.3vh，避免擠壓遮擋 */
+                --active-h: 56vh; 
+                --active-w: 37.3vh; 
                 
                 --max-w: none;
                 --max-h: none;
@@ -139,27 +142,26 @@
                         opacity 0.5s ease;
         }
 
-        /* 橫向模式適配 (針對手機橫向優化：垂直位移與按鈕避讓) */
+        /* 橫向模式適配 (針對手機橫向優化：垂直位移與大牌/按鈕避讓) */
         @media (orientation: landscape) {
             .card-wrapper {
                 height: 44vh; 
                 width: 29.3vh; 
-                top: 42%;
+                top: 40%;
                 margin-top: -22vh; 
                 margin-left: -14.65vh;
             }
 
             .card-wrapper.active {
-                top: 42% !important;
+                top: 40% !important;
             }
 
             #zone-overlay {
-                top: 42%;
+                top: 40%;
             }
 
             #reveal-container {
-                align-items: flex-start;
-                padding-top: 7vh;
+                top: 40% !important;
             }
 
             .controls { 
@@ -249,23 +251,23 @@
             transform: rotateY(180deg);
         }
 
-        /* --- 揭曉大牌層 --- */
+        /* --- 揭曉大牌層 (定位與 .card-wrapper.active 完全重合，消除跳動) --- */
         #reveal-container {
             display: none;
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            justify-content: center;
-            align-items: center;
-            z-index: 200;
-            pointer-events: none; 
-        }
-
-        .big-card-wrapper {
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
             width: var(--active-w);
             height: var(--active-h);
             max-width: var(--max-w);
             max-height: var(--max-h);
+            z-index: 1500;
+            pointer-events: none; 
+        }
+
+        .big-card-wrapper {
+            width: 100%;
+            height: 100%;
             perspective: 1500px;
             pointer-events: auto; 
         }
@@ -611,7 +613,9 @@
             inner.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
             if (currentRotation > 60) {
                 inner.style.transform = `rotateY(180deg)`;
-                revealSuccess();
+                setTimeout(() => {
+                    revealSuccess();
+                }, 480);
             } else {
                 inner.style.transform = `rotateY(0deg)`;
             }
