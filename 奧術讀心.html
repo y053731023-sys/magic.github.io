@@ -4116,7 +4116,7 @@
     <div id="app" class="w-full max-w-xl relative">
 
         <!-- Header -->
-        <div class="text-center mb-10 relative z-10">
+        <div id="main-header" class="text-center mb-10 relative z-10 transition-all duration-300">
             <h1
                 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-amber-100 to-amber-500 mb-2 tracking-[0.15em] uppercase font-cinzel drop-shadow-lg">
                 奧術讀心
@@ -4262,7 +4262,16 @@
             return numbers; // Sorted
         }
 
+        const mainHeader = document.getElementById('main-header');
+
         function switchScreen(screenName) {
+            if (mainHeader) {
+                if (screenName === 'intro') {
+                    mainHeader.classList.remove('hidden');
+                } else {
+                    mainHeader.classList.add('hidden');
+                }
+            }
             Object.values(screens).forEach(el => {
                 el.classList.add('hidden');
                 el.classList.remove('fade-enter-active');
