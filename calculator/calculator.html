@@ -216,15 +216,22 @@
                     const result = new Function('return ' + sanitized)();
                     let num = Number(result);
                     if (isNaN(num) || !isFinite(num)) return 'Error';
-                    let resStr = num.toPrecision(11);
-                    if (resStr.includes('e')) {
+                    
+                    let resStr;
+                    if (Math.abs(num) >= 1e10 || (Math.abs(num) > 0 && Math.abs(num) <= 1e-10)) {
+                        resStr = num.toExponential(9);
                         resStr = resStr.replace(/(\.[0-9]*?[1-9])0+e/, '$1e').replace(/\.0+e/, 'e');
                     } else {
-                        if (resStr.includes('.')) {
-                            resStr = resStr.replace(/0+$/, '').replace(/\.$/, '');
+                        resStr = num.toPrecision(10);
+                        if (resStr.includes('e')) {
+                            resStr = resStr.replace(/(\.[0-9]*?[1-9])0+e/, '$1e').replace(/\.0+e/, 'e');
+                        } else {
+                            if (resStr.includes('.')) {
+                                resStr = resStr.replace(/0+$/, '').replace(/\.$/, '');
+                            }
                         }
                     }
-                    return resStr;
+                    return resStr.replace('e+', 'e');
                 } catch (e) {
                     return 'Error';
                 }
@@ -248,9 +255,8 @@
 
             const getFontSizeClass = (str) => {
                 const len = str.replace(/,/g, '').length;
-                if (len >= 10) return 'text-[3.8rem]';
-                if (len === 9) return 'text-[4.2rem]';
-                return 'text-[4.6rem]';
+                if (len >= 10) return 'text-[2.9rem]';
+                return 'text-[3.3rem]';
             };
 
             // Logic
@@ -524,9 +530,9 @@
 
             const Button = ({ text, icon, type, onClick, opValue, wide }) => {
                 const bgColors = {
-                    func: 'bg-[#A5A5A5] text-black',
-                    num: 'bg-[#333333] text-white',
-                    orange: 'bg-[#FF9F0A] text-white',
+                    func: 'bg-[#666666] text-white border-[#999999]',
+                    num: 'bg-[#333333] text-white border-[#555555]',
+                    orange: 'bg-[#FF9F0A] text-white border-white/20',
                 };
 
                 let btnColor = bgColors.num;
@@ -569,7 +575,7 @@
                         ${wide ? 'col-span-2 w-auto pl-[34px] text-left items-center justify-start rounded-[44px]' : 'w-full aspect-square justify-center rounded-full'}
                         ${btnColor}
                         ${fontSize} font-medium leading-none flex items-center select-none btn-press ${pressEffect} transition-all duration-100
-                        border border-[#555]
+                        border-[0.5px]
                     `}
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                     >
@@ -631,17 +637,20 @@
                         </div>
 
                         {/* 螢幕顯示區 */}
-                        <div className="flex-1 flex flex-col justify-end items-end px-9 pb-6 gap-0 relative z-10 pointer-events-none w-full">
+                        <div className="flex-1 flex flex-col justify-end items-end pb-6 gap-0 relative z-10 pointer-events-none w-full">
+                            {/* 左側漸層遮罩，讓超長數字滑動時有流暢的漸隱邊緣 */}
+                            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black to-transparent z-20 pointer-events-none"></div>
+                            
                             <div 
                                 ref={lastDisplayRef}
-                                className={`text-[#8e8e93] text-[1.5rem] font-medium tracking-wide transition-all duration-300 min-h-[30px] transform origin-right w-full text-right overflow-x-auto no-scrollbar whitespace-nowrap pointer-events-auto ${lastExpression ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+                                className={`text-[#8e8e93] text-[1.5rem] font-medium tracking-wide transition-all duration-300 min-h-[30px] transform origin-right w-full text-right overflow-x-auto no-scrollbar whitespace-nowrap pointer-events-auto pr-6 pl-4 ${lastExpression ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
                                 style={{ touchAction: 'pan-x' }}
                             >
                                 {lastExpression}
                             </div>
                             <div 
                                 ref={displayRef}
-                                className={`text-white font-medium leading-none transition-all duration-200 tracking-tight w-full overflow-x-auto no-scrollbar whitespace-nowrap text-right pointer-events-auto ${getFontSizeClass(formatDisplay(inputExpression))}`}
+                                className={`text-white font-medium leading-none transition-all duration-200 tracking-tight w-full overflow-x-auto no-scrollbar whitespace-nowrap text-right pointer-events-auto pr-6 pl-4 ${getFontSizeClass(formatDisplay(inputExpression))}`}
                                 style={{ touchAction: 'pan-x' }}
                             >
                                 {formatDisplay(inputExpression)}
