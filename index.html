@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#020617">
+    <meta name="format-detection" content="telephone=no">
+    <title>目錄頁</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-white">
+    <main class="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-12">
+        <header class="mb-10">
+            <p class="mb-3 text-sm uppercase tracking-[0.3em] text-cyan-300/80">Magic.github.io</p>
+            <h1 class="text-4xl font-bold tracking-tight">目錄頁</h1>
+            <p class="mt-3 text-base text-slate-300">點擊下方清單即可跳轉到對應的 HTML 頁面。</p>
+        </header>
+
+        <section id="list" class="grid gap-4 sm:grid-cols-2">
+            <p class="text-slate-400">載入中...</p>
+        </section>
+    </main>
+
+    <script>
+        // 每個項目的 favicon 慣例：優先讀取「資料夾/favicon.png」，讀取失敗則顯示預設瀏覽器圖示。
+        const DEFAULT_ICON = "data:image/svg+xml;utf8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23708090">
+                <circle cx="12" cy="12" r="10" stroke="#94a3b8" stroke-width="1.5"/>
+                <path d="M2 12h20M12 2c2.5 2.7 4 6.3 4 10s-1.5 7.3-4 10c-2.5-2.7-4-6.3-4-10s1.5-7.3 4-10z" stroke="#94a3b8" stroke-width="1.5"/>
+            </svg>
+        `);
+
+        function createCard(item) {
+            const href = `${item.folder}/${item.file}`;
+            const a = document.createElement("a");
+            a.href = href;
+            a.className = "flex items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 transition hover:border-cyan-400 hover:bg-slate-900";
+
+            const icon = document.createElement("img");
+            icon.src = `${item.folder}/favicon.png`;
+            icon.alt = "";
+            icon.className = "h-10 w-10 flex-shrink-0 rounded-lg object-cover bg-slate-800";
+            icon.onerror = () => {
+                icon.onerror = null;
+                icon.src = DEFAULT_ICON;
+                icon.className = "h-10 w-10 flex-shrink-0 rounded-lg bg-slate-800 p-2";
+            };
+
+            const text = document.createElement("div");
+            text.innerHTML = `
+                <h2 class="text-xl font-semibold">${item.title}</h2>
+                <p class="mt-2 text-sm text-slate-400">${href}</p>
+            `;
+
+            a.append(icon, text);
+            return a;
+        }
+
+        async function renderList() {
+            const list = document.getElementById("list");
+            try {
+                const res = await fetch("manifest.json");
+                const items = await res.json();
+                list.innerHTML = "";
+                items.forEach(item => list.appendChild(createCard(item)));
+            } catch (err) {
+                list.innerHTML = `<p class="text-red-400">無法載入 manifest.json：${err.message}</p>`;
+            }
+        }
+
+        renderList();
+    </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Magic Card Selection</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600&display=swap" rel="stylesheet">
+</head>
+<body class="theme-default">
+    <div id="app">
+        <!-- 階段一：選牌 Carousel -->
+        <div id="phase1" class="phase-container active">
+            <div class="carousel" id="carousel">
+                <!-- JavaScript 會在這裡動態產生撲克牌 -->
+            </div>
+        </div>
+
+        <!-- 隱藏的觸發區 (底部) -->
+        <div id="secret-trigger"></div>
+
+        <!-- 設定按鈕 (隱藏式，需雙擊) -->
+        <div id="settings-btn"></div>
+
+        <!-- 設定 Modal -->
+        <div id="settings-modal" class="modal">
+            <div class="modal-content">
+                <h3>後台設定</h3>
+                <select id="theme-select">
+                    <option value="theme-poker">撲克牌</option>
+                    <option value="theme-flags">各國國旗</option>
+                    <option value="theme-landmarks">世界景點</option>
+                </select>
+                <div class="modal-actions" style="margin-top: 20px;">
+                    <button id="btn-close-settings" style="width: 100%; background: #444; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer;">關閉</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

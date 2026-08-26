@@ -1,0 +1,14 @@
+[
+  { "title": "心靈感應 (Mind Reader Magic) - Pro Ver.", "folder": "mindreading", "file": "mindreading.html" },
+  { "title": "心靈感應術 - 撲克牌讀心", "folder": "cardmagic", "file": "cardmagic.html" },
+  { "title": "奧術讀心 - Mind Reader", "folder": "arcanemind", "file": "arcanemind.html" },
+  { "title": "Magic Card", "folder": "Magicard", "file": "Magicard.html" },
+  { "title": "禮物靈感", "folder": "giftlist", "file": "giftlist.html" },
+  { "title": "Calculator - calculator", "folder": "calculator", "file": "calculator.html" },
+  { "title": "TOP SECRET - 終極單機版", "folder": "square", "file": "square.html" },
+  { "title": "碼錶", "folder": "clock", "file": "index.html" },
+  { "title": "Magic Coloring - 魔法著色板", "folder": "magic-coloring", "file": "index.html" },
+  { "title": "ReadingCard - 讀心卡", "folder": "ReadingCard", "file": "index.html" },
+  { "title": "Prediction - 擦卡預言", "folder": "wipingcard", "file": "index.html" },
+  { "title": "Magic Card Selection - 一觸選牌", "folder": "one-touch", "file": "index.html" }
+]

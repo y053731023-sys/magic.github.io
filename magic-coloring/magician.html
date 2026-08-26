@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center; 
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* 隱密燈號預設靠下 */
+        #secret-mode-view {
+            align-items: flex-end;
+            padding-bottom: 5px;
+        }
+
+        /* 隱形按鈕 - 左上角觸發區塊 */
+        #secret-trigger {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50px;
+            height: 50px;
+            z-index: 100;
+            cursor: pointer;
+            /* background: rgba(255,0,0,0.3); 測試用，平常保持透明 */
+        }
+
+        /* 魔術師後台面板 */
+        #admin-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(30, 30, 30, 0.95);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #admin-panel.active {
+            display: flex;
+        }
+        
+        #admin-panel h2 {
+            margin-bottom: 20px;
+            color: #4facfe;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .control-group label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #close-admin {
+            padding: 10px 30px;
+            background: #4facfe;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* 視圖切換 */
+        .view-layer {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            justify-content: center;
+            align-items: center;
+        }
+        .view-layer.active {
+            display: flex;
+        }
+
+        /* === 隱密模式 === */
+        .dashboard-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 5px;
+        }
+        .zone-list {
+            list-style: none;
+            display: flex;
+            flex-direction: row; 
+            gap: 15px; 
+        }
+        .zone-item {
+            display: flex;
+            align-items: center;
+        }
+        .color-preview {
+            width: 8px; 
+            height: 8px;
+            border-radius: 50%;
+            background-color: #000; 
+            transition: all 0.3s ease;
+        }
+        .color-preview.on {
+            box-shadow: 0 0 12px var(--light-color), 0 0 24px var(--light-color);
+        }
+
+        /* === 畫作同步 === */
+        #current-image {
+            font-size: 3rem;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        /* === 著色狀態 === */
+        #color-sync-view {
+            flex-direction: column;
+        }
+        #color-sync-view h2 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+            color: #aaa;
+        }
+        #zones-color-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 80%;
+            max-width: 400px;
+        }
+        .zone-color-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #222;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+        }
+        .zone-color-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            border: 2px solid #444;
+        }
+        
+        #conn-status {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            color: #555;
+            z-index: 50;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 隱形觸發按鈕 (左上角) -->
+    <div id="secret-trigger"></div>
+
+    <!-- 魔術師後台面板 -->
+    <div id="admin-panel">
+        <h2>🎭 魔術師後台設定</h2>
+        <div class="control-group">
+            <label><input type="radio" name="displayMode" value="secret" checked> 🟢 隱密燈號 (選色點)</label>
+            <label><input type="radio" name="displayMode" value="image_sync"> 🖼️ 畫作同步 (目前圖片)</label>
+            <label><input type="radio" name="displayMode" value="color_sync"> 🎨 著色同步 (各物件顏色)</label>
+        </div>
+        <button id="close-admin">完成並關閉</button>
+    </div>
+
+    <!-- 顯示區域 -->
+    <div id="secret-mode-view" class="view-layer active">
+        <div class="dashboard-container">
+            <ul class="zone-list" id="zone-list">
+                <!-- JS 動態產生燈號 -->
+            </ul>
+        </div>
+    </div>
+
+    <div id="image-sync-view" class="view-layer">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+            <div id="sync-title" style="margin-bottom: 10px; font-size: 1.5rem; color: #fff; text-shadow: 0 0 5px #000;">等待連線...</div>
+            <canvas id="sync-canvas" style="max-width: 90vw; max-height: 80vh; background: transparent;"></canvas>
+            <button id="save-image-btn" style="margin-top: 20px; padding: 10px 30px; background: #4facfe; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: background 0.3s;">儲存圖片</button>
+        </div>
+    </div>
+
+    <div id="color-sync-view" class="view-layer">
+        <h2>🎨 物件上色狀態</h2>
+        <ul id="zones-color-list">
+            <!-- JS 動態產生各物件狀態 -->
+        </ul>
+    </div>
+
+    <div id="conn-status"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="images_base64.js?v=2"></script>
+    <script src="magician.js?v=8"></script>
+</body>
+</html>

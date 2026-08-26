@@ -1,0 +1,87 @@
+
+/* Card Container styles */
+#card-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5; /* Below canvas */
+    background-color: #050505;
+}
+
+.card {
+    width: min(100vw, 393px);
+    height: min(100vh, 852px);
+    position: relative;
+    border-radius: min(8vw, 40px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transition: transform 0.6s, -webkit-transform 0.6s;
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+    container-type: inline-size;
+}
+
+.card.flipped {
+    transform: rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: inherit;
+    border: 1px solid #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: white;
+}
+
+.card-back {
+    background: radial-gradient(circle at 50% 50%, transparent 20%, #8a0a0a 21%, #8a0a0a 30%, transparent 31%),
+                repeating-linear-gradient(45deg, #700 0, #700 2px, #8a0a0a 2px, #8a0a0a 4px);
+    background-color: #8a0a0a;
+    border: 3px solid white;
+}
+
+.card-front {
+    transform: rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
+    color: black;
+}
+
+/* Glowing effect based on suit color */
+.card.red .card-front {
+    color: #e51c23;
+}
+.card.black .card-front {
+    color: #000;
+}
+
+.card-value {
+    font-size: 13cqi;
+    font-weight: 600;
+    position: absolute;
+}
+.card-suit {
+    font-size: 11.5cqi;
+    position: absolute;
+}
+
+.top-left-value { top: 6cqi; left: 6cqi; }
+.top-left-suit { top: 18cqi; left: 6cqi; }
+
+.bottom-right-value { bottom: 6cqi; right: 6cqi; transform: rotate(180deg); }
+.bottom-right-suit { bottom: 18cqi; right: 6cqi; transform: rotate(180deg); }
+
+.card-center {
+    font-size: 40cqi;
+    text-shadow: 0 0 20px currentColor;
+}

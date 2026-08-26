@@ -5,7 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="../manifest.webmanifest">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
     <meta name="format-detection" content="telephone=no">
@@ -28,9 +30,9 @@
     </script>
     <!-- 加入自訂圖示 (Favicon) -->
     <!-- 請將 'your-icon.png' 替換成您自己的圖片路徑或網址 (建議格式為 PNG, 建議尺寸 512x512 正方形) -->
-    <link rel="icon" type="image/png" href="calculator.png">
+    <link rel="icon" type="image/png" href="favicon.png">
     <!-- Apple Touch Icon (用於 iOS 設備「加入主畫面」時的 App 圖示) -->
-    <link rel="apple-touch-icon" href="calculator.png">
+    <link rel="apple-touch-icon" href="favicon.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -589,7 +591,7 @@
             return (
                 <div className="flex justify-center items-center h-screen w-full font-sans overflow-hidden relative bg-black">
 
-                    <div className="relative w-full h-full sm:w-[390px] sm:h-[844px] sm:bg-black sm:rounded-[48px] sm:border-[10px] sm:border-[#1c1c1e] sm:shadow-2xl flex flex-col overflow-hidden z-10 transition-all duration-300">
+                    <div className="relative w-full h-full sm:w-[390px] sm:h-[min(844px,100vh)] sm:bg-black sm:rounded-[48px] sm:border-[10px] sm:border-[#1c1c1e] sm:shadow-2xl flex flex-col overflow-hidden z-10 transition-all duration-300">
 
                         {/* 頂部圖示區 */}
                         <div className="flex justify-between px-6 pt-12 z-40 relative">
