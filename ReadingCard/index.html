@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html>
+
+<head data-gwd-animation-mode="quickMode">
+    <title>ReadingCard</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+    <style type="text/css">
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+            font-family: sans-serif;
+        }
+
+        body {
+            background-color: transparent;
+            background-image: url('images/sandpaper.png');
+            -ms-transform: perspective(1400px) matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+            -webkit-transform: perspective(1400px) matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+            -moz-transform: perspective(1400px) matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+            -o-transform: perspective(1400px) matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+            transform: perspective(1400px) matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+
+            -ms-transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+            -moz-transform-style: preserve-3d;
+            -o-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+        }
+
+        /* Theme Selector Styles */
+        .theme-selector-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+            z-index: 9999;
+        }
+
+        .theme-select {
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            /* 完全透明隱藏 */
+            cursor: pointer;
+        }
+
+        /* Card styles to support emoji texts or background images */
+        .hundredImage {
+            position: absolute;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: transparent;
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            user-select: none;
+            -webkit-user-select: none;
+
+            -webkit-transform-style: preserve-3d;
+            -ms-transform-style: preserve-3d;
+            -moz-transform-style: preserve-3d;
+            -o-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+        }
+
+        .drag {
+            position: absolute;
+            border-radius: 50px;
+            width: 100%;
+            height: 100%;
+            -ms-transform: perspective(1400px) matrix3d(1, 0, 0, 0, 0, 1, 0.2, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+            -webkit-transform: perspective(1400px) matrix3d(1, 0, 0, 0, 0, 1, 0.2, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+            -moz-transform: perspective(1400px) matrix3d(1, 0, 0, 0, 0, 1, 0.2, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+            -o-transform: perspective(1400px) matrix3d(1, 0, 0, 0, 0, 1, 0.2, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+            transform: perspective(1400px) matrix3d(1, 0, 0, 0, 0, 1, 0.2, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+
+            -ms-transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+            -moz-transform-style: preserve-3d;
+            -o-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+        }
+
+        /* Twemoji styles */
+        img.emoji {
+            height: 1em;
+            width: 1em;
+            margin: 0 .05em 0 .1em;
+            vertical-align: -0.1em;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="theme-selector-container">
+        <select id="themeSelect" class="theme-select">
+            <option value="original">原始圖片</option>
+            <option value="fruits">水果</option>
+            <option value="countries">國家</option>
+            <option value="animals">動物</option>
+        </select>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="modernizr.js"></script>
+    <script src="jquery.hammer.js"></script>
+    <script type="text/javascript" src="jquery.timer.js"></script>
+    <!-- Twemoji for Windows flag support -->
+    <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
+
+    <div class="drag"></div>
+    <div class="hundredImage" id="name001"></div>
+    <div class="hundredImage" id="name002"></div>
+    <div class="hundredImage" id="name003"></div>
+    <div class="hundredImage" id="name004"></div>
+    <div class="hundredImage" id="name005"></div>
+    <div class="hundredImage" id="name006"></div>
+    <div class="hundredImage" id="name007"></div>
+    <div class="hundredImage" id="name008"></div>
+    <div class="hundredImage" id="name009"></div>
+    <div class="hundredImage" id="name010"></div>
+    <div class="hundredImage" id="name011"></div>
+    <div class="hundredImage" id="name012"></div>
+    <div class="hundredImage" id="name013"></div>
+    <div class="hundredImage" id="name014"></div>
+    <div class="hundredImage" id="name015"></div>
+    <div class="hundredImage" id="name016"></div>
+    <div class="hundredImage" id="name017"></div>
+    <div class="hundredImage" id="name018"></div>
+    <div class="hundredImage" id="name019"></div>
+    <div class="hundredImage" id="name020"></div>
+
+    <script>
+        var themes = {
+            'fruits': [
+                '🍎<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">蘋果</span>',
+                '🍌<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">香蕉</span>',
+                '🍉<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">西瓜</span>',
+                '🍇<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">葡萄</span>',
+                '🍓<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">草莓</span>',
+                '🍈<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">哈密瓜</span>',
+                '🍒<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">櫻桃</span>',
+                '🍑<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">水蜜桃</span>',
+                '🥭<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">芒果</span>',
+                '🍍<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">鳳梨</span>',
+                '<img src="images/durian.png" class="emoji"><br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">榴槤</span>',
+                '🥝<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">奇異果</span>',
+                '🍊<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">橘子</span>',
+                '🍋<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">檸檬</span>',
+                '🍐<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">梨子</span>',
+                '🍏<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">青蘋果</span>',
+                '🫐<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">藍莓</span>',
+                '🥑<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">酪梨</span>',
+                '<img src="images/guava.png" class="emoji"><br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">芭樂</span>',
+                '<img src="images/dragon_fruit.png" class="emoji"><br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">火龍果</span>'
+            ],
+            'countries': [
+                '🇺🇸<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">美國</span>',
+                '🇬🇧<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">英國</span>',
+                '🇯🇵<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">日本</span>',
+                '🇰🇷<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">韓國</span>',
+                '🇩🇪<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">德國</span>',
+                '🇫🇷<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">法國</span>',
+                '🇮🇹<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">義大利</span>',
+                '🇪🇸<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">西班牙</span>',
+                '🇨🇦<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">加拿大</span>',
+                '🇦🇺<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">澳洲</span>',
+                '🇧🇷<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">巴西</span>',
+                '🇦🇷<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">阿根廷</span>',
+                '🇲🇽<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">墨西哥</span>',
+                '🇿🇦<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">南非</span>',
+                '🇨🇳<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">中國</span>',
+                '🇮🇳<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">印度</span>',
+                '🇷🇺<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">俄羅斯</span>',
+                '🇪🇬<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">埃及</span>',
+                '🇹🇷<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">土耳其</span>',
+                '🇹🇼<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">台灣</span>'
+            ],
+            'animals': [
+                '🐶<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">狗</span>',
+                '🐱<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">貓</span>',
+                '🐭<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">老鼠</span>',
+                '🐹<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">倉鼠</span>',
+                '🐰<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">兔子</span>',
+                '🦊<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">狐狸</span>',
+                '🐻<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">熊</span>',
+                '🐼<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">熊貓</span>',
+                '🐨<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">無尾熊</span>',
+                '🐯<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">老虎</span>',
+                '🦁<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">獅子</span>',
+                '🐮<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">牛</span>',
+                '🐷<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">豬</span>',
+                '🐸<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">青蛙</span>',
+                '🐵<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">猴子</span>',
+                '🐔<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">雞</span>',
+                '🐧<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">企鵝</span>',
+                '🦉<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">貓頭鷹</span>',
+                '🐴<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">馬</span>',
+                '🦄<br><span style="font-size:0.35em; display:block; font-weight:bold; color:#333;">獨角獸</span>'
+            ]
+        };
+        var currentTheme = 'original';
+
+        var imageWidth, imageHeight, screenWidth, screenHeight, buttonWidth, buttonHeight;
+        var imageTop, imageLeft;
+        var startPointX, endPointX, startPointY, endPointY;
+        var nowCard, imageFlag, randomNumber, tempNumber, haveSetImageNumber, ratioValue;
+        var gimmickImageValue;
+        var moveING, cancelRelease, shuffleFlag;
+        var totalCardSum, totalCardCounts;
+        var timerIng, triggerGimmickFlag;
+
+        $('#themeSelect').change(function () {
+            currentTheme = $(this).val();
+            $('.hundredImage').stop(true, true);
+            $('.hundredImage').css('opacity', '0');
+            gimmickImageValue = null;
+            initImagePosition();
+        });
+
+        function renderCard($cardElement, valueIndex) {
+            $cardElement.data('value', valueIndex);
+            if (currentTheme === 'original') {
+                var num = valueIndex < 10 ? '0' + valueIndex : valueIndex;
+                $cardElement.css({
+                    'background-image': 'url(images/n0' + num + '.png)',
+                    'background-color': 'transparent',
+                    'background-size': '110% 110%',
+                    'background-position': 'center',
+                    'border': 'none'
+                }).text('');
+            } else {
+                var fontSize = Math.floor(imageWidth * 0.5) + 'px';
+                $cardElement.css({
+                    'background-image': 'none',
+                    'background-color': '#ffffff',
+                    'border': '2px solid #ccc',
+                    'font-size': fontSize
+                }).html('<div style="text-align:center; line-height:1.2;">' + themes[currentTheme][valueIndex - 1] + '</div>');
+
+                if (typeof twemoji !== 'undefined') {
+                    twemoji.parse($cardElement[0], {
+                        folder: 'svg',
+                        ext: '.svg'
+                    });
+                }
+            }
+        }
+
+        $(initImagePosition);
+
+        window.onresize = function (event) {
+            $(resetImagePosition);
+        }
+        $('.drag')
+            .hammer({ drag_max_touches: 0 })
+            .on("touch drag release", function (ev) {
+                var touches = ev.gesture.touches;
+                ev.gesture.preventDefault();
+
+                if (ev.type == 'touch') {
+                    if (nowCard > totalCardSum || shuffleFlag) {
+                        gimmickImageValue = $('#name002').data('value');
+
+                        shuffleFlag = false;
+                        moveING = true;
+                        nowCard = 0;
+                        imageFlag = [false, false, false, false, false, false, false, false, false, false,
+                            false, false, false, false, false, false, false, false, false, false];
+                        tempNumber = 0;
+                        haveSetImageNumber = 0;
+
+                        renderCard($('#name020'), gimmickImageValue);
+                        imageFlag[gimmickImageValue - 1] = true;
+
+                        totalCardCounts = totalCardSum - 1;
+                        $(randomImage);
+                        $(resetImagePosition);
+                    }
+                    if (moveING) {
+                        cancelRelease = true;
+                        if (nowCard > 0) {
+                            shuffleFlag = true;
+                        }
+                    } else {
+                        cancelRelease = false;
+                    }
+                    moveING = false;
+                    startPointX = touches[0].pageX;
+                }
+                if (moveING == false && cancelRelease == false) {
+                    if (ev.type == 'release') {
+                        endPointX = touches[0].pageX;
+                        if (startPointX > imageLeft && startPointX < imageLeft + imageWidth) {
+                            if (endPointX > startPointX) {
+                                moveING = true;
+                                $(card2right);
+                            } else if (endPointX < startPointX) {
+                                moveING = true;
+                                $(card2left);
+                            }
+                        }
+                    }
+                }
+            });
+
+        function card2right() {
+            nowCard++;
+            if (nowCard > totalCardSum) {
+                return;
+            }
+            var cardName, nextCardName;
+            if (nowCard < 10) {
+                cardName = "#name00" + nowCard;
+            } else if (nowCard < 100) {
+                cardName = "#name0" + nowCard;
+            }
+
+            if (moveING == false) {
+                nowCard++;
+                if (nowCard > totalCardSum) {
+                    return;
+                }
+                if (nowCard < 10) {
+                    nextCardName = "#name00" + nowCard;
+                } else if (nowCard < 100) {
+                    nextCardName = "#name0" + nowCard;
+                }
+
+                if (gimmickImageValue) {
+                    renderCard($(nextCardName), gimmickImageValue);
+                }
+
+                $(cardName).animate({
+                    left: '+=' + imageWidth
+                }, 300, function () {
+                    $(cardName).animate({
+                        opacity: '0'
+                    }, 500);
+                });
+            } else {
+                $(cardName).animate({
+                    left: '+=' + imageWidth
+                }, 300, function () {
+                    $(card2right);
+                    $(cardName).animate({
+                        opacity: '0'
+                    }, 500);
+                });
+            }
+        }
+        function card2left() {
+            nowCard++;
+            if (nowCard > totalCardSum) {
+                return;
+            }
+            var cardName, nextCardName;
+            if (nowCard < 10) {
+                cardName = "#name00" + nowCard;
+            } else if (nowCard < 100) {
+                cardName = "#name0" + nowCard;
+            }
+
+            if (moveING == false) {
+                nowCard++;
+                if (nowCard > totalCardSum) {
+                    return;
+                }
+                if (nowCard < 10) {
+                    nextCardName = "#name00" + nowCard;
+                } else if (nowCard < 100) {
+                    nextCardName = "#name0" + nowCard;
+                }
+
+                if (gimmickImageValue) {
+                    renderCard($(nextCardName), gimmickImageValue);
+                }
+
+                $(cardName).animate({
+                    left: '-=' + imageWidth
+                }, 300, function () {
+                    $(cardName).animate({
+                        opacity: '0'
+                    }, 500);
+                });
+            } else {
+                $(cardName).animate({
+                    left: '-=' + imageWidth
+                }, 300, function () {
+                    $(card2left);
+                    $(cardName).animate({
+                        opacity: '0'
+                    }, 500);
+                });
+            }
+        }
+        function initImagePosition() {
+            screenWidth = $(window).width();
+            screenHeight = $(window).height();
+            if (screenWidth < screenHeight) {
+                imageWidth = $(window).width() * 3 / 4;
+            } else {
+                imageWidth = $(window).height() * 3 / 4;
+            }
+
+            imageHeight = imageWidth;
+            buttonHeight = screenHeight - imageHeight;
+            buttonWidth = buttonHeight * 2.5;
+
+            moveING = false;
+            shuffleFlag = false;
+            triggerGimmickFlag = false;
+            timerIng = false;
+            totalCardSum = 20;
+            totalCardCounts = totalCardSum;
+
+            if (imageHeight > (screenHeight * 0.7)) {
+                ratioValue = (screenHeight * 0.7) / imageHeight
+                imageWidth *= ratioValue;
+                imageHeight = (screenHeight * 0.7);
+                buttonWidth *= ratioValue;
+                buttonHeight *= ratioValue;
+            }
+
+            imageTop = ($(window).height() - imageHeight) / 2 - 30;
+            imageLeft = ($(window).width() - imageWidth) / 2 - 10;
+            nowCard = 0;
+
+            $('.drag').css('height', imageHeight + imageTop + 20);
+            $('.hundredImage').css('width', imageWidth);
+            $('.hundredImage').css('height', imageHeight);
+            $('.hundredImage').css('top', imageTop);
+            $('.hundredImage').css('left', imageLeft);
+
+            for (var i = 1; i < totalCardSum + 1; i++) {
+                if (i < 10) {
+                    $('#name00' + i).css('-webkit-transform', 'matrix3d(1, 0, 0, 0, 0, 1,' + 0.2 + ', 0, 0, 0, 1, 0,' + 1 * (i - 1) + ',' + 3 * (i - 1) + ',' + -i + ', 1)');
+                    $('#name00' + i).css('-ms-transform', 'matrix3d(1, 0, 0, 0, 0, 1,' + 0.2 + ', 0, 0, 0, 1, 0,' + 1 * (i - 1) + ',' + 3 * (i - 1) + ',' + -i + ', 1)');
+                    $('#name00' + i).css('-moz-transform', 'matrix3d(1, 0, 0, 0, 0, 1,' + 0.2 + ', 0, 0, 0, 1, 0,' + 1 * (i - 1) + ',' + 3 * (i - 1) + ',' + -i + ', 1)');
+                    $('#name00' + i).css('-o-transform', 'matrix3d(1, 0, 0, 0, 0, 1,' + 0.2 + ', 0, 0, 0, 1, 0,' + 1 * (i - 1) + ',' + 3 * (i - 1) + ',' + -i + ', 1)');
+                    $('#name00' + i).css('transform', 'matrix3d(1, 0, 0, 0, 0, 1,' + 0.2 + ', 0, 0, 0, 1, 0,' + 1 * (i - 1) + ',' + 3 * (i - 1) + ',' + -i + ', 1)');
+                } else if (i < 100) {
+                    $('#name0' + i).css('-webkit-transform', 'matrix3d(1, 0, 0, 0, 0, 1,' + 0.2 + ', 0, 0, 0, 1, 0,' + 1 * (i - 1) + ',' + 3 * (i - 1) + ',' + -i + ', 1)');
+                    $('#name0' + i).css('-ms-transform', 'matrix3d(1, 0, 0, 0, 0, 1,' + 0.2 + ', 0, 0, 0, 1, 0,' + 1 * (i - 1) + ',' + 3 * (i - 1) + ',' + -i + ', 1)');
+                    $('#name0' + i).css('-moz-transform', 'matrix3d(1, 0, 0, 0, 0, 1,' + 0.2 + ', 0, 0, 0, 1, 0,' + 1 * (i - 1) + ',' + 3 * (i - 1) + ',' + -i + ', 1)');
+                    $('#name0' + i).css('-o-transform', 'matrix3d(1, 0, 0, 0, 0, 1,' + 0.2 + ', 0, 0, 0, 1, 0,' + 1 * (i - 1) + ',' + 3 * (i - 1) + ',' + -i + ', 1)');
+                    $('#name0' + i).css('transform', 'matrix3d(1, 0, 0, 0, 0, 1,' + 0.2 + ', 0, 0, 0, 1, 0,' + 1 * (i - 1) + ',' + 3 * (i - 1) + ',' + -i + ', 1)');
+                }
+            }
+
+            imageFlag = [false, false, false, false, false, false, false, false, false, false,
+                false, false, false, false, false, false, false, false, false, false];
+
+            tempNumber = 0;
+            haveSetImageNumber = 0;
+            $(randomImage);
+        }
+        function resetImagePosition() {
+            screenWidth = $(window).width();
+            screenHeight = $(window).height();
+            if (screenWidth < screenHeight) {
+                imageWidth = $(window).width() * 3 / 4;
+            } else {
+                imageWidth = $(window).height() * 3 / 4;
+            }
+            imageHeight = imageWidth;
+            buttonHeight = screenHeight - imageHeight;
+            buttonWidth = buttonHeight * 2.5;
+
+            if (imageHeight > (screenHeight * 0.7)) {
+                ratioValue = (screenHeight * 0.7) / imageHeight
+                imageWidth *= ratioValue;
+                imageHeight = (screenHeight * 0.7);
+                buttonWidth *= ratioValue;
+                buttonHeight *= ratioValue;
+            }
+
+            imageTop = ($(window).height() - imageHeight) / 2 - 30;
+            imageLeft = ($(window).width() - imageWidth) / 2 - 10;
+
+            $('.drag').css('height', imageHeight + imageTop + 20);
+            $('.hundredImage').css('width', imageWidth);
+            $('.hundredImage').css('height', imageHeight);
+            $('.hundredImage').css('top', imageTop);
+            $('.hundredImage').css('left', imageLeft);
+
+            if (currentTheme !== 'original') {
+                var fontSize = Math.floor(imageWidth * 0.5) + 'px';
+                $('.hundredImage').css('font-size', fontSize);
+            }
+        }
+        function randomImage() {
+            randomNumber = Math.round(Math.random() * (totalCardSum - 1));
+            while (imageFlag[randomNumber]) {
+                randomNumber = tempNumber;
+                tempNumber++;
+            }
+
+            imageFlag[randomNumber] = true;
+            randomNumber++;
+            haveSetImageNumber++;
+
+            var cardName = (haveSetImageNumber < 10) ? '#name00' + haveSetImageNumber : '#name0' + haveSetImageNumber;
+            renderCard($(cardName), randomNumber);
+
+            if (haveSetImageNumber < totalCardCounts) {
+                $(randomImage);
+            } else {
+                $('.hundredImage').animate({
+                    opacity: '100'
+                }, 500);
+            }
+        }
+    </script>
+</body>
+
+</html>

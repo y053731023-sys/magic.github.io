@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Prediction</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style_card.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- The glowing card (hidden behind the canvas initially) -->
+        <div id="card-container">
+            <div class="card" id="the-card">
+                <div class="card-back"></div>
+                <div class="card-front">
+                    <div class="card-value top-left-value">A</div>
+                    <div class="card-suit top-left-suit">♠</div>
+                    <div class="card-center">♠</div>
+                    <div class="card-value bottom-right-value">A</div>
+                    <div class="card-suit bottom-right-suit">♠</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas for the reveal and scratch-off effect (covers everything) -->
+        <canvas id="reveal-canvas"></canvas>
+        
+        <!-- UI overlay for secret inputs and hints -->
+        <div id="ui-overlay">
+            <!-- Hidden corner zones for Suits -->
+            <div class="zone top-left" data-suit="spades"></div>
+            <div class="zone top-right" data-suit="hearts"></div>
+            <div class="zone bottom-left" data-suit="clubs"></div>
+            <div class="zone bottom-right" data-suit="diamonds"></div>
+            
+            <!-- Hidden center zone for swiping Values -->
+            <div id="value-zone" class="zone center-zone"></div>
+            
+            <!-- Secret hint text (very low opacity) -->
+            <div id="secret-hint">♠ A</div>
+        </div>
+    </div>
+    
+    <!-- Backend Modal -->
+    <div id="backend-modal" class="modal">
+        <div class="modal-content">
+            <h2>⚙️ 後台設定</h2>
+            
+            <div class="section">
+                <h3>操作說明</h3>
+                <p>1. 點擊畫面四角設定「花色」<br>
+                2. 在畫面中間上下滑動設定「數字」<br>
+                3. 點兩下鎖定畫面<br>
+                4. 觀眾刮除畫面後，點擊翻開卡片<br>
+                5. 翻開後，點擊右下角重置</p>
+            </div>
+            
+            <div class="section">
+                <h3>強選模式 (Force Select)</h3>
+                <label>
+                    <input type="checkbox" id="force-select-toggle"> 啟用強選模式
+                </label>
+                <div id="force-select-controls" style="display:none; margin-top: 10px;">
+                    <select id="force-suit">
+                        <option value="spades">黑桃 ♠</option>
+                        <option value="hearts">紅心 ♥</option>
+                        <option value="clubs">梅花 ♣</option>
+                        <option value="diamonds">方塊 ♦</option>
+                    </select>
+                    <select id="force-value">
+                        <option value="0">A</option>
+                        <option value="1">2</option>
+                        <option value="2">3</option>
+                        <option value="3">4</option>
+                        <option value="4">5</option>
+                        <option value="5">6</option>
+                        <option value="6">7</option>
+                        <option value="7">8</option>
+                        <option value="8">9</option>
+                        <option value="9">10</option>
+                        <option value="10">J</option>
+                        <option value="11">Q</option>
+                        <option value="12">K</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button id="btn-close-backend">儲存並關閉</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

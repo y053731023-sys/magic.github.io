@@ -1,0 +1,168 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    /* Prevent default touch actions like pull-to-refresh or scrolling */
+    touch-action: none; 
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+body, html {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #050505; /* Deep rich black */
+}
+
+#app {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#reveal-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    transform: translateZ(10px);
+    -webkit-transform: translateZ(10px);
+}
+
+#ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 20;
+}
+
+/* Hidden Touch Zones */
+.zone {
+    position: absolute;
+}
+
+/* Suit Corners (20% of width/height) */
+.top-left { top: 0; left: 0; width: 30%; height: 25%; }
+.top-right { top: 0; right: 0; width: 30%; height: 25%; }
+.bottom-left { bottom: 0; left: 0; width: 30%; height: 25%; }
+.bottom-right { bottom: 0; right: 0; width: 30%; height: 25%; }
+
+/* Value Swipe Zone (Center 40%) */
+.center-zone {
+    top: 30%;
+    left: 30%;
+    width: 40%;
+    height: 40%;
+}
+
+/* Secret Hint */
+#secret-hint {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(128, 128, 128, 0.6);
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+/* When locked, the UI overlay hides completely */
+.locked #ui-overlay {
+    display: none;
+}
+
+/* Modal */
+.modal {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s;
+    color: white;
+}
+
+.modal.show {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-content {
+    background: #222;
+    padding: 25px;
+    border-radius: 16px;
+    width: 85%;
+    max-width: 350px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    text-align: left;
+}
+
+.modal-content h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+.section {
+    margin-bottom: 20px;
+    background: #333;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.section h3 {
+    margin-bottom: 10px;
+    font-size: 16px;
+    color: #4da6ff;
+}
+
+.section p {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #ccc;
+}
+
+.section label {
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+#force-select-controls select {
+    padding: 8px;
+    border-radius: 5px;
+    background: #444;
+    color: white;
+    border: 1px solid #555;
+    margin-right: 5px;
+    font-size: 14px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.modal-actions button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #1e90ff;
+    color: white;
+}
