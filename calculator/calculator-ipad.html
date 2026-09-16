@@ -10,6 +10,9 @@
     <meta name="theme-color" content="#000000">
     <meta name="format-detection" content="telephone=no">
     <title>Calculator</title>
+<meta name="apple-mobile-web-app-title" content="Calculator">
+    <link rel="icon" type="image/png" href="calculator.png">
+    <link rel="apple-touch-icon" href="calculator.png">
 
     <script>
         // 捕捉所有的 console.error 和系統錯誤，直接印在畫面上
@@ -1345,6 +1348,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
         body { touch-action: manipulation; }
         .calculator-app { height: 100vh; height: 100dvh; width: 100%; background: #000; overflow: hidden; }
         .calculator-shell {
+            --toolbar-top: calc(max(24px, env(safe-area-inset-top, 0px)) + 16px);
             --edge: clamp(16px, 5.35vw, 80px);
             --gap: clamp(10px, 1.95vw, 28px);
             --key-font: clamp(28px, 5.55vw, 80px);
@@ -1355,11 +1359,11 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
             overflow: hidden; background: #000;
         }
         .calculator-toolbar { display: flex; justify-content: space-between; position: relative; z-index: 40;
-            padding: max(12px, env(safe-area-inset-top)) clamp(12px, 1.25vw, 24px) 0; }
+            padding: var(--toolbar-top) clamp(12px, 1.25vw, 24px) 0; }
         .toolbar-button { width: clamp(44px, 5.7vw, 78px); height: clamp(44px, 5.7vw, 78px);
             border: 1px solid #303030; background: #202020; touch-action: none; }
         .toolbar-button svg { width: 60%; height: 60%; }
-        .backend-trigger { top: max(12px, env(safe-area-inset-top)); height: 48px; touch-action: none; }
+        .backend-trigger { top: var(--toolbar-top); height: 48px; touch-action: none; }
         .calculator-display { min-height: 0; overflow: hidden; padding-bottom: clamp(12px, 2.1vh, 32px); }
         .main-display, .previous-display { flex-shrink: 0; padding-right: var(--edge); padding-left: var(--edge); }
         .main-display { font-size: clamp(64px, 12vw, 174px); font-weight: 400; line-height: 1.12; }
@@ -1379,6 +1383,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
             .calculator-shell { --edge: 16px; --gap: 10px; grid-template-rows: auto minmax(0, 1fr) minmax(0, 58%); padding-bottom: max(14px, env(safe-area-inset-bottom)); }
         }
         @media (orientation: landscape) {
+            .calculator-shell { --toolbar-top: calc(max(12px, env(safe-area-inset-top, 0px)) + 8px); }
             .calculator-shell { --edge: clamp(16px, 5vw, 80px); --gap: clamp(8px, 1.6vh, 16px); --key-font: clamp(22px, 5.6vh, 52px);
                 grid-template-rows: auto minmax(0, 1fr) minmax(0, 63%); padding-bottom: max(12px, env(safe-area-inset-bottom)); }
             .toolbar-button { width: 44px; height: 44px; }
