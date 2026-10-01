@@ -88,6 +88,24 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* Keep the toolbar below the iPhone status bar and safe area. */
+        .calculator-frame {
+            --toolbar-top: max(48px, calc(env(safe-area-inset-top, 0px) + 12px));
+        }
+
+        .calculator-toolbar {
+            padding-top: var(--toolbar-top);
+            flex-shrink: 0;
+        }
+
+        .calculator-backend-trigger {
+            top: var(--toolbar-top);
+        }
+
+        .calculator-debug {
+            top: calc(var(--toolbar-top) + 48px);
+        }
+
         .safe-pb {
             padding-bottom: env(safe-area-inset-bottom, 34px);
         }
@@ -589,10 +607,10 @@
             return (
                 <div className="flex justify-center items-center h-screen w-full font-sans overflow-hidden relative bg-black">
 
-                    <div className="relative w-full h-full sm:w-[390px] sm:h-[844px] sm:bg-black sm:rounded-[48px] sm:border-[10px] sm:border-[#1c1c1e] sm:shadow-2xl flex flex-col overflow-hidden z-10 transition-all duration-300">
+                    <div className="calculator-frame relative w-full h-full sm:w-[390px] sm:h-[844px] sm:bg-black sm:rounded-[48px] sm:border-[10px] sm:border-[#1c1c1e] sm:shadow-2xl flex flex-col overflow-hidden z-10 transition-all duration-300">
 
                         {/* 頂部圖示區 */}
-                        <div className="flex justify-between px-6 pt-12 z-40 relative">
+                        <div className="calculator-toolbar flex justify-between px-6 z-40 relative">
                             {/* 左上角：短按鬼影(時間)，長按設定加時分鐘數 */}
                             <div
                                 className="w-10 h-10 rounded-full flex items-center justify-center border border-white/30 text-white hover:bg-white/10 transition-colors cursor-pointer select-none active:opacity-50"
@@ -610,7 +628,7 @@
 
                             {/* 隱藏式後台/Debug按鈕（原本是短按開 debug，現在新增長按 1 秒開後台） */}
                             <div
-                                className="absolute top-12 left-1/2 transform -translate-x-1/2 w-24 h-12 z-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                                className="calculator-backend-trigger absolute left-1/2 transform -translate-x-1/2 w-24 h-12 z-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
                                 onClick={() => setDebugMode(!debugMode)}
                                 onTouchStart={handleBackendTouchStart}
                                 onTouchEnd={handleBackendTouchEnd}
@@ -698,7 +716,7 @@
 
                         {/* Debug 面板 */}
                         {debugMode && (
-                            <div className="absolute top-20 left-6 bg-white/90 backdrop-blur-md text-black p-4 rounded-xl text-xs font-mono border w-48 shadow-2xl z-50 pointer-events-none">
+                            <div className="calculator-debug absolute left-6 bg-white/90 backdrop-blur-md text-black p-4 rounded-xl text-xs font-mono border w-48 shadow-2xl z-50 pointer-events-none">
                                 <div className="font-bold border-b pb-2 mb-2 flex justify-between">
                                     <span>Magic Status</span>
                                     <span>
