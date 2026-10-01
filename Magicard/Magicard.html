@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Magic Card</title>
     <link rel="icon" type="image/png" href="Gemini_Generated_Image_uixo8fuixo8fuixo.png">
     <link rel="apple-touch-icon" href="Gemini_Generated_Image_uixo8fuixo8fuixo.png">
@@ -17,6 +17,8 @@
             --active-h: 112.5vw;
             --max-w: 340px;
             --max-h: 510px;
+            --fan-w: min(32vw, 36vh, 240px);
+            --fan-h: min(48vw, 54vh, 360px);
 
             /* 微調參數 */
             --bg-size-x: 1300%;
@@ -28,9 +30,9 @@
         /* --- 橫向模式適配 (Landscape) --- */
         @media (orientation: landscape) {
             :root {
-                /* 大牌揭曉尺寸加大：高度 76vh，寬度 50.6vh */
-                --active-h: 76vh; 
-                --active-w: 50.6vh; 
+                /* 大牌維持原樣：高度 85% */
+                --active-h: 85vh; 
+                --active-w: 56.6vh; 
                 
                 --max-w: none;
                 --max-h: none;
@@ -127,9 +129,10 @@
         .card-wrapper {
             position: absolute;
             left: 50%; top: 50%;
-            /* 直向模式：16vw 寬，確保 5 張牌完全留在螢幕內不溢出 */
-            width: 16vw; height: 24vw; 
-            margin-left: -8vw; margin-top: -12vw;
+            /* 放大的扇形牌組，尺寸同時受螢幕寬高限制 */
+            width: var(--fan-w); height: var(--fan-h);
+            margin-left: calc(var(--fan-w) / -2);
+            margin-top: calc(var(--fan-h) / -2);
             
             transform-style: preserve-3d;
             cursor: pointer;
@@ -140,54 +143,6 @@
                         height 0.6s ease, 
                         margin 0.6s ease,
                         opacity 0.5s ease;
-        }
-
-        /* 橫向模式適配 (針對手機橫向優化：大卡片與貼附式按鈕) */
-        @media (orientation: landscape) {
-            .card-wrapper {
-                /* 橫向小牌：高度 48vh，寬度 32vh */
-                height: 48vh; 
-                width: 32vh; 
-                top: 40%;
-                margin-top: -24vh; 
-                margin-left: -16vh;
-            }
-
-            .card-wrapper.active {
-                top: 42% !important;
-            }
-
-            #zone-overlay {
-                top: 42%;
-            }
-
-            #reveal-container {
-                top: 42% !important;
-            }
-
-            .controls { 
-                bottom: max(16px, env(safe-area-inset-bottom)); 
-                z-index: 3000;
-            }
-
-            #action-btn {
-                padding: 10px 36px;
-                font-size: 15px;
-                border: 2px solid rgba(255, 255, 255, 0.3);
-                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-            }
-
-            #help-modal {
-                padding: 20px 15px;
-            }
-        }
-
-        /* 電腦版/大平板固定上限 */
-        @media (min-width: 800px) and (min-height: 800px) {
-            .card-wrapper {
-                width: 140px; height: 210px;
-                margin-left: -70px; margin-top: -105px;
-            }
         }
 
         /* 放大狀態 (Active / 大牌) */
@@ -218,6 +173,7 @@
 
         .card-face {
             position: absolute; width: 100%; height: 100%;
+            box-sizing: border-box;
             backface-visibility: hidden; -webkit-backface-visibility: hidden;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
@@ -255,23 +211,23 @@
             transform: rotateY(180deg);
         }
 
-        /* --- 揭曉大牌層 (定位與 .card-wrapper.active 完全重合，消除跳動) --- */
+        /* --- 揭曉大牌層 --- */
         #reveal-container {
             display: none;
             position: absolute;
-            left: 50%; top: 50%;
-            transform: translate(-50%, -50%);
-            width: var(--active-w);
-            height: var(--active-h);
-            max-width: var(--max-w);
-            max-height: var(--max-h);
-            z-index: 1500;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
             pointer-events: none; 
         }
 
         .big-card-wrapper {
-            width: 100%;
-            height: 100%;
+            width: var(--active-w);
+            height: var(--active-h);
+            max-width: var(--max-w);
+            max-height: var(--max-h);
             perspective: 1500px;
             pointer-events: auto; 
         }
@@ -316,9 +272,7 @@
 
         /* --- 底部按鈕 --- */
         .controls { 
-            position: absolute; 
-            bottom: max(20px, env(safe-area-inset-bottom)); 
-            width: 100%; z-index: 3000; 
+            position: absolute; bottom: 8vh; width: 100%; z-index: 3000; 
             display: flex; justify-content: center; pointer-events: none; 
         }
 
@@ -462,28 +416,31 @@
             });
         }
         
-        function updateCardPosition(el, index) {
-            let offset = (index - 2) * 17.5; // 直向間距 (17.5vw，確保 5 張卡片全在螢幕內)
-            let unit = 'vw';
-            if (window.innerWidth > window.innerHeight) {
-                // 橫向模式：卡片間距 (約 26vh)
-                offset = (index - 2) * 26; 
-                unit = 'vh';
-            }
-            const transform = `translateX(${offset}${unit})`;
+        function updateCardPosition(el, index, lift = 0) {
+            const offset = index - 2;
+            const x = offset * 40;
+            const y = offset * offset * 5 - 8 + lift;
+            const angle = offset * 10;
+            const transform = `translate(${x}%, ${y}%) rotate(${angle}deg)`;
             el.style.transform = transform;
-            el.dataset.baseTransform = transform;
+            // 右邊的牌疊在上方，保留每張牌左上角的數字與花色。
+            el.style.zIndex = index + 10;
+            if (lift === 0) {
+                el.dataset.baseTransform = transform;
+                el.dataset.fanSlot = index;
+            }
         }
         
         window.addEventListener('resize', () => {
             if (currentStage === 0 || currentStage === 1) {
                 const wrappers = document.querySelectorAll('.card-wrapper');
-                wrappers.forEach((w, i) => updateCardPosition(w, i));
+                wrappers.forEach((w, i) => updateCardPosition(w, Number(w.dataset.fanSlot ?? i)));
             }
         });
 
         function handleMainButton(e) {
             if (e) { e.preventDefault(); e.stopPropagation(); }
+            if (currentStage === 0.5) return;
             if (currentStage === 3) resetTable();
             else performShuffle(); 
         }
@@ -495,6 +452,7 @@
             hint.style.opacity = 0;
             initCards(); 
             actionBtn.innerText = "打亂順序";
+            actionBtn.disabled = false;
             actionBtn.style.opacity = 1;
             actionBtn.style.pointerEvents = 'auto';
             document.getElementById('reveal-container').style.display = 'none';
@@ -502,60 +460,77 @@
         }
 
         function performShuffle() {
+            if (currentStage === 0.5) return;
             if (shuffleInterval) clearInterval(shuffleInterval);
             if (shuffleTimeout) clearTimeout(shuffleTimeout);
             if (dealTimeout) clearTimeout(dealTimeout);
 
             currentStage = 0.5;
+            actionBtn.disabled = true;
+            actionBtn.innerText = "洗牌中…";
             
             const wrappers = document.querySelectorAll('.card-wrapper');
             const inners = document.querySelectorAll('.card-inner');
+            const slots = Array.from(wrappers, (w, i) => Number(w.dataset.fanSlot ?? i));
             
-            inners.forEach(i => i.style.transform = 'rotateY(0deg)');
+            inners.forEach(i => {
+                i.style.transition = 'transform 0.22s ease-in';
+                i.style.transform = 'rotateY(0deg)';
+            });
             
-            wrappers.forEach(w => {
+            wrappers.forEach((w, index) => {
                 w.classList.remove('active', 'fade-out');
                 w.style.opacity = 1;
                 w.style.pointerEvents = 'auto';
                 w.style.transition = 'transform 0.2s ease-out';
-                w.style.transform = `translateX(0)`;
+                updateCardPosition(w, slots[index]);
             });
 
-            let count = 0;
-            let maxCount = 15;
-            
+            // 多張牌同時隨機穿插，最後才回到扇形位置。
+            let step = 0;
             shuffleTimeout = setTimeout(() => {
-                shuffleInterval = setInterval(() => {
-                    count++;
-                    wrappers.forEach(w => {
-                        w.style.zIndex = Math.floor(Math.random() * 50);
-                        const isLandscape = window.innerWidth > window.innerHeight;
-                        const unit = isLandscape ? 'vh' : 'px';
-                        const scale = isLandscape ? 5 : 10; 
-                        
-                        const rx = Math.random() * scale - (scale/2); 
-                        const ry = Math.random() * scale - (scale/2); 
-                        const rr = Math.random() * 10 - 5; 
-                        w.style.transition = 'transform 0.1s linear';
-                        w.style.transform = `translate(${rx}${unit}, ${ry}${unit}) rotate(${rr}deg)`;
-                    });
-
-                    if (count > maxCount) {
+                const animateStep = () => {
+                    if (step === 10) {
                         clearInterval(shuffleInterval);
+                        shuffleInterval = null;
                         dealCardsBack();
+                        return;
                     }
-                }, 60);
-            }, 400);
+                    const previousSlots = slots.slice();
+                    for (let i = slots.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [slots[i], slots[j]] = [slots[j], slots[i]];
+                    }
+                    if (slots.every((slot, i) => slot === previousSlots[i])) {
+                        slots.push(slots.shift());
+                    }
+                    wrappers.forEach((w, index) => {
+                        const x = (slots[index] - 2) * 27 + (Math.random() - 0.5) * 14;
+                        const y = (Math.random() - 0.5) * 44;
+                        const angle = (Math.random() - 0.5) * 56;
+                        w.style.transition = 'transform 0.085s linear';
+                        w.style.transform = `translate(${x}%, ${y}%) rotate(${angle}deg)`;
+                        w.style.zIndex = 20 + slots[(index + step) % slots.length];
+                        w.dataset.fanSlot = slots[index];
+                    });
+                    step++;
+                };
+                animateStep();
+                shuffleInterval = setInterval(animateStep, 85);
+            }, 240);
         }
 
         function dealCardsBack() {
             const wrappers = document.querySelectorAll('.card-wrapper');
             wrappers.forEach((w, index) => {
-                w.style.zIndex = index + 10;
-                w.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                w.style.transform = w.dataset.baseTransform;
+                w.style.transition = 'transform 0.18s ease-out';
+                updateCardPosition(w, Number(w.dataset.fanSlot ?? index));
             });
-            dealTimeout = setTimeout(() => { currentStage = 1; }, 500);
+            dealTimeout = setTimeout(() => {
+                currentStage = 1;
+                actionBtn.disabled = false;
+                actionBtn.innerText = "再打亂一次";
+            }, 180);
         }
 
         function handleCardSelect(index, e) {
@@ -599,7 +574,7 @@
             const deltaX = currentX - startX;
             const screenW = window.innerWidth;
             let rotation = (deltaX / (screenW * 0.4)) * 180;
-            if (rotation < 0) rotation = 0; 
+            if (rotation < -179) rotation = -179;
             if (rotation > 179) rotation = 179;
             currentRotation = rotation;
             const activeCard = document.getElementById(`card-${activeCardIndex}`);
@@ -617,11 +592,9 @@
             if(!activeCard) return;
             const inner = activeCard.querySelector('.card-inner');
             inner.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
-            if (currentRotation > 60) {
-                inner.style.transform = `rotateY(180deg)`;
-                setTimeout(() => {
-                    revealSuccess();
-                }, 480);
+            if (Math.abs(currentRotation) > 60) {
+                inner.style.transform = `rotateY(${currentRotation < 0 ? -180 : 180}deg)`;
+                revealSuccess();
             } else {
                 inner.style.transform = `rotateY(0deg)`;
             }
