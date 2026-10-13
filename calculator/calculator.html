@@ -3,8 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="../manifest.webmanifest">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
     <meta name="format-detection" content="telephone=no">
@@ -27,9 +30,9 @@
     </script>
     <!-- 加入自訂圖示 (Favicon) -->
     <!-- 請將 'your-icon.png' 替換成您自己的圖片路徑或網址 (建議格式為 PNG, 建議尺寸 512x512 正方形) -->
-    <link rel="icon" type="image/png" href="calculator.png">
+    <link rel="icon" type="image/png" href="favicon.png">
     <!-- Apple Touch Icon (用於 iOS 設備「加入主畫面」時的 App 圖示) -->
-    <link rel="apple-touch-icon" href="calculator.png">
+    <link rel="apple-touch-icon" href="favicon.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -37,24 +40,15 @@
     <script src="https://unpkg.com/@babel/standalone@7.21.4/babel.min.js"></script>
 
     <style>
-        html,
-        body,
-        #root {
-            width: 100%;
-            height: 100%;
-            height: 100dvh;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #000;
-        }
-
         body {
+            background-color: #000;
             color: white;
+            overflow: hidden;
             touch-action: none;
             -webkit-user-select: none;
             user-select: none;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: #000;
         }
 
         .no-scrollbar::-webkit-scrollbar {
@@ -595,12 +589,12 @@
             const clearBtnText = (inputExpression === '0' && lastExpression === '') ? 'AC' : 'C';
 
             return (
-                <div className="flex justify-center items-center h-full w-full font-sans overflow-hidden relative bg-black">
+                <div className="flex justify-center items-center h-screen w-full font-sans overflow-hidden relative bg-black">
 
-                    <div className="relative w-full h-full max-w-lg flex flex-col justify-between overflow-hidden z-10">
+                    <div className="relative w-full h-full sm:w-[390px] sm:h-[min(844px,100vh)] sm:bg-black sm:rounded-[48px] sm:border-[10px] sm:border-[#1c1c1e] sm:shadow-2xl flex flex-col overflow-hidden z-10 transition-all duration-300">
 
                         {/* 頂部圖示區 */}
-                        <div className="flex justify-between px-6 pt-[max(env(safe-area-inset-top,0px),44px)] z-40 relative">
+                        <div className="flex justify-between px-6 pt-12 z-40 relative">
                             {/* 左上角：短按鬼影(時間)，長按設定加時分鐘數 */}
                             <div
                                 className="w-10 h-10 rounded-full flex items-center justify-center border border-white/30 text-white hover:bg-white/10 transition-colors cursor-pointer select-none active:opacity-50"
@@ -616,9 +610,9 @@
                                 <ClockIcon className="w-6 h-6" />
                             </div>
 
-                            {/* 隱藏式後台/Debug按鈕 */}
+                            {/* 隱藏式後台/Debug按鈕（原本是短按開 debug，現在新增長按 1 秒開後台） */}
                             <div
-                                className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-28 z-50 flex items-center justify-center opacity-0 cursor-pointer"
+                                className="absolute top-12 left-1/2 transform -translate-x-1/2 w-24 h-12 z-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
                                 onClick={() => setDebugMode(!debugMode)}
                                 onTouchStart={handleBackendTouchStart}
                                 onTouchEnd={handleBackendTouchEnd}
